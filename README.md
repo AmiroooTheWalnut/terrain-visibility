@@ -1,2 +1,2 @@
 # terrain-visibility
-This repository contains functional and abandoned codes for experimnting different terrain visiblity algorithms.
+This repository contains functional and abandoned codes for experimenting different terrain visiblity algorithms.
