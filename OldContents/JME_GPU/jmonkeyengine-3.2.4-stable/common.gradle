@@ -1,0 +1,116 @@
+//
+// This file is to be applied to every subproject.
+//
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'org.jmonkeyengine'
+version = jmePomVersion
+
+sourceCompatibility = '1.7'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "http://nifty-gui.sourceforge.net/nifty-maven-repo"
+    }
+    flatDir {
+        dirs rootProject.file('lib')
+    }
+}
+
+dependencies {
+    // Adding dependencies here will add the dependencies to each subproject.
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.0.28-beta'
+    testCompile group: 'org.easytesting', name: 'fest-assert-core', version: '2.0M10'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'jMonkeyEngine',
+                   'Implementation-Version': jmeFullVersion
+    }
+}
+
+javadoc {
+    failOnError = false
+    options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+    options.docTitle = "jMonkeyEngine ${jmeMainVersion} ${project.name} Javadoc"
+    options.windowTitle = "jMonkeyEngine ${jmeMainVersion} ${project.name} Javadoc"
+    options.header = "<b>jMonkeyEngine ${jmeMainVersion} ${project.name}</b>"
+    options.author = "true"
+    options.use = "true"
+    //disable doclint for JDK8, more quiet output
+    if (JavaVersion.current().isJava8Compatible()){
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+test {
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes, description: 'Creates a jar from the source files.') {
+    classifier = 'sources'
+    from sourceSets*.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc, description: 'Creates a jar from the javadoc files.') {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+ext.pomConfig = {
+    name POM_NAME
+    description POM_DESCRIPTION
+    url POM_URL
+    inceptionYear POM_INCEPTION_YEAR
+    scm {
+        url POM_SCM_URL
+        connection POM_SCM_CONNECTION
+        developerConnection POM_SCM_DEVELOPER_CONNECTION
+    }
+    licenses {
+        license {
+            name POM_LICENSE_NAME
+            url POM_LICENSE_URL
+            distribution POM_LICENSE_DISTRIBUTION
+        }
+    }
+    developers {
+        developer {
+            name 'jMonkeyEngine Team'
+            id 'jMonkeyEngine'
+        }
+    }
+}
+
+// workaround to be able to use same custom pom with 'maven' and 'bintray' plugin
+task writeFullPom {
+    ext.pomFile = "$mavenPomDir/${project.name}-${project.version}.pom"
+    outputs.file pomFile
+    doLast {
+        pom {
+            project pomConfig
+        }.writeTo(pomFile)
+    }
+}
+
+assemble.dependsOn(writeFullPom)
+install.dependsOn(writeFullPom)
+uploadArchives.dependsOn(writeFullPom)
+
+artifacts {
+    archives jar
+    archives sourcesJar
+    if (buildJavaDoc == "true") {
+        archives javadocJar
+    }
+    archives writeFullPom.outputs.files[0]
+}
+
