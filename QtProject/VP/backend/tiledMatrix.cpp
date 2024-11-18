@@ -33,8 +33,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <sstream>
-#include <vector>
 #include <cassert>
 #include <sys/time.h>
 #include <stdio.h>

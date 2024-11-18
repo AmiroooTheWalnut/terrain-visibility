@@ -1,9 +1,13 @@
+/**
+ * Written by Amir Mohammad Esmaieeli Sikaroudi in November 2024.
+ * This file is the main file that the GUI starts with running the QML engine.
+ */
+
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 //#ifdef QMAKE_BUILD
 #include "BackendContainer.h"
 //#endif
-//#include "BackendContainer.h"
 
 
 int main(int argc, char *argv[])
@@ -28,7 +32,7 @@ int main(int argc, char *argv[])
         &app,
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
-    engine.loadFromModule("VP", "Main2");
+    engine.loadFromModule("VP", "Main");
 
     return app.exec();
 }
