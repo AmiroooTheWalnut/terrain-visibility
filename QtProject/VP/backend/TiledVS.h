@@ -7,7 +7,9 @@
 #include <fcntl.h>
 #include <sys/times.h>
 #include <sys/types.h>
-//#include <sys/uio.h>
+#ifdef _WIN32
+#include <sys/uio.h>
+#endif
 
 #include "backend/tiledMatrix.cpp"
 #include <string>
