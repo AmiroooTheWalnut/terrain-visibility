@@ -19,22 +19,48 @@ qt_add_executable(appVP
     frontend/main.cpp
 )
 
-qt_add_qml_module(appVP
-    URI VP
-    VERSION 1.0
-    NO_RESOURCE_TARGET_PATH
-    QML_FILES frontend/Main.qml
-    SOURCES  backend/tiledMatrix.cpp backend/TiledVS.cpp
-    RESOURCES tiles/N32W110.hgt
-    RESOURCES heightmap.png
-    RESOURCES temp.png
-    SOURCES backend/TiledVS.h
-    SOURCES backend/tiledMatrix.h
-    SOURCES backend/lz4.cpp
-    SOURCES backend/lz4.h
-    SOURCES BackendContainer.cpp
-    SOURCES BackendContainer.h
-)
+
+if(WIN32)
+    qt_add_qml_module(appVP
+        URI VP
+        VERSION 1.0
+        NO_RESOURCE_TARGET_PATH
+        QML_FILES frontend/Main.qml
+        SOURCES  backend/tiledMatrix.cpp backend/TiledVS.cpp
+        RESOURCES tiles/N32W110.hgt
+        RESOURCES heightmap.png
+        RESOURCES temp.png
+        SOURCES backend/TiledVS.h
+        SOURCES backend/tiledMatrix.h
+        SOURCES backend/lz4.cpp
+        SOURCES backend/lz4.h
+        SOURCES BackendContainer.cpp
+        SOURCES BackendContainer.h
+        SOURCES sys/times.h
+        SOURCES sys/times.c
+        SOURCES sys/uio.h
+    )
+
+elseif(UNIX)
+
+    qt_add_qml_module(appVP
+        URI VP
+        VERSION 1.0
+        NO_RESOURCE_TARGET_PATH
+        QML_FILES frontend/Main.qml
+        SOURCES  backend/tiledMatrix.cpp backend/TiledVS.cpp
+        RESOURCES tiles/N32W110.hgt
+        RESOURCES heightmap.png
+        RESOURCES temp.png
+        SOURCES backend/TiledVS.h
+        SOURCES backend/tiledMatrix.h
+        SOURCES backend/lz4.cpp
+        SOURCES backend/lz4.h
+        SOURCES BackendContainer.cpp
+        SOURCES BackendContainer.h
+    )
+
+endif()
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

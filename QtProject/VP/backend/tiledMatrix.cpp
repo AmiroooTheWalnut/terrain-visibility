@@ -37,6 +37,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <algorithm>
 #include "backend/lz4.h"
 #include "backend/tiledMatrix.h"
 using namespace std;
@@ -231,7 +232,7 @@ tiledMatrix<T>::tiledMatrix(int nrows,int ncolumns,int linhasTiles,int colunasTi
 	}
 
 	tamanhoMaximoBlocoComprimido = LZ4_compressBound( linhasTiles*colunasTiles*sizeof(T) );
-	bufferTempCompressao = new char[ max(tamanhoMaximoBlocoComprimido,(long unsigned int)linhasTiles*colunasTiles*sizeof(T)) ];
+    bufferTempCompressao = new char[ std::max(tamanhoMaximoBlocoComprimido,(long unsigned int)(linhasTiles*colunasTiles*sizeof(T))) ];
 	
 	
 	/*numVezesTileCarregadoDisco =  new int *[nrowsTiles];

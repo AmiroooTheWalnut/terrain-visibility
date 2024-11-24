@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <sys/times.h>
 #include <sys/types.h>
-#include <sys/uio.h>
+//#include <sys/uio.h>
 
 #include "backend/tiledMatrix.cpp"
 #include <string>
