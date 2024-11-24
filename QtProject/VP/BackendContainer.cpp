@@ -8,7 +8,9 @@
 #include <QQmlComponent>
 #include <QTransform>
 #include <stdlib.h>
+#include "backend/singleguardalgorithm.h"
 #include "BackendContainer.h"
+//#include <QtGraphs/private/qquickgraphssurface_p.h>
 
 BackendContainer::BackendContainer(QObject *parent)
     : QObject{parent}
@@ -61,7 +63,11 @@ QList<QString> BackendContainer::drawSurface(QSurface3DSeries *series)
 {
     QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
 
-    QSurfaceDataArray *m_resetArray=new QSurfaceDataArray();
+    if(!surfaceData->isEmpty()){
+        surfaceData->clear();
+    }
+
+    //QSurfaceDataArray *m_resetArray=new QSurfaceDataArray();
     for(int i=0;i<ncols;i++){
         QSurfaceDataRow *a=new QSurfaceDataRow();
         for(int j=0;j<nrows;j++){
@@ -76,11 +82,13 @@ QList<QString> BackendContainer::drawSurface(QSurface3DSeries *series)
             QColor c=interpolateColor(interpolatedHValue);
             texture->setPixelColor(j,i,c);
         }
-        m_resetArray->append(*a);
+        //m_resetArray->append(*a);
+        surfaceData->append(*a);
         delete a;
     }
-    series->dataProxy()->resetArray();
-    series->dataProxy()->addRows(*m_resetArray);
+    //series->dataProxy()->resetArray();
+    //series->dataProxy()->resetArray(*m_resetArray);
+    series->dataProxy()->resetArray(*surfaceData);
     //series->dataProxy()->resetArray(*m_resetArray);
     QImage rotatedImg = texture->transformed(QTransform().rotate(0.0));
     series->setTexture(rotatedImg);
@@ -98,10 +106,18 @@ QList<QString> BackendContainer::drawSurface(QSurface3DSeries *series)
     return qList;
 }
 
-QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurface3DSeries *vSeries, QString obsX, QString obsZ, QString obsH,QString range)
+QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurface3DSeries *vSeries, QString obsX, QString obsZ, QString obsH,QString range, int r,int g,int b)
 {
-    // QColor r("yellow");
-    // vSeries->setWireframeColor(r);
+    //vSeries->dataProxy()->resetArray()
+    //vSeries->setSelectedPoint(NULL);
+    //vSeries->dataProxy()->disconnect(vSeries->parent());
+    //vSeries->clearArray();
+    //vSeries->dataProxy()->resetArray();
+
+    BackendContainer::drawSurface(series);
+
+    QColor yColor(r,g,b);
+    vSeries->setWireframeColor(yColor);
     updateVisibility(obsX,obsZ,obsH,range);
     QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
     //QImage *vTexture=new QImage(2,2,QImage::Format_ARGB32);
@@ -113,131 +129,118 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
                 QColor c=interpolateColor(interpolatedHValue);
                 texture->setPixelColor(j,i,c);
             }else{
-                QColor c("red");
-                texture->setPixelColor(j,i,c);
+                //QColor c("red");
+                texture->setPixelColor(j,i,yColor);
             }
         }
     }
     //QImage rotatedImg = texture->transformed(QTransform().rotate(90.0));
     series->setTexture(*texture);
 
-    // QSurfaceDataArray *m_viewerResetArray=new QSurfaceDataArray();
-    // int x=atoi(obsX.toStdString().c_str());
-    // int z=atoi(obsZ.toStdString().c_str());
-    // int sH=elevData->get(x,z);
-    // int y=atoi(obsH.toStdString().c_str())+sH;
-
-    // for(int i=0;i<50;i++){
-    //     QSurfaceDataRow *a=new QSurfaceDataRow();
-    //     for(int j=0;j<50;j++){
-    //         QSurfaceDataItem *d=new QSurfaceDataItem();
-    //         //int sign = (rand()%1)+1;
-    //         double signRaw = (((double)rand()) / RAND_MAX)-0.5;
-    //         float sign=0;
-    //         if(signRaw>0){
-    //             sign=1.0;
-    //         }else{
-    //             sign=-1.0;
-    //         }
-    //         d->setX(z+viewerSize*sign);
-    //         signRaw = (((double)rand()) / RAND_MAX)-0.5;
-    //         sign=0;
-    //         if(signRaw>0){
-    //             sign=1.0;
-    //         }else{
-    //             sign=-1.0;
-    //         }
-    //         d->setY(y+viewerSize*sign);
-    //         signRaw = (((double)rand()) / RAND_MAX)-0.5;
-    //         sign=0;
-    //         if(signRaw>0){
-    //             sign=1.0;
-    //         }else{
-    //             sign=-1.0;
-    //         }
-    //         d->setZ(x+viewerSize*sign);
-    //         a->append(*d);
-    //         //delete d;
-    //     }
-    //     m_viewerResetArray->append(*a);
-    //     //delete a;
-    // }
-
-    // QColor c("red");
-    // vTexture->setPixelColor(0,0,c);
-    // vTexture->setPixelColor(0,1,c);
-    // vTexture->setPixelColor(1,0,c);
-    // vTexture->setPixelColor(1,1,c);
+    if(!viewerData->empty()){
+        vSeries->clearArray();
+        viewerData->clear();
+    }
 
 
-    // QSurfaceDataRow *a=new QSurfaceDataRow();
-    // QSurfaceDataItem *d=new QSurfaceDataItem();
-    // d->setX(x+viewerSize);
-    // d->setY(y+viewerSize);
-    // d->setZ(z+viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,0,c);
-    // d=new QSurfaceDataItem();
-    // d->setX(x-viewerSize);
-    // d->setY(y+viewerSize);
-    // d->setZ(z+viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,1,c);
-    // d=new QSurfaceDataItem();
-    // d->setX(x+viewerSize);
-    // d->setY(y-viewerSize);
-    // d->setZ(z+viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,2,c);
-    // d=new QSurfaceDataItem();
-    // d->setX(x+viewerSize);
-    // d->setY(y+viewerSize);
-    // d->setZ(z-viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,3,c);
-    // d=new QSurfaceDataItem();
-    // d->setX(x-viewerSize);
-    // d->setY(y-viewerSize);
-    // d->setZ(z+viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,4,c);
-    // d=new QSurfaceDataItem();
-    // d->setX(x-viewerSize);
-    // d->setY(y+viewerSize);
-    // d->setZ(z-viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,5,c);
-    // d=new QSurfaceDataItem();
-    // d->setX(x+viewerSize);
-    // d->setY(y-viewerSize);
-    // d->setZ(z-viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,6,c);
-    // d=new QSurfaceDataItem();
-    // d->setX(x-viewerSize);
-    // d->setY(y-viewerSize);
-    // d->setZ(z-viewerSize);
-    // a->append(*d);
-    // delete d;
-    // //vTexture->setPixelColor(0,7,c);
+    //QSurfaceDataArray *m_viewerResetArray=new QSurfaceDataArray();
+    int x=atoi(obsX.toStdString().c_str());
+    int z=atoi(obsZ.toStdString().c_str());
+    int sH=elevData->get(x,z);
+    int y=atoi(obsH.toStdString().c_str())+sH;
 
-    // //m_viewerResetArray->append(*a);
+    QSurfaceDataRow *a=new QSurfaceDataRow();
+    QSurfaceDataItem *d=new QSurfaceDataItem();
+    d->setX(z+viewerSize);
+    d->setY(y);
+    d->setZ(x+viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z);
+    d->setY(y);
+    d->setZ(x+viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z-viewerSize);
+    d->setY(y);
+    d->setZ(x+viewerSize);
+    a->append(*d);
+    delete d;
+    viewerData->append(*a);
+    delete a;
+
+    a=new QSurfaceDataRow();
+    d=new QSurfaceDataItem();
+    d->setX(z+viewerSize);
+    d->setY(y);
+    d->setZ(x);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z);
+    d->setY(y);
+    d->setZ(x);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z-viewerSize);
+    d->setY(y);
+    d->setZ(x);
+    a->append(*d);
+    delete d;
+    viewerData->append(*a);
+    delete a;
+
+    a=new QSurfaceDataRow();
+    d=new QSurfaceDataItem();
+    d->setX(z+viewerSize);
+    d->setY(y);
+    d->setZ(x-viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z);
+    d->setY(y);
+    d->setZ(x-viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z-viewerSize);
+    d->setY(y);
+    d->setZ(x-viewerSize);
+    a->append(*d);
+    delete d;
+    viewerData->append(*a);
+    delete a;
+
+    //vTexture->setPixelColor(0,7,c);
+
+    //m_viewerResetArray->append(*a);
 
 
-    // vSeries->dataProxy()->resetArray();
-    // vSeries->dataProxy()->addRows(*m_viewerResetArray);
+    //vSeries->clearArray();
+    //vSeries->dataProxy()->resetArray(*m_viewerResetArray);
 
-    // vSeries->setTexture(*vTexture);
+    //cout<<"!!!"<<vSeries->dataArray().size()<<endl;
+    vSeries->dataProxy()->resetArray(*viewerData);
+
+
+    //vSeries->dataProxy().
+    //vSeries->dataProxy()->addRows(*m_viewerResetArray);
+    //vSeries->dataProxy()->arrayReset();
+
+    //series->dataProxy()->arrayReset();
+
+    //vSeries->setTexture(*vTexture);
 
     QList<QString> qList;
     return qList;
+}
+
+void BackendContainer::removeSelection(QSurface3DSeries *series){
+    //series->setSelectedPoint(series->invalidSelectionPosition());
 }
 
 /*
@@ -275,4 +278,16 @@ QColor BackendContainer::interpolateColor(float in){
     int bNew=colors[pI].blue()*(1-internalInterpolation)+colors[nI].blue()*internalInterpolation;
 
     return QColor(rNew,gNew,bNew);
+}
+
+void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, QVariantList *vmSeries){
+    SingleGuardAlgorithm *sga=new SingleGuardAlgorithm();
+    sga->run(10,50,elevData);
+    drawMultipleGuards(series,vmSeries,sga->guards);
+}
+
+void BackendContainer::drawMultipleGuards(QSurface3DSeries *series, QVariantList *vmSeries,std::vector<Guard> guards){
+    for(int i=0;i<guards.size();i++){
+        //bc.
+    }
 }

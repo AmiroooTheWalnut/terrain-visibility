@@ -9,6 +9,7 @@
 
 #include <QObject>
 #include "backend/TiledVS.h"
+#include "backend/guard.h"
 #include <QtGraphs/qsurface3dseries.h>
 #include <QtQml/qqmlregistration.h>
 
@@ -25,8 +26,14 @@ public:
     Q_INVOKABLE void readElevData(const QString file_name);
     void updateVisibility(QString obsX, QString obsY, QString obsH,QString range);
     Q_INVOKABLE QList<QString> drawSurface(QSurface3DSeries *series);
-    Q_INVOKABLE QList<QString> drawViewSurface(QSurface3DSeries *series, QSurface3DSeries *vSeries, const QString obsX, const QString obsY, const QString obsH, const QString range);
+    Q_INVOKABLE QList<QString> drawViewSurface(QSurface3DSeries *series, QSurface3DSeries *vSeries, const QString obsX, const QString obsY, const QString obsH, const QString range, int r,int g,int b);
     QColor interpolateColor(float in);
+    Q_INVOKABLE void removeSelection(QSurface3DSeries *series);
+    Q_INVOKABLE void runSingleGuardAlgFrontend(QSurface3DSeries *series, QVariantList *vmSeries);
+    void drawMultipleGuards(QSurface3DSeries *series, QVariantList *vmSeries,std::vector<Guard> guards);
+
+    QSurfaceDataArray *viewerData=new QSurfaceDataArray();
+    QSurfaceDataArray *surfaceData=new QSurfaceDataArray();
 };
 
 

@@ -36,6 +36,14 @@ if(WIN32)
         SOURCES backend/lz4.h
         SOURCES BackendContainer.cpp
         SOURCES BackendContainer.h
+	
+	SOURCES backend/guard.h backend/guard.cpp
+    	SOURCES backend/connectedcomponent.h backend/connectedcomponent.cpp
+    	SOURCES backend/multiguardalgorithm.h backend/multiguardalgorithm.cpp
+    	SOURCES backend/singleguardalgorithm.h backend/singleguardalgorithm.cpp
+    	QML_FILES frontend/surface_template.qml
+    	QML_FILES frontend/surface3DSeries_template.qml
+
         SOURCES sys/times.h
         SOURCES sys/times.c
         SOURCES sys/uio.h
@@ -58,6 +66,13 @@ elseif(UNIX)
         SOURCES backend/lz4.h
         SOURCES BackendContainer.cpp
         SOURCES BackendContainer.h
+
+	SOURCES backend/guard.h backend/guard.cpp
+    	SOURCES backend/connectedcomponent.h backend/connectedcomponent.cpp
+    	SOURCES backend/multiguardalgorithm.h backend/multiguardalgorithm.cpp
+    	SOURCES backend/singleguardalgorithm.h backend/singleguardalgorithm.cpp
+    	QML_FILES frontend/surface_template.qml
+    	QML_FILES frontend/surface3DSeries_template.qml
     )
 
 endif()

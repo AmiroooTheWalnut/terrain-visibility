@@ -16,10 +16,24 @@ Window {
     property real maxX: 1201
     property real maxZ: 1201
 
+    property var surfComponent;
+    property var sufaceQMLItem;
+
+    property var lastCamera;
+    property var cameraPresent;
+    property var cameraTargetPosition;
+    property var cameraXRotation;
+    property var cameraYRotation;
+    property var cameraZoomLevel;
+
+    property var axisX;
+    property var axisY;
+    property var axisZ;
+
     id: mainWindow
 
-    width: 640
-    height: 480
+    width: 1150
+    height: 788
     visible: true
     title: qsTr("Visibility GUI")
 
@@ -60,11 +74,59 @@ Window {
         onClicked: drawMap()
 
         function drawMap(){
-            var ret=backendContainer.drawSurface(heightSeries);
-            maxHeight=Number(ret[0]);
-            minHeight=Number(ret[1]);
-            maxX=Number(ret[2]);
-            maxZ=Number(ret[3]);
+            if (typeof sufaceQMLItem !== "undefined") {
+                axisX=sufaceQMLItem.children[0].axisX;
+                axisY=sufaceQMLItem.children[0].axisY;
+                axisZ=sufaceQMLItem.children[0].axisZ;
+                //lastCamera=sufaceQMLItem.children[0].camera;
+                //cameraPresent=sufaceQMLItem.children[0].cameraPresent;
+                cameraTargetPosition=sufaceQMLItem.children[0].cameraTargetPosition;
+                cameraXRotation=sufaceQMLItem.children[0].cameraXRotation;
+                cameraYRotation=sufaceQMLItem.children[0].cameraYRotation;
+                cameraZoomLevel=sufaceQMLItem.children[0].cameraZoomLevel;
+
+                sufaceQMLItem.destroy();
+            }
+            surfComponent = Qt.createComponent("surface_template.qml");
+
+            if (surfComponent.status == Component.Ready){
+                    finishCreation();
+            }else{
+                surfComponent.statusChanged.connect(finishCreation);
+            }
+        }
+
+        function finishCreation() {
+            if (surfComponent.status == Component.Ready) {
+                sufaceQMLItem = surfComponent.createObject(mainWindow);
+                if (sufaceQMLItem == null) {
+                    // Error Handling
+                    console.log("Error creating object");
+                }
+                if(typeof cameraTargetPosition!=="undefined"){
+                    //sufaceQMLItem.children[0].camera=lastCamera;
+                    //sufaceQMLItem.children[0].cameraPresent=cameraPresent;
+
+                    sufaceQMLItem.children[0].axisX=axisX;
+                    sufaceQMLItem.children[0].axisY=axisY;
+                    sufaceQMLItem.children[0].axisZ=axisZ;
+
+                    sufaceQMLItem.children[0].cameraTargetPosition=cameraTargetPosition;
+                    sufaceQMLItem.children[0].cameraXRotation=cameraXRotation;
+                    sufaceQMLItem.children[0].cameraYRotation=cameraYRotation;
+                    sufaceQMLItem.children[0].cameraZoomLevel=cameraZoomLevel;
+                }
+
+                // var ret=backendContainer.drawSurface(heightSeries);
+                var ret=backendContainer.drawSurface(sufaceQMLItem.children[0].seriesList[0]);
+                maxHeight=Number(ret[0]);
+                minHeight=Number(ret[1]);
+                maxX=Number(ret[2]);
+                maxZ=Number(ret[3]);
+            } else if (surfComponent.status == Component.Error) {
+                // Error Handling
+                console.log("Error loading component:", component.errorString());
+            }
         }
     }
 
@@ -146,96 +208,140 @@ Window {
         onClicked: drawViewMap()
 
         function drawViewMap(){
-            var ret=backendContainer.drawViewSurface(heightSeries,viewerSeries,obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text);
+            if (typeof sufaceQMLItem !== "undefined") {
+                axisX=sufaceQMLItem.children[0].axisX;
+                axisY=sufaceQMLItem.children[0].axisY;
+                axisZ=sufaceQMLItem.children[0].axisZ;
+
+                cameraTargetPosition=sufaceQMLItem.children[0].cameraTargetPosition;
+                cameraXRotation=sufaceQMLItem.children[0].cameraXRotation;
+                cameraYRotation=sufaceQMLItem.children[0].cameraYRotation;
+                cameraZoomLevel=sufaceQMLItem.children[0].cameraZoomLevel;
+                sufaceQMLItem.destroy();
+            }
+            surfComponent = Qt.createComponent("surface_template.qml");
+
+            if (surfComponent.status == Component.Ready){
+                    finishCreation();
+            }else{
+                surfComponent.statusChanged.connect(finishCreation);
+            }
+        }
+
+        function finishCreation() {
+            if (surfComponent.status == Component.Ready) {
+                sufaceQMLItem = surfComponent.createObject(mainWindow);
+                if (sufaceQMLItem == null) {
+                    // Error Handling
+                    console.log("Error creating object");
+                }
+                if(typeof cameraTargetPosition!=="undefined"){
+                    //sufaceQMLItem.children[0].camera=lastCamera;
+                    //sufaceQMLItem.children[0].cameraPresent=cameraPresent;
+
+                    sufaceQMLItem.children[0].axisX=axisX;
+                    sufaceQMLItem.children[0].axisY=axisY;
+                    sufaceQMLItem.children[0].axisZ=axisZ;
+
+                    sufaceQMLItem.children[0].cameraTargetPosition=cameraTargetPosition;
+                    sufaceQMLItem.children[0].cameraXRotation=cameraXRotation;
+                    sufaceQMLItem.children[0].cameraYRotation=cameraYRotation;
+                    sufaceQMLItem.children[0].cameraZoomLevel=cameraZoomLevel;
+                }
+                // var ret=backendContainer.drawSurface(heightSeries);
+                //var ret=backendContainer.drawViewSurface(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+                var ret=dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+            } else if (surfComponent.status == Component.Error) {
+                // Error Handling
+                console.log("Error loading component:", component.errorString());
+            }
+        }
+
+        function dispatchDrawViewRequest(surfSeries,viewerSeries,x,z,h,range,red,green,blue){
+            var ret=backendContainer.drawViewSurface(surfSeries,viewerSeries,x,z,h,range,red,green,blue);
+            return ret;
         }
     }
 
     Item {
-        id: surfaceView
-        anchors.top: getElevDataButton.bottom
+        id: algorithmsPanel
+        anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.left: parent.left
+        width: 200
         anchors.right: parent.right
 
-        Gradient {
-            id: surfaceGradient
-            GradientStop { position: 0.0; color: "darkgreen"}
-            GradientStop { position: 0.15; color: "darkslategray" }
-            GradientStop { position: 0.7; color: "peru" }
-            GradientStop { position: 1.0; color: "white" }
+        Label {
+            id: sgaNGLabel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            text: "Number of guards: "
+            color: "black"
         }
 
-        Surface3D {
-            id: surfacePlot
-            width: surfaceView.width
-            height: surfaceView.height
-            aspectRatio: 3.0
-            theme: GraphsTheme {
-                colorScheme: GraphsTheme.ColorScheme.Dark
-                labelFont.family: "STCaiyun"
-                labelFont.pointSize: 35
-                colorStyle: GraphsTheme.ColorStyle.ObjectGradient
-                baseGradients: [surfaceGradient] // Use the custom gradient
-                //baseColors: ["#FFFF0000"]
-            }
-            shadowQuality: Graphs3D.ShadowQuality.Medium
-            selectionMode: Graphs3D.SelectionFlag.Item
-            //selectionMode: Graphs3D.SelectionFlag.Slice | Graphs3D.SelectionFlag.ItemAndRow
+        TextField {
+            width: 50
+            anchors.top: sgaNGLabel.bottom
+            anchors.left: parent.left
+            anchors.horizontalCenterOffset: 1
+            id: sgaNGTextField
+            text: qsTr("10")
+        }
 
-            cameraPreset: Graphs3D.CameraPreset.IsometricLeft
+        Button {
+            anchors.top: sgaNGTextField.bottom
+            anchors.left: parent.left
+            anchors.horizontalCenterOffset: 1
+            id: singleGuardAlgButton
+            text: qsTr("Single Guard Algorithm")
+            onClicked: singleGuardAlg()
 
-            axisX.min: -0.01
-            axisY.min: mainWindow.minHeight
-            axisZ.min: -0.01
-            axisX.max: mainWindow.maxX
-            axisY.max: mainWindow.maxHeight
-            axisZ.max: mainWindow.maxZ
-            axisX.segmentCount: 4
-            axisY.segmentCount: 4
-            axisZ.segmentCount: 4
+            property var viewersSeriesObject;
+            function singleGuardAlg(){
+                if (typeof sufaceQMLItem !== "undefined") {
+                    drawButton.drawMap();
+                }
 
-            axisY.title: "Height (m)"
-            axisX.title: "Longitude (m)"
-            axisZ.title: "Latitude (m)"
-            axisY.titleVisible: true
-            axisX.titleVisible: true
-            axisZ.titleVisible: true
+                var header=`import QtQuick
+                import QtGraphs
+                `;
+                var contentTemplate1=`Surface3DSeries {
+                objectName: "`;
+                var contentTemplate2=`"
+                drawMode: Surface3DSeries.DrawWireframe
+                itemLabelVisible: false
+                }
+                `;
+                var contentTrunk=header;
+                var numGuards=parseInt(sgaNGTextField.text);
+                for(let i=0;i<numGuards;i++){
+                    contentTrunk=contentTrunk+contentTemplate1+"viewerSeries"+i+contentTemplate2;
+                }
 
-            //! [0]
-            Surface3DSeries {
-                id: heightSeries
-                shading: Surface3DSeries.Shading.Smooth
-                drawMode: Surface3DSeries.DrawSurface
+                viewersSeriesObject = Qt.createQmlObject(contentTrunk,algorithmsPanel);
 
-                // Heightmap can be used for debugging
 
-                // HeightMapSurfaceDataProxy {
-                //     heightMapFile: "://temp.png"
-                //     autoScaleY: true
-                //     minYValue: 800
-                //     maxYValue: 5000
-                //     minZValue: -1
-                //     maxZValue: 1201
-                //     minXValue: -1
-                //     maxXValue: 1201
-                // }
-
-                onSelectedPointChanged: {
-                    obsXTextField.text=heightSeries.selectedPoint.y;
-                    obsZTextField.text=heightSeries.selectedPoint.x;
+                if (viewersSeriesObject.status == Component.Ready){
+                        finishCreation();
+                }else{
+                    viewersSeriesObject.statusChanged.connect(finishCreation);
                 }
             }
 
-            Surface3DSeries {
-                id: viewerSeries
-                //shading: Surface3DSeries.Shading.Smooth
-                drawMode: Surface3DSeries.DrawWireframe
-
+            function finishCreation() {
+                if (viewersSeriesObject.status == Component.Ready) {
+                    var viewerList = viewersSeriesObject.createObject(sufaceQMLItem);
+                    if (viewerList == null) {
+                        // Error Handling
+                        console.log("Error creating object");
+                    }
+                    backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0]);
+                    //dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+                } else if (viewersSeriesObject.status == Component.Error) {
+                    // Error Handling
+                    console.log("Error loading component:", component.errorString());
+                }
             }
         }
-
-
     }
-
 
 }
