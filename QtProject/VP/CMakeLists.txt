@@ -12,6 +12,7 @@ find_package(Qt6 COMPONENTS Quick)
 find_package(Qt6 COMPONENTS Quick3D)
 find_package(Qt6 COMPONENTS Graphs)
 #find_package(Qt6 COMPONENTS DataVisualization)
+find_package(OpenCV REQUIRED)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -43,10 +44,12 @@ if(WIN32)
     	SOURCES backend/singleguardalgorithm.h backend/singleguardalgorithm.cpp
     	QML_FILES frontend/surface_template.qml
     	QML_FILES frontend/surface3DSeries_template.qml
+        QML_FILES frontend/test.qml
 
         SOURCES sys/times.h
         SOURCES sys/times.c
         SOURCES sys/uio.h
+
     )
 
 elseif(UNIX)
@@ -73,6 +76,7 @@ elseif(UNIX)
     	SOURCES backend/singleguardalgorithm.h backend/singleguardalgorithm.cpp
     	QML_FILES frontend/surface_template.qml
     	QML_FILES frontend/surface3DSeries_template.qml
+        QML_FILES frontend/test.qml
     )
 
 endif()
@@ -96,6 +100,7 @@ target_link_libraries(appVP PUBLIC
     Qt::Quick3D
     Qt::Graphs
     #Qt::DataVisualization
+    ${OpenCV_LIBS}
 )
 
 include(GNUInstallDirs)
@@ -108,6 +113,8 @@ install(TARGETS appVP
 # Define source and destination directories
 set(SOURCE_FOLDER "${CMAKE_SOURCE_DIR}/tiles")
 set(DEST_FOLDER "${CMAKE_BINARY_DIR}/tiles")
+
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 #target_include_directories(${PROJECT_NAME} PUBLIC
 #    "${CMAKE_SOURCE_DIR}/backend")

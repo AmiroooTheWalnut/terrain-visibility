@@ -21,8 +21,10 @@ void SingleGuardAlgorithm::initializeGuardsUniform(int numGuards, int height, ti
             Guard *g=new Guard();
             g->x=i;
             g->z=j;
-            g->h=elev->get(i,j);
+            g->h=50;
+            g->r=200;
             g->index=counter;
+            g->findConnected();
             guards.push_back(*g);
             counter=counter+1;
         }

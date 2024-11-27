@@ -91,6 +91,7 @@ Item {
             itemLabelVisible: false
         }
 
+
         //onSelectedSeriesChanged: {
         //            if (surfacePlot.selectedSeries === viewerSeries) {
                         // Reset selection for series2
@@ -100,6 +101,4 @@ Item {
         //            }
         //        }
     }
-
-
 }

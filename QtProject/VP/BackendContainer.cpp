@@ -7,7 +7,10 @@
 #include <QQmlEngine>
 #include <QQmlComponent>
 #include <QTransform>
+#include <QVariant>
 #include <stdlib.h>
+#include <opencv2/opencv.hpp>
+#include<opencv2/core/mat.hpp>
 #include "backend/singleguardalgorithm.h"
 #include "BackendContainer.h"
 //#include <QtGraphs/private/qquickgraphssurface_p.h>
@@ -16,6 +19,7 @@ BackendContainer::BackendContainer(QObject *parent)
     : QObject{parent}
 {
     qRegisterMetaType<QSurface3DSeries *>();
+    //qRegisterMetaType<QList<QSurface3DSeries> *>();
 }
 
 /*
@@ -239,6 +243,140 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
     return qList;
 }
 
+void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards){
+    BackendContainer::drawSurface(series);
+
+    int r=255;
+    int g=0;
+    int b=0;
+
+    QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
+
+    for(int i=0;i<nrows;i++){
+        for(int j=0;j<ncols;j++){
+            int hValue=elevData->get(i,j);
+            float interpolatedHValue=(float)(hValue-minHeight)/(float)(maxHeight-minHeight);
+            QColor c=interpolateColor(interpolatedHValue);
+            texture->setPixelColor(j,i,c);
+        }
+    }
+
+    int hueStep = 180 / vSeries.size();
+    int saturation = 255; // Fixed saturation
+    int value = 255;      // Fixed value
+
+    for(int g=0;g<vSeries.size();g++){
+        int hue = g * hueStep;
+        cv::Mat bgrMat;
+        cv::Mat hsvMat(1, 1, CV_8UC3, cv::Scalar(hue, saturation, value));
+        cv::cvtColor(hsvMat, bgrMat, cv::COLOR_HSV2BGR);
+        cv::Vec3b temp=hsvMat.at<cv::Vec3b>(0,0);
+        //cout<< hsvMat <<endl;
+    QColor yColor(temp.val[0],temp.val[1],temp.val[2]);
+    vSeries.at(g)->setWireframeColor(yColor);
+    QString obsX=QString::fromStdString(std::to_string(guards.at(g).x));
+    QString obsZ=QString::fromStdString(std::to_string(guards.at(g).z));
+    QString obsH=QString::fromStdString(std::to_string(guards.at(g).h));
+    QString range=QString::fromStdString(std::to_string(guards.at(g).r));
+    updateVisibility(obsX,obsZ,obsH,range);
+
+    //QImage *vTexture=new QImage(2,2,QImage::Format_ARGB32);
+    for(int i=0;i<nrows;i++){
+        for(int j=0;j<ncols;j++){
+            if(viewshedData->get(i,j)!=0){
+                texture->setPixelColor(j,i,yColor);
+            }
+        }
+    }
+    //QImage rotatedImg = texture->transformed(QTransform().rotate(90.0));
+
+
+    QSurfaceDataArray *viewerData=new QSurfaceDataArray();
+
+    //if(!viewerData->empty()){
+    //    vSeries->at(i).clearArray();
+    //    viewerData->clear();
+    //}
+
+
+    //QSurfaceDataArray *m_viewerResetArray=new QSurfaceDataArray();
+    int x=atoi(obsX.toStdString().c_str());
+    int z=atoi(obsZ.toStdString().c_str());
+    int sH=elevData->get(x,z);
+    int y=atoi(obsH.toStdString().c_str())+sH;
+
+    QSurfaceDataRow *a=new QSurfaceDataRow();
+    QSurfaceDataItem *d=new QSurfaceDataItem();
+    d->setX(z+viewerSize);
+    d->setY(y);
+    d->setZ(x+viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z);
+    d->setY(y);
+    d->setZ(x+viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z-viewerSize);
+    d->setY(y);
+    d->setZ(x+viewerSize);
+    a->append(*d);
+    delete d;
+    viewerData->append(*a);
+    delete a;
+
+    a=new QSurfaceDataRow();
+    d=new QSurfaceDataItem();
+    d->setX(z+viewerSize);
+    d->setY(y);
+    d->setZ(x);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z);
+    d->setY(y);
+    d->setZ(x);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z-viewerSize);
+    d->setY(y);
+    d->setZ(x);
+    a->append(*d);
+    delete d;
+    viewerData->append(*a);
+    delete a;
+
+    a=new QSurfaceDataRow();
+    d=new QSurfaceDataItem();
+    d->setX(z+viewerSize);
+    d->setY(y);
+    d->setZ(x-viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z);
+    d->setY(y);
+    d->setZ(x-viewerSize);
+    a->append(*d);
+    delete d;
+    d=new QSurfaceDataItem();
+    d->setX(z-viewerSize);
+    d->setY(y);
+    d->setZ(x-viewerSize);
+    a->append(*d);
+    delete d;
+    viewerData->append(*a);
+    delete a;
+
+    vSeries.at(g)->dataProxy()->resetArray(*viewerData);
+    }
+
+    series->setTexture(*texture);
+}
+
 void BackendContainer::removeSelection(QSurface3DSeries *series){
     //series->setSelectedPoint(series->invalidSelectionPosition());
 }
@@ -280,14 +418,38 @@ QColor BackendContainer::interpolateColor(float in){
     return QColor(rNew,gNew,bNew);
 }
 
-void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, QVariantList *vmSeries){
+void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries){
     SingleGuardAlgorithm *sga=new SingleGuardAlgorithm();
     sga->run(10,50,elevData);
-    drawMultipleGuards(series,vmSeries,sga->guards);
+    //drawMultipleGuards(series,vmSeries,sga->guards);
+    std::vector<QSurface3DSeries*> vSeries;
+    for(int i=0;i<vmSeries.size();i++){
+        QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
+        //QSurface3DSeries targetSeries = vmSeries.at(i).value<QSurface3DSeries>();
+        vSeries.push_back(targetSeries);
+    }
+    drawViewBatchSurface(series,vSeries,sga->guards);
 }
 
-void BackendContainer::drawMultipleGuards(QSurface3DSeries *series, QVariantList *vmSeries,std::vector<Guard> guards){
-    for(int i=0;i<guards.size();i++){
-        //bc.
+void BackendContainer::drawMultipleGuards(QSurface3DSeries *series, QVariantList &vmSeries,std::vector<Guard> guards){
+    for(int i=0;i<5;i++){
+        std::string obsX_str = std::to_string(guards.at(i).x);
+        const char* obsX_p = obsX_str.c_str();
+        std::string obsY_str = std::to_string(guards.at(i).z);
+        const char* obsY_p = obsY_str.c_str();
+        std::string obsH_str = std::to_string(guards.at(i).h);
+        const char* obsH_p = obsH_str.c_str();
+        std::string range_str = std::to_string(guards.at(i).r);
+        const char* range_p = range_str.c_str();
+        const char *options[9]={"","1201","1201",obsX_p,obsY_p,obsH_p,range_p,in_file.c_str(),"100"};
+
+        read_delta_time();           // Initialize the timer.
+        Get_Options(8, options);
+        Calc_Vis();
+        viewshedData=viewshedp;
+
+        //QSurface3DSeries targetSeries = vmSeries.at(i).value<QSurface3DSeries>();
+        //BackendContainer::drawViewSurface(series,&targetSeries,QString::fromStdString(obsX_str),QString::fromStdString(obsY_str),QString::fromStdString(obsH_str),QString::fromStdString(range_str),255,0,0);
+
     }
 }

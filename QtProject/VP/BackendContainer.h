@@ -11,6 +11,7 @@
 #include "backend/TiledVS.h"
 #include "backend/guard.h"
 #include <QtGraphs/qsurface3dseries.h>
+//#include <QtGraphs/qsurface3d.h>
 #include <QtQml/qqmlregistration.h>
 
 class BackendContainer : public QObject
@@ -27,10 +28,11 @@ public:
     void updateVisibility(QString obsX, QString obsY, QString obsH,QString range);
     Q_INVOKABLE QList<QString> drawSurface(QSurface3DSeries *series);
     Q_INVOKABLE QList<QString> drawViewSurface(QSurface3DSeries *series, QSurface3DSeries *vSeries, const QString obsX, const QString obsY, const QString obsH, const QString range, int r,int g,int b);
+    void drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards);
     QColor interpolateColor(float in);
     Q_INVOKABLE void removeSelection(QSurface3DSeries *series);
-    Q_INVOKABLE void runSingleGuardAlgFrontend(QSurface3DSeries *series, QVariantList *vmSeries);
-    void drawMultipleGuards(QSurface3DSeries *series, QVariantList *vmSeries,std::vector<Guard> guards);
+    Q_INVOKABLE void runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries);
+    void drawMultipleGuards(QSurface3DSeries *series, QVariantList &vmSeries,std::vector<Guard> guards);
 
     QSurfaceDataArray *viewerData=new QSurfaceDataArray();
     QSurfaceDataArray *surfaceData=new QSurfaceDataArray();

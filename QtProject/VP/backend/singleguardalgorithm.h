@@ -15,7 +15,7 @@ public:
     void run(int numGuards, int height, tiledMatrix<elev_t>* elev);
     void initializeGuardsUniform(int numGuards, int height, tiledMatrix<elev_t>* elev);
     //void drawGuardVisibilities(BackendContainer *bc);
-    std::vector<ConnectedComponent> perimeter;
+    std::vector<ConnectedComponent *> pPerimeter; // Actually owned by the guards
     std::vector<Guard> guards;
 };
 
