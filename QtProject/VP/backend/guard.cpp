@@ -6,6 +6,8 @@
 
 bool debugFlag=false;
 
+/* To avoid stack overflow */
+uint16_t MaxIterations=6;
 
 Guard::Guard() {
 }
@@ -68,7 +70,7 @@ void Guard::findConnected(void) {
                     vector<vector<unsigned char>> pVisitedLocal(nrows, vector<unsigned char> (ncols, 0));
                     pVisited=&pVisitedLocal;
                     //pVisited->set(0);
-                    floodFillCC(i, j);
+                    floodFillCC(i, j, 0);
                     /* After flood fill, we have a grid with the connected pixels set */
                     /* Now place it into a connected component format */
                     setConnectedComponent(pVisited);
@@ -125,18 +127,20 @@ void Guard::findConnected(void) {
 }
 
 /* Flood fill the grid pVisited with only the connected pixels */
-void Guard::floodFillCC(uint16_t i, uint16_t j)
+void Guard::floodFillCC(uint16_t i, uint16_t j, uint16_t level)
 {
     if ((i < 0 || i >= pVisited->size() || j < 0 || j >= pVisited->at(0).size()) || viewshedp->get(i,j) == 0 || pVisited->at(i).at(j)!=0)
         return;
 
     pVisited->at(i).at(j)= 1;
     viewshedp->set(i,j,0); /* Clear the pixel on pGrid so we won't find it again */
+    level++;
+    if (level >= MaxIterations) return;
 
-    floodFillCC(i, j+1);
-    floodFillCC(i, j-1);
-    floodFillCC(i-1, j);
-    floodFillCC(i+1, j);
+    floodFillCC(i, j+1, level);
+    floodFillCC(i, j-1, level);
+    floodFillCC(i-1, j, level);
+    floodFillCC(i+1, j, level);
 }
 
 /* Put connected component data in the correct format */
@@ -204,6 +208,3 @@ void Guard::setConnectedComponent(vector<vector<unsigned char>> *pVisited)
     components.push_back(component);
 }
 
-int compRow;
-int xStart;
-int xEnd;
