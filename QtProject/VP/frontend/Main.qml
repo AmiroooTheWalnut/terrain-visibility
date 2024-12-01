@@ -329,7 +329,7 @@ Window {
             anchors.left: parent.left
             anchors.horizontalCenterOffset: 1
             id: sgaNGTextField
-            text: qsTr("10")
+            text: qsTr("16")
         }
 
         Button {
@@ -361,7 +361,7 @@ Window {
                 }
 
                 //seriesList.shift();
-                backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],seriesList);
+                backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],seriesList, parseInt(sgaNGTextField.text));
 
                 //if (viewersSeriesObject.status == Component.Ready){
                 //        finishCreation();
@@ -377,7 +377,7 @@ Window {
                         // Error Handling
                         console.log("Error creating object");
                     }
-                    backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0]);
+                    backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],parseInt(sgaNGTextField.text));
                     //dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
                 } else if (viewersSeriesObject.status == Component.Error) {
                     // Error Handling

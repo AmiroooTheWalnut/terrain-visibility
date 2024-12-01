@@ -31,8 +31,8 @@ public:
     void drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards);
     QColor interpolateColor(float in);
     Q_INVOKABLE void removeSelection(QSurface3DSeries *series);
-    Q_INVOKABLE void runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries);
-    void drawMultipleGuards(QSurface3DSeries *series, QVariantList &vmSeries,std::vector<Guard> guards);
+    Q_INVOKABLE void runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards);
+    //void drawMultipleGuards(QSurface3DSeries *series, QVariantList &vmSeries,std::vector<Guard> guards);
 
     QSurfaceDataArray *viewerData=new QSurfaceDataArray();
     QSurfaceDataArray *surfaceData=new QSurfaceDataArray();

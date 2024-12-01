@@ -56,6 +56,7 @@ void BackendContainer::updateVisibility(QString obsX, QString obsY, QString obsH
     read_delta_time();           // Initialize the timer.
     Get_Options(8, options);
     Calc_Vis();
+
     viewshedData=viewshedp;
 }
 
@@ -272,108 +273,107 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
         cv::cvtColor(hsvMat, bgrMat, cv::COLOR_HSV2BGR);
         cv::Vec3b temp=hsvMat.at<cv::Vec3b>(0,0);
         //cout<< hsvMat <<endl;
-    QColor yColor(temp.val[0],temp.val[1],temp.val[2]);
-    vSeries.at(g)->setWireframeColor(yColor);
-    QString obsX=QString::fromStdString(std::to_string(guards.at(g).x));
-    QString obsZ=QString::fromStdString(std::to_string(guards.at(g).z));
-    QString obsH=QString::fromStdString(std::to_string(guards.at(g).h));
-    QString range=QString::fromStdString(std::to_string(guards.at(g).r));
-    updateVisibility(obsX,obsZ,obsH,range);
+        QColor yColor(temp.val[0],temp.val[1],temp.val[2]);
+        vSeries.at(g)->setWireframeColor(yColor);
+        QString obsX=QString::fromStdString(std::to_string(guards.at(g).x));
+        QString obsZ=QString::fromStdString(std::to_string(guards.at(g).z));
+        QString obsH=QString::fromStdString(std::to_string(guards.at(g).h));
+        QString range=QString::fromStdString(std::to_string(guards.at(g).r));
+        updateVisibility(obsX,obsZ,obsH,range);
 
-    //QImage *vTexture=new QImage(2,2,QImage::Format_ARGB32);
-    for(int i=0;i<nrows;i++){
-        for(int j=0;j<ncols;j++){
-            if(viewshedData->get(i,j)!=0){
-                texture->setPixelColor(j,i,yColor);
+        //QImage *vTexture=new QImage(2,2,QImage::Format_ARGB32);
+        for(int i=0;i<nrows;i++){
+            for(int j=0;j<ncols;j++){
+                if(viewshedData->get(i,j)!=0){
+                    texture->setPixelColor(j,i,yColor);
+                }
             }
         }
+        //QImage rotatedImg = texture->transformed(QTransform().rotate(90.0));
+
+
+        QSurfaceDataArray *viewerData=new QSurfaceDataArray();
+
+        //if(!viewerData->empty()){
+        //    vSeries->at(i).clearArray();
+        //    viewerData->clear();
+        //}
+
+
+        //QSurfaceDataArray *m_viewerResetArray=new QSurfaceDataArray();
+        int x=atoi(obsX.toStdString().c_str());
+        int z=atoi(obsZ.toStdString().c_str());
+        int sH=elevData->get(x,z);
+        int y=atoi(obsH.toStdString().c_str())+sH;
+
+        QSurfaceDataRow *a=new QSurfaceDataRow();
+        QSurfaceDataItem *d=new QSurfaceDataItem();
+        d->setX(z+viewerSize);
+        d->setY(y);
+        d->setZ(x+viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z);
+        d->setY(y);
+        d->setZ(x+viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z-viewerSize);
+        d->setY(y);
+        d->setZ(x+viewerSize);
+        a->append(*d);
+        delete d;
+        viewerData->append(*a);
+        delete a;
+
+        a=new QSurfaceDataRow();
+        d=new QSurfaceDataItem();
+        d->setX(z+viewerSize);
+        d->setY(y);
+        d->setZ(x);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z);
+        d->setY(y);
+        d->setZ(x);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z-viewerSize);
+        d->setY(y);
+        d->setZ(x);
+        a->append(*d);
+        delete d;
+        viewerData->append(*a);
+        delete a;
+
+        a=new QSurfaceDataRow();
+        d=new QSurfaceDataItem();
+        d->setX(z+viewerSize);
+        d->setY(y);
+        d->setZ(x-viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z);
+        d->setY(y);
+        d->setZ(x-viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z-viewerSize);
+        d->setY(y);
+        d->setZ(x-viewerSize);
+        a->append(*d);
+        delete d;
+        viewerData->append(*a);
+        delete a;
+
+        vSeries.at(g)->dataProxy()->resetArray(*viewerData);
     }
-    //QImage rotatedImg = texture->transformed(QTransform().rotate(90.0));
-
-
-    QSurfaceDataArray *viewerData=new QSurfaceDataArray();
-
-    //if(!viewerData->empty()){
-    //    vSeries->at(i).clearArray();
-    //    viewerData->clear();
-    //}
-
-
-    //QSurfaceDataArray *m_viewerResetArray=new QSurfaceDataArray();
-    int x=atoi(obsX.toStdString().c_str());
-    int z=atoi(obsZ.toStdString().c_str());
-    int sH=elevData->get(x,z);
-    int y=atoi(obsH.toStdString().c_str())+sH;
-
-    QSurfaceDataRow *a=new QSurfaceDataRow();
-    QSurfaceDataItem *d=new QSurfaceDataItem();
-    d->setX(z+viewerSize);
-    d->setY(y);
-    d->setZ(x+viewerSize);
-    a->append(*d);
-    delete d;
-    d=new QSurfaceDataItem();
-    d->setX(z);
-    d->setY(y);
-    d->setZ(x+viewerSize);
-    a->append(*d);
-    delete d;
-    d=new QSurfaceDataItem();
-    d->setX(z-viewerSize);
-    d->setY(y);
-    d->setZ(x+viewerSize);
-    a->append(*d);
-    delete d;
-    viewerData->append(*a);
-    delete a;
-
-    a=new QSurfaceDataRow();
-    d=new QSurfaceDataItem();
-    d->setX(z+viewerSize);
-    d->setY(y);
-    d->setZ(x);
-    a->append(*d);
-    delete d;
-    d=new QSurfaceDataItem();
-    d->setX(z);
-    d->setY(y);
-    d->setZ(x);
-    a->append(*d);
-    delete d;
-    d=new QSurfaceDataItem();
-    d->setX(z-viewerSize);
-    d->setY(y);
-    d->setZ(x);
-    a->append(*d);
-    delete d;
-    viewerData->append(*a);
-    delete a;
-
-    a=new QSurfaceDataRow();
-    d=new QSurfaceDataItem();
-    d->setX(z+viewerSize);
-    d->setY(y);
-    d->setZ(x-viewerSize);
-    a->append(*d);
-    delete d;
-    d=new QSurfaceDataItem();
-    d->setX(z);
-    d->setY(y);
-    d->setZ(x-viewerSize);
-    a->append(*d);
-    delete d;
-    d=new QSurfaceDataItem();
-    d->setX(z-viewerSize);
-    d->setY(y);
-    d->setZ(x-viewerSize);
-    a->append(*d);
-    delete d;
-    viewerData->append(*a);
-    delete a;
-
-    vSeries.at(g)->dataProxy()->resetArray(*viewerData);
-    }
-
     series->setTexture(*texture);
 }
 
@@ -418,19 +418,18 @@ QColor BackendContainer::interpolateColor(float in){
     return QColor(rNew,gNew,bNew);
 }
 
-void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries){
+void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards){
     SingleGuardAlgorithm *sga=new SingleGuardAlgorithm();
-    sga->run(10,50,elevData);
-    //drawMultipleGuards(series,vmSeries,sga->guards);
+    sga->run(numGuards,50,elevData);
     std::vector<QSurface3DSeries*> vSeries;
     for(int i=0;i<vmSeries.size();i++){
         QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
-        //QSurface3DSeries targetSeries = vmSeries.at(i).value<QSurface3DSeries>();
         vSeries.push_back(targetSeries);
     }
     drawViewBatchSurface(series,vSeries,sga->guards);
 }
 
+/*
 void BackendContainer::drawMultipleGuards(QSurface3DSeries *series, QVariantList &vmSeries,std::vector<Guard> guards){
     for(int i=0;i<5;i++){
         std::string obsX_str = std::to_string(guards.at(i).x);
@@ -453,3 +452,4 @@ void BackendContainer::drawMultipleGuards(QSurface3DSeries *series, QVariantList
 
     }
 }
+*/

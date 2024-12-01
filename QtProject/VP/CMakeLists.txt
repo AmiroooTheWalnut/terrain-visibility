@@ -43,8 +43,6 @@ if(WIN32)
     	SOURCES backend/multiguardalgorithm.h backend/multiguardalgorithm.cpp
     	SOURCES backend/singleguardalgorithm.h backend/singleguardalgorithm.cpp
     	QML_FILES frontend/surface_template.qml
-    	QML_FILES frontend/surface3DSeries_template.qml
-        QML_FILES frontend/test.qml
 
         SOURCES sys/times.h
         SOURCES sys/times.c
@@ -75,11 +73,10 @@ elseif(UNIX)
     	SOURCES backend/multiguardalgorithm.h backend/multiguardalgorithm.cpp
     	SOURCES backend/singleguardalgorithm.h backend/singleguardalgorithm.cpp
     	QML_FILES frontend/surface_template.qml
-    	QML_FILES frontend/surface3DSeries_template.qml
-        QML_FILES frontend/test.qml
     )
 
 endif()
+
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
