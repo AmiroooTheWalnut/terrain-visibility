@@ -101,7 +101,7 @@ void SingleGuardAlgorithm::initializeGuardsUniform(int numGuards, int height, ti
             g->x=i*nRowGuardPixels;
             g->z=j*nColGuardsPixels;
             g->h=50;
-            g->r=300;
+            g->r=100;
             g->index=counter;
             g->findConnected();
             guards.push_back(*g);

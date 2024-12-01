@@ -9,8 +9,13 @@
 #include <QTransform>
 #include <QVariant>
 #include <stdlib.h>
-#include <opencv2/opencv.hpp>
-#include<opencv2/core/mat.hpp>
+#ifdef Q_OS_WIN
+    #include "opencv2/opencv.hpp"
+    #include "opencv2/core/mat.hpp"
+#else
+    #include <opencv2/opencv.hpp>
+    #include <opencv2/core/mat.hpp>
+#endif
 #include "backend/singleguardalgorithm.h"
 #include "BackendContainer.h"
 //#include <QtGraphs/private/qquickgraphssurface_p.h>

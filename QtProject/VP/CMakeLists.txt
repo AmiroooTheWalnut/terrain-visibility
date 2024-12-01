@@ -12,7 +12,7 @@ find_package(Qt6 COMPONENTS Quick)
 find_package(Qt6 COMPONENTS Quick3D)
 find_package(Qt6 COMPONENTS Graphs)
 #find_package(Qt6 COMPONENTS DataVisualization)
-find_package(OpenCV REQUIRED)
+
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -20,6 +20,21 @@ qt_add_executable(appVP
     frontend/main.cpp
 )
 
+if(WIN32)
+    #set_property(appVP OpenCV_LIBS PROPERTY
+    #      IMPORTED_LOCATION "C:/Users/user/Downloads/opencv/build/bin")
+    #target_include_directories(${PROJECT_NAME INTERFACE
+    #      "C:/Users/user/Downloads/opencv/build/include")
+    set(OpenCV_DIR "./openCVBins_MGW")
+    add_library(OpenCV_LIBS "./openCVBins_MGW/OpenCVConfig.cmake")
+    #set(OpenCV_DIR "openCVBins/lib/OpenCVConfig.cmake")
+    find_package(OpenCV REQUIRED)
+    #add_library(OpenCV_LIBS "openCV/opencv_videoio_ffmpeg460_64.dll")
+    #target_include_directories(appVP PUBLIC "./opencv2")
+elseif(UNIX)
+    find_package(OpenCV REQUIRED)
+    include_directories(${OpenCV_INCLUDE_DIRS})
+endif()
 
 if(WIN32)
     qt_add_qml_module(appVP
@@ -110,8 +125,6 @@ install(TARGETS appVP
 # Define source and destination directories
 set(SOURCE_FOLDER "${CMAKE_SOURCE_DIR}/tiles")
 set(DEST_FOLDER "${CMAKE_BINARY_DIR}/tiles")
-
-include_directories(${OpenCV_INCLUDE_DIRS})
 
 #target_include_directories(${PROJECT_NAME} PUBLIC
 #    "${CMAKE_SOURCE_DIR}/backend")
