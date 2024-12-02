@@ -18,7 +18,7 @@ public:
     int index;
     std::vector<ConnectedComponent> components;
     void findConnected(void);
-    void floodFillCC(uint16_t i, uint16_t j);
+    void floodFillCC(uint16_t i, uint16_t j, uint16_t limit);
     void setConnectedComponent(vector<vector<unsigned char>> *pVisited);
 
 
