@@ -6,56 +6,21 @@
 
 bool debugFlag=false;
 
-/* To avoid stack overflow */
-uint16_t MaxIterations=6;
-
 Guard::Guard() {
 }
 
 void Guard::findConnected(void) {
     /* Construct the connected components per guard based on the viewshed information */
-    //char strX[10], strH[10], strZ[10], strR[10];
-
     std::string strX = std::to_string(x);
-    //const char* obsX_p = strX;
     std::string strH = std::to_string(h);
-    //const char* obsY_p = strH;
     std::string strZ = std::to_string(z);
-    //const char* obsH_p = strZ;
     std::string strR = std::to_string(r);
-    //const char* range_p = strR;
     const char *options[9]={"","1201","1201",strX.c_str(),strZ.c_str(),strH.c_str(),strR.c_str(),in_file.c_str(),"100"};
 
     read_delta_time();           // Initialize the timer.
     Get_Options(8, options);
     Calc_Vis();
 
-    //if (pVisited) delete pVisited;
-    // pVisited=new vector<vector<unsigned char>>(nrows, vector<unsigned char> (ncols, 0));
-    //vector<vector<unsigned char>> pVisitedLocal(nrows, vector<unsigned char> (ncols, 0));
-    //pVisited=&pVisitedLocal;
-
-    //int row_num = ((nrows + blockSizeRows - 1) / blockSizeRows) * blockSizeRows;
-    //int col_num = ((ncols + blockSizeCols - 1) / blockSizeCols) * blockSizeCols;
-
-    //tiledMatrix<unsigned char> viewshedTrunkp = tiledMatrix<unsigned char>(row_num, row_num, blockSizeRows, blockSizeCols, numBlocks, "tiles/vistrunc");
-    //Deep copy of entire viewshed because the side of viewshed can exceed elev and it can be less too.
-    //for(int i=0;i<elevp->nrows;i++){
-    //    for(int j=0;j<elevp->ncolumns;j++){
-    //        viewshedTrunkp.set(i,j,viewshedp->get(i,j));
-    //    }
-    //}
-    /* Read viewshedp to figure out Connected Components */
-
-    //if (pVisited) delete pVisited;
-    //if (pGrid) delete pGrid;
-
-    // if(index==3){
-    //     cout<<"DEBUGGG!!!!"<<endl;
-    //     debugFlag=true;
-    // }
-
-    //vector<vector<unsigned char>> pGrid(viewshedp->nrows, vector<unsigned char> (viewshedp->ncolumns, 0));
     bool done = false;
     while (!done)
     {
@@ -65,86 +30,46 @@ void Guard::findConnected(void) {
         {
             for(uint16_t j=0;j<ncols;j++)
             {
-                if (viewshedp->get(i,j))
+                if (viewshedp->get(i,j)==1)
                 {
-                    vector<vector<unsigned char>> pVisitedLocal(nrows, vector<unsigned char> (ncols, 0));
-                    pVisited=&pVisitedLocal;
-                    //pVisited->set(0);
-                    floodFillCC(i, j, 0);
+                    floodFill(i, j);
                     /* After flood fill, we have a grid with the connected pixels set */
                     /* Now place it into a connected component format */
-                    setConnectedComponent(pVisited);
+                    setConnectedComponent();
                     found = true;
                 }
             }
         }
         if (!found) done = true;
     }
-    //delete pVisited;
-
-    // row_num = ((nrows + blockSizeRows - 1) / blockSizeRows) * blockSizeRows;
-    // col_num = ((ncols + blockSizeCols - 1) / blockSizeCols) * blockSizeCols;
-
-
-    // if (pVisited) delete pVisited;
-    // if (pGrid) delete pGrid;
-    // pVisited = new tiledMatrix<unsigned char>(row_num, row_num, blockSizeRows, blockSizeCols, numBlocks, "tiles/visited");
-    // pGrid = new tiledMatrix<unsigned char>(row_num, row_num, blockSizeRows, blockSizeCols, numBlocks, "tiles/visited");
-    // pGrid->set(0);
-    // /* Make a copy of viewshedp -- Should be able to copy easier but I can't read the Spanish comments! */
-    // for(int i=0;i<nrows;i++)
-    // {
-    //     for(int j=0;j<ncols;j++)
-    //     {
-    //         if (viewshedp->get(i,j))
-    //             pGrid->set(i,j,1);
-    //     }
-    // }
-
-    // bool done = false;
-    // while (!done)
-    // {
-    //     /* Find a non-zero pixel to start */
-    //     bool found = false;
-    //     for(int i=0;i<nrows;i++)
-    //     {
-    //         for(int j=0;j<ncols;j++)
-    //         {
-    //             if (pGrid->get(i,j))
-    //             {
-    //                 pVisited->set(0);
-    //                 floodFillCC(i, j);
-    //                 /* After flood fill, we have a grid with the connected pixels set */
-    //                 /* Now place it into a connected component format */
-    //                 setConnectedComponent();
-    //                 found = true;
-    //             }
-    //         }
-    //     }
-    //     /* Done when we cannot find a non-zero pixel */
-    //     if (!found) done = true;
-    // }
 }
 
-/* Flood fill the grid pVisited with only the connected pixels */
-void Guard::floodFillCC(uint16_t i, uint16_t j, uint16_t level)
+/* Flood fill the grid with only the connected pixels */
+void Guard::floodFill(uint16_t sr, uint16_t sc)
 {
-    if ((i < 0 || i >= pVisited->size() || j < 0 || j >= pVisited->at(0).size()) || viewshedp->get(i,j) == 0 || pVisited->at(i).at(j)!=0)
-        return;
+    std::queue<std::pair<int, int>>q;
+    q.push({sr, sc});
 
-    pVisited->at(i).at(j)= 1;
-    viewshedp->set(i,j,0); /* Clear the pixel on pGrid so we won't find it again */
-    level++;
-    if (level >= MaxIterations) return;
+    while (!q.empty())
+    {
+        int r = q.front().first;
+        int c = q.front().second;
+        q.pop();
+        if (r<0 || r>=nrows || c<0 || c>=ncols || viewshedp->get(r,c)!=1)
+            continue;
 
-    floodFillCC(i, j+1, level);
-    floodFillCC(i, j-1, level);
-    floodFillCC(i-1, j, level);
-    floodFillCC(i+1, j, level);
+        // Set a new color
+        viewshedp->set(r,c,2);
+
+        q.push({r+1, c});
+        q.push({r-1, c});
+        q.push({r, c+1});
+        q.push({r, c-1});
+    }
 }
 
 /* Put connected component data in the correct format */
-void Guard::setConnectedComponent(vector<vector<unsigned char>> *pVisited)
+void Guard::setConnectedComponent(void)
 {
     ConnectedComponent component;
     int maxX=-100000;
@@ -155,30 +80,31 @@ void Guard::setConnectedComponent(vector<vector<unsigned char>> *pVisited)
     {
         bool lastSet = false;
         int startPos = -1;
+        int endPos = -1;
         ConnectedRow conR;
         conR.compRow = i;
         for (int j=0;j<ncols;j++)
         {
-            if (pVisited->at(i).at(j)==1 && j<ncols-1)
+            if (viewshedp->get(i,j)==2 && j<ncols-1)
             {
                 if (!lastSet) startPos = j;
                 lastSet = true;
             }
-            else if((j==ncols-1 && pVisited->at(i).at(j)==1)||pVisited->at(i).at(j)==0)// If visited columns in the row never ends or if it ends
+            else if((j==ncols-1 && viewshedp->get(i,j)==2)||viewshedp->get(i,j)!=2)// If visited columns in the row never ends or if it ends
             {
                 if (startPos != -1)
                 {
                     conR.xStart.push_back(startPos);
-                    if(j==ncols-1 && pVisited->at(i).at(j)==1){
-                        conR.xEnd.push_back(j);
-                        if(maxZ<j){
-                            maxZ=j;
-                        }
-                    }else{
-                        conR.xEnd.push_back(j-1);
-                        if(maxZ<j-1){
-                            maxZ=j-1;
-                        }
+                    if(j==ncols-1 && viewshedp->get(i,j)==2)
+                    {
+                        endPos = j;
+                    }else
+                    {
+                        endPos = j-1;
+                    }
+                    conR.xEnd.push_back(endPos);
+                    if(maxZ<endPos){
+                        maxZ=endPos;
                     }
 
                     if(minZ>startPos){
@@ -192,6 +118,10 @@ void Guard::setConnectedComponent(vector<vector<unsigned char>> *pVisited)
                     }
 
                     startPos = -1;
+                    endPos = -1;
+
+                    for (int k=startPos; k<= endPos; k++)
+                        viewshedp->set(i,k,0); /* Clear pixel after setting the ConnectedRow */
                 }
                 lastSet = false;
             }

@@ -18,16 +18,8 @@ public:
     int index;
     std::vector<ConnectedComponent> components;
     void findConnected(void);
-    void floodFillCC(uint16_t i, uint16_t j, uint16_t limit);
-    void setConnectedComponent(vector<vector<unsigned char>> *pVisited);
-
-
-    vector<vector<unsigned char>> *pVisited;
-    //tiledMatrix<unsigned char>* pVisited=NULL;
-    //tiledMatrix<unsigned char>* pGrid=NULL;
-    //int row_num;
-    //int col_num;
-
+    void floodFill(uint16_t sr, uint16_t sc);
+    void setConnectedComponent(void);
 };
 
 #endif // GUARD_H
