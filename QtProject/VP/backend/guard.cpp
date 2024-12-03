@@ -32,10 +32,10 @@ void Guard::findConnected(void) {
             {
                 if (viewshedp->get(i,j)==1)
                 {
-                    if(index==7 && components.size()==0){
-                        cout<<"DEBUG"<<endl;
-                        debugFlag=true;
-                    }
+                    //if(index==7 && components.size()==0){
+                    //    cout<<"DEBUG"<<endl;
+                    //    debugFlag=true;
+                    //}
 
                     floodFill(i, j);
                     /* After flood fill, we have a grid with the connected pixels set */
