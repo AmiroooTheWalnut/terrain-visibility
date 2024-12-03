@@ -312,83 +312,95 @@ Window {
         id: algorithmsItem
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        width: 200
+        width: 250
         anchors.right: parent.right
 
         Pane {
             //id: SGAlgPane
             anchors.top: parent.top
-            anchors.bottom: parent.bottom
+            //anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
 
-            Label {
-                id: sgaNGLabel
-                anchors.top: parent.top
-                anchors.left: parent.left
-                text: "Number of guards: "
-                color: "black"
-            }
-
-            TextField {
-                width: 50
-                anchors.top: sgaNGLabel.bottom
-                anchors.left: parent.left
-                anchors.horizontalCenterOffset: 1
-                id: sgaNGTextField
-                text: qsTr("16")
-            }
-
-            Button {
-                anchors.top: sgaNGTextField.bottom
-                anchors.left: parent.left
-                anchors.horizontalCenterOffset: 1
-                id: singleGuardAlgButton
-                text: qsTr("Single Guard Algorithm")
-                onClicked: singleGuardAlg()
-
-                property var viewersSeriesObject;
-                function singleGuardAlg(){
-                    if (typeof sufaceQMLItem !== "undefined") {
-                        //drawButton.drawMap();
-                        sufaceQMLItem.destroy();
-                    }
-
-                    var numGuards=parseInt(sgaNGTextField.text);
-                    var seriesTrunk="";
-                    for(let i=0;i<numGuards;i++){
-                        seriesTrunk=seriesTrunk+seriesTemplate1+i+seriesTemplate2;
-                    }
-
-                    sufaceQMLItem = Qt.createQmlObject(baseSurfaceText+seriesTrunk+baseEndSurfaceText,mainWindow);
-                    var seriesListRaw=sufaceQMLItem.children[0].seriesList;
-                    var seriesList=[];
-                    for (let j=1;j<seriesListRaw.length;j++){
-                        seriesList.push(seriesListRaw[j]);
-                    }
-
-                    //seriesList.shift();
-                    backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],seriesList, parseInt(sgaNGTextField.text));
-
-                    //if (viewersSeriesObject.status == Component.Ready){
-                    //        finishCreation();
-                    //}else{
-                    //    viewersSeriesObject.statusChanged.connect(finishCreation);
-                    //}
+            ColumnLayout{
+                Label {
+                    id: sgaNGLabel
+                    //anchors.top: parent.top
+                    //anchors.left: parent.left
+                    text: "Number of guards: "
+                    //color: "black"
                 }
 
-                function finishCreation() {
-                    if (viewersSeriesObject.status == Component.Ready) {
-                        var viewerList = viewersSeriesObject.createObject(sufaceQMLItem);
-                        if (viewerList == null) {
-                            // Error Handling
-                            console.log("Error creating object");
+                TextField {
+                    width: 50
+                    //anchors.top: sgaNGLabel.bottom
+                    //anchors.left: parent.left
+                    //anchors.horizontalCenterOffset: 1
+                    id: sgaNGTextField
+                    text: qsTr("16")
+                }
+
+                Button {
+                    //anchors.top: sgaNGTextField.bottom
+                    //anchors.left: parent.left
+                    //anchors.horizontalCenterOffset: 1
+                    id: singleGuardAlgButton
+                    text: qsTr("Single Guard Algorithm")
+                    onClicked: singleGuardAlg()
+
+                    property var viewersSeriesObject;
+                    function singleGuardAlg(){
+                        if (typeof sufaceQMLItem !== "undefined") {
+                            //drawButton.drawMap();
+                            sufaceQMLItem.destroy();
                         }
-                        backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],parseInt(sgaNGTextField.text));
-                        //dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
-                    } else if (viewersSeriesObject.status == Component.Error) {
-                        // Error Handling
-                        console.log("Error loading component:", component.errorString());
+
+                        var numGuards=parseInt(sgaNGTextField.text);
+                        var seriesTrunk="";
+                        for(let i=0;i<numGuards;i++){
+                            seriesTrunk=seriesTrunk+seriesTemplate1+i+seriesTemplate2;
+                        }
+
+                        sufaceQMLItem = Qt.createQmlObject(baseSurfaceText+seriesTrunk+baseEndSurfaceText,mainWindow);
+                        var seriesListRaw=sufaceQMLItem.children[0].seriesList;
+                        var seriesList=[];
+                        for (let j=1;j<seriesListRaw.length;j++){
+                            seriesList.push(seriesListRaw[j]);
+                        }
+
+                        //seriesList.shift();
+                        backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],seriesList, parseInt(sgaNGTextField.text));
+
+                        //if (viewersSeriesObject.status == Component.Ready){
+                        //        finishCreation();
+                        //}else{
+                        //    viewersSeriesObject.statusChanged.connect(finishCreation);
+                        //}
+                    }
+
+                    function finishCreation() {
+                        if (viewersSeriesObject.status == Component.Ready) {
+                            var viewerList = viewersSeriesObject.createObject(sufaceQMLItem);
+                            if (viewerList == null) {
+                                // Error Handling
+                                console.log("Error creating object");
+                            }
+                            backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],parseInt(sgaNGTextField.text));
+                            //dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+                        } else if (viewersSeriesObject.status == Component.Error) {
+                            // Error Handling
+                            console.log("Error loading component:", component.errorString());
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    RadioButton {
+                        checked: true
+                        text: qsTr("Show frontiers")
+                    }
+                    RadioButton {
+                        text: qsTr("Show final guards")
                     }
                 }
             }
