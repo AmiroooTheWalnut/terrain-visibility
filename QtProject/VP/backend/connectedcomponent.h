@@ -30,6 +30,7 @@ public:
     int maxZ;
     int minZ;
     bool isComponentUsedForFrontier=false;
+    std::vector<ConnectedComponent*> intersectingCC;
 };
 
 #endif // CONNECTEDCOMPONENT_H

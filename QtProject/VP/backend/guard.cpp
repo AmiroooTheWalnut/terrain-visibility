@@ -32,6 +32,11 @@ void Guard::findConnected(void) {
             {
                 if (viewshedp->get(i,j)==1)
                 {
+                    if(index==7 && components.size()==0){
+                        cout<<"DEBUG"<<endl;
+                        debugFlag=true;
+                    }
+
                     floodFill(i, j);
                     /* After flood fill, we have a grid with the connected pixels set */
                     /* Now place it into a connected component format */
@@ -47,6 +52,9 @@ void Guard::findConnected(void) {
 /* Flood fill the grid with only the connected pixels */
 void Guard::floodFill(uint16_t sr, uint16_t sc)
 {
+    // if(debugFlag==true){
+    //     cout<<"DEBUG!!!"<<endl;
+    // }
     std::queue<std::pair<int, int>>q;
     q.push({sr, sc});
 
@@ -117,11 +125,11 @@ void Guard::setConnectedComponent(void)
                         minX=i;
                     }
 
+                    for (int k=startPos; k<= endPos; k++){
+                        viewshedp->set(i,k,0); /* Clear pixel after setting the ConnectedRow */
+                    }
                     startPos = -1;
                     endPos = -1;
-
-                    for (int k=startPos; k<= endPos; k++)
-                        viewshedp->set(i,k,0); /* Clear pixel after setting the ConnectedRow */
                 }
                 lastSet = false;
             }

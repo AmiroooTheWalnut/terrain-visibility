@@ -14,6 +14,7 @@ void SingleGuardAlgorithm::run(int numGuards, int height, tiledMatrix<elev_t>* e
         cout<<"No solution exists! There is no guard who can see north."<<endl;
         return;
     }
+    std::vector<ConnectedComponent*> returningPath;
     if(isEndAchieved==false){
         bool successToAddPremiter=true;
         int prevFrontierIndex=0;
@@ -26,12 +27,15 @@ void SingleGuardAlgorithm::run(int numGuards, int height, tiledMatrix<elev_t>* e
                         for(int of=prevFrontierIndex;of>=0;of--){
                             for(int cp=0;cp<pFrontier.at(of).size();cp++){//Connected component index from previous frontier
                                 if(ConnectedComponent::checkComponentsIntersection(&(guards.at(g).components.at(c)),pFrontier.at(of).at(cp))){
+                                    guards.at(g).components.at(c).intersectingCC.push_back(pFrontier.at(of).at(cp));
+                                    //pFrontier.at(of).at(cp)->intersectingCC.push_back(&(guards.at(g).components.at(c)));//Only backward path is needed
                                     constructingFrontier.push_back(&(guards.at(g).components.at(c)));
                                     guards.at(g).components.at(c).isComponentUsedForFrontier=true;
                                     successToAddPremiter=true;
                                     //cout<<guards.at(g).components.at(c).maxX<<endl;
                                     if(guards.at(g).components.at(c).maxX==nrows-1){
                                         isEndAchieved=true;
+                                        returningPath.push_back(&(guards.at(g).components.at(c)));
                                     }
                                 }
                             }
@@ -43,6 +47,13 @@ void SingleGuardAlgorithm::run(int numGuards, int height, tiledMatrix<elev_t>* e
                 pFrontier.push_back(constructingFrontier);
                 prevFrontierIndex=prevFrontierIndex+1;
             }
+        }
+        while(!(returningPath.back()->intersectingCC.empty())){
+            returningPath.push_back(returningPath.back()->intersectingCC.at(0));
+        }
+        for(int f=0;f<returningPath.size();f++){
+            cout << "Frontier: " << f << endl;
+            cout << "   Gaurd: " << returningPath.at(f)->owner->index << endl;
         }
         for(int f=0;f<pFrontier.size();f++){
             cout << "Frontier: " << f << endl;
@@ -101,7 +112,7 @@ void SingleGuardAlgorithm::initializeGuardsUniform(int numGuards, int height, ti
             g->x=i*nRowGuardPixels;
             g->z=j*nColGuardsPixels;
             g->h=50;
-            g->r=100;
+            g->r=400;
             g->index=counter;
             g->findConnected();
             guards.push_back(*g);
