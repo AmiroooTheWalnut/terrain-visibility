@@ -252,9 +252,9 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
 void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards){
     BackendContainer::drawSurface(series);
 
-    int r=255;
-    int g=0;
-    int b=0;
+    //int r=255;
+    //int g=0;
+    //int b=0;
 
     QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
 
@@ -276,7 +276,7 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
         cv::Mat bgrMat;
         cv::Mat hsvMat(1, 1, CV_8UC3, cv::Scalar(hue, saturation, value));
         cv::cvtColor(hsvMat, bgrMat, cv::COLOR_HSV2BGR);
-        cv::Vec3b temp=hsvMat.at<cv::Vec3b>(0,0);
+        cv::Vec3b temp=bgrMat.at<cv::Vec3b>(0,0);
         //cout<< hsvMat <<endl;
         QColor yColor(temp.val[0],temp.val[1],temp.val[2]);
         vSeries.at(g)->setWireframeColor(yColor);
