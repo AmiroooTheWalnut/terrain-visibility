@@ -249,13 +249,8 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
     return qList;
 }
 
-void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards){
+void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards, std::vector<QColor> *explicitColors){
     BackendContainer::drawSurface(series);
-
-    //int r=255;
-    //int g=0;
-    //int b=0;
-
     QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
 
     for(int i=0;i<nrows;i++){
@@ -271,14 +266,21 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
     int saturation = 255; // Fixed saturation
     int value = 255;      // Fixed value
 
-    for(int g=0;g<vSeries.size();g++){
-        int hue = g * hueStep;
-        cv::Mat bgrMat;
-        cv::Mat hsvMat(1, 1, CV_8UC3, cv::Scalar(hue, saturation, value));
-        cv::cvtColor(hsvMat, bgrMat, cv::COLOR_HSV2BGR);
-        cv::Vec3b temp=bgrMat.at<cv::Vec3b>(0,0);
-        //cout<< hsvMat <<endl;
-        QColor yColor(temp.val[0],temp.val[1],temp.val[2]);
+    for(int g=0;g<guards.size();g++){
+        QColor yColor;
+        if(explicitColors==NULL){
+            int hue = g * hueStep;
+            cv::Mat bgrMat;
+            cv::Mat hsvMat(1, 1, CV_8UC3, cv::Scalar(hue, saturation, value));
+            cv::cvtColor(hsvMat, bgrMat, cv::COLOR_HSV2BGR);
+            cv::Vec3b temp=bgrMat.at<cv::Vec3b>(0,0);
+            //cout<< hsvMat <<endl;
+            yColor.setRed(temp.val[0]);
+            yColor.setGreen(temp.val[1]);
+            yColor.setBlue(temp.val[2]);
+        }else{
+            yColor=explicitColors->at(g);
+        }
         vSeries.at(g)->setWireframeColor(yColor);
         QString obsX=QString::fromStdString(std::to_string(guards.at(g).x));
         QString obsZ=QString::fromStdString(std::to_string(guards.at(g).z));
@@ -310,6 +312,141 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
         int z=atoi(obsZ.toStdString().c_str());
         int sH=elevData->get(x,z);
         int y=atoi(obsH.toStdString().c_str())+sH;
+
+        QSurfaceDataRow *a=new QSurfaceDataRow();
+        QSurfaceDataItem *d=new QSurfaceDataItem();
+        d->setX(z+viewerSize);
+        d->setY(y);
+        d->setZ(x+viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z);
+        d->setY(y);
+        d->setZ(x+viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z-viewerSize);
+        d->setY(y);
+        d->setZ(x+viewerSize);
+        a->append(*d);
+        delete d;
+        viewerData->append(*a);
+        delete a;
+
+        a=new QSurfaceDataRow();
+        d=new QSurfaceDataItem();
+        d->setX(z+viewerSize);
+        d->setY(y);
+        d->setZ(x);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z);
+        d->setY(y);
+        d->setZ(x);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z-viewerSize);
+        d->setY(y);
+        d->setZ(x);
+        a->append(*d);
+        delete d;
+        viewerData->append(*a);
+        delete a;
+
+        a=new QSurfaceDataRow();
+        d=new QSurfaceDataItem();
+        d->setX(z+viewerSize);
+        d->setY(y);
+        d->setZ(x-viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z);
+        d->setY(y);
+        d->setZ(x-viewerSize);
+        a->append(*d);
+        delete d;
+        d=new QSurfaceDataItem();
+        d->setX(z-viewerSize);
+        d->setY(y);
+        d->setZ(x-viewerSize);
+        a->append(*d);
+        delete d;
+        viewerData->append(*a);
+        delete a;
+
+        vSeries.at(g)->dataProxy()->resetArray(*viewerData);
+    }
+    series->setTexture(*texture);
+}
+
+void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<std::vector<ConnectedComponent *>> *pFrontier, std::vector<Guard> *guards){
+    BackendContainer::drawSurface(series);
+    QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
+
+    for(int i=0;i<nrows;i++){
+        for(int j=0;j<ncols;j++){
+            int hValue=elevData->get(i,j);
+            float interpolatedHValue=(float)(hValue-minHeight)/(float)(maxHeight-minHeight);
+            QColor c=interpolateColor(interpolatedHValue);
+            texture->setPixelColor(j,i,c);
+        }
+    }
+
+    int hueStep = 180 / pFrontier->size();
+    int saturation = 255; // Fixed saturation
+    int value = 255;      // Fixed value
+
+    std::unordered_set<int> usedGuardsIds;
+    //int f=0;
+    for(int f=0;f<pFrontier->size();f++){
+        QColor yColor;
+        int hue = f * hueStep;
+        cv::Mat bgrMat;
+        cv::Mat hsvMat(1, 1, CV_8UC3, cv::Scalar(hue, saturation, value));
+        cv::cvtColor(hsvMat, bgrMat, cv::COLOR_HSV2BGR);
+        cv::Vec3b temp=bgrMat.at<cv::Vec3b>(0,0);
+        //cout<< hsvMat <<endl;
+        yColor.setRed(temp.val[0]);
+        yColor.setGreen(temp.val[1]);
+        yColor.setBlue(temp.val[2]);
+
+        //vSeries.at(g)->setWireframeColor(yColor);//***
+        for(int ccI=0;ccI<pFrontier->at(f).size();ccI++){
+            for(int ccrI=0;ccrI<pFrontier->at(f).at(ccI)->colRangeInRow.size();ccrI++){
+                ConnectedRow conR = pFrontier->at(f).at(ccI)->colRangeInRow.at(ccrI);
+                for(int pI=0;pI<conR.xStart.size();pI++){
+                    for(int cI=conR.xStart.at(pI);cI<conR.xEnd.at(pI);cI++){
+                        texture->setPixelColor(cI,conR.compRow,yColor);
+                    }
+                }
+            }
+            usedGuardsIds.insert(pFrontier->at(f).at(ccI)->owner->index);
+        }
+    }
+
+    for(int g=0;g<vSeries.size();g++){
+        QColor yColor;
+        if (usedGuardsIds.find(guards->at(g).index) != usedGuardsIds.end()) {
+            yColor.setRed(255);
+            yColor.setGreen(0);
+            yColor.setBlue(0);
+        } else {
+            yColor.setRed(0);
+            yColor.setGreen(0);
+            yColor.setBlue(0);
+        }
+        vSeries.at(g)->setWireframeColor(yColor);
+
+        QSurfaceDataArray *viewerData=new QSurfaceDataArray();
+        int x=guards->at(g).x;
+        int z=guards->at(g).z;
+        int sH=elevData->get(x,z);
+        int y=guards->at(g).h+sH;
 
         QSurfaceDataRow *a=new QSurfaceDataRow();
         QSurfaceDataItem *d=new QSurfaceDataItem();
@@ -423,15 +560,19 @@ QColor BackendContainer::interpolateColor(float in){
     return QColor(rNew,gNew,bNew);
 }
 
-void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards){
+void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius){
     SingleGuardAlgorithm *sga=new SingleGuardAlgorithm();
-    sga->run(numGuards,50,elevData);
+    sga->run(numGuards,heightOffset,radius,elevData);
     std::vector<QSurface3DSeries*> vSeries;
     for(int i=0;i<vmSeries.size();i++){
         QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
         vSeries.push_back(targetSeries);
     }
-    drawViewBatchSurface(series,vSeries,sga->guards);
+    if(sga->pFrontier.size()>0){
+        drawFrontiers(series,vSeries,&(sga->pFrontier),&(sga->guards));
+    }
+    //drawViewBatchSurface(series,vSeries,sga->guards,NULL);
+
 }
 
 /*

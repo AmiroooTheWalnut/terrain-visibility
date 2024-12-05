@@ -6,8 +6,8 @@ SingleGuardAlgorithm::SingleGuardAlgorithm() {
 
 }
 
-void SingleGuardAlgorithm::run(int numGuards, int height, tiledMatrix<elev_t>* elev){
-    initializeGuardsUniform(numGuards,height,elev);
+void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
+    initializeGuardsUniform(numGuards,height,radius,elev);
     //debugInitializeGuards(numGuards,height,elev);
     bool isEndAchieved=constructF0(elev);
     if(pFrontier.size()==0){
@@ -114,37 +114,61 @@ bool SingleGuardAlgorithm::constructF0(tiledMatrix<elev_t>* elev){
     return isEndFound;//Return boolean indicating if a single guard is enough
 }
 
-void SingleGuardAlgorithm::initializeGuardsUniform(int numGuards, int height, tiledMatrix<elev_t>* elev){
-    float nGRows=std::max(1.0,std::sqrt((numGuards)*(nrows/ncols)));
-    float nGCols=std::max(1.0,std::sqrt((numGuards)*(ncols/nrows)));
-
-    float nRowGuardPixels=std::floor(std::max(1.0f,((float)ncols/(float)(nGCols+1))));
-    float nColGuardsPixels=std::floor(std::max(1.0f,((float)nrows/(float)(nGRows+1))));
-
-    //int maxXSeenDebug=0;
-
+void SingleGuardAlgorithm::initializeGuardsUniform(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
+    //*** Fib
     int counter=0;
-    for(int i=1;i<=nGRows;i++){
-        for(int j=1;j<=nGCols;j++){
-            Guard *g=new Guard();
-            g->x=i*nRowGuardPixels;
-            g->z=j*nColGuardsPixels;
-            g->h=50;
-            g->r=1200;
-            g->index=counter;
-            g->findConnected();
-            guards.push_back(*g);
-            counter=counter+1;
-            // for(int m=0;m<g.components.size();m++){
-            //     if(maxXSeenDebug<g.components.at(m).maxX){
-            //         maxXSeenDebug=g.components.at(m).maxX;
-            //     }
-            // }
-        }
+    for(int i=1;i<=numGuards;i++){
+        Guard *g=new Guard();
+        std::pair<float,float> out=fibonacciLattice(counter+1,numGuards+1);
+        g->x=out.first*nrows;
+        g->z=out.second*ncols;
+        g->h=height;
+        g->r=radius;
+        g->index=counter;
+        g->findConnected();
+        guards.push_back(*g);
+        counter=counter+1;
     }
+
+
+    //***
+
+    // float nGRows=std::max(1.0,std::sqrt((numGuards)*(nrows/ncols)));
+    // float nGCols=std::max(1.0,std::sqrt((numGuards)*(ncols/nrows)));
+
+    // float nRowGuardPixels=std::floor(std::max(1.0f,((float)ncols/(float)(nGCols+1))));
+    // float nColGuardsPixels=std::floor(std::max(1.0f,((float)nrows/(float)(nGRows+1))));
+
+    // //int maxXSeenDebug=0;
+
+    // int counter=0;
+    // for(int i=1;i<=nGRows;i++){
+    //     for(int j=1;j<=nGCols;j++){
+    //         Guard *g=new Guard();
+    //         g->x=i*nRowGuardPixels;
+    //         g->z=j*nColGuardsPixels;
+    //         g->h=50;
+    //         g->r=200;
+    //         g->index=counter;
+    //         g->findConnected();
+    //         guards.push_back(*g);
+    //         counter=counter+1;
+    //         // if(counter==4){
+    //         //     break;
+    //         // }
+    //         // for(int m=0;m<g.components.size();m++){
+    //         //     if(maxXSeenDebug<g.components.at(m).maxX){
+    //         //         maxXSeenDebug=g.components.at(m).maxX;
+    //         //     }
+    //         // }
+    //     }
+    //     // if(counter==4){
+    //     //     break;
+    //     // }
+    // }
 }
 
-void SingleGuardAlgorithm::debugInitializeGuards(int numGuards, int height, tiledMatrix<elev_t>* elev){
+void SingleGuardAlgorithm::debugInitializeGuards(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
     float nGRows=std::max(1.0,std::sqrt((numGuards)*(nrows/ncols)));
     Guard g1;
     g1.x=50;
@@ -165,4 +189,15 @@ void SingleGuardAlgorithm::debugInitializeGuards(int numGuards, int height, tile
     guards.push_back(g2);
 
     bool result=ConnectedComponent::checkComponentsIntersection(&(guards.at(0).components.at(0)),&(guards.at(1).components.at(0)));
+}
+
+/*
+ * Find the location of a guard based on Fibonacci Lattice. The index of guard and total number of guards are the inputs.
+ */
+std::pair<float,float> SingleGuardAlgorithm::fibonacciLattice(uint32_t input, uint32_t nunItems)
+{
+    float x = ((float)(input)) / gR;
+    x -= int(x);
+    float y = ((float)(input)) / ((float)(nunItems));
+    return std::pair(x, y);
 }
