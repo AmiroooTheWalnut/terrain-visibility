@@ -8,7 +8,7 @@ Item {
     anchors.top: getElevDataButton.bottom
     anchors.bottom: parent.bottom
     anchors.left: parent.left
-    anchors.right: algorithmsPanel.left
+    anchors.right: optionsItem.left
 
     Gradient {
         id: surfaceGradient

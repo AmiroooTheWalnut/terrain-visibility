@@ -442,7 +442,7 @@ Window {
     anchors.top: getElevDataButton.bottom
     anchors.bottom: parent.bottom
     anchors.left: parent.left
-    anchors.right: algorithmsItem.left
+    anchors.right: optionsItem.left
 
     Gradient {
     id: surfaceGradient
