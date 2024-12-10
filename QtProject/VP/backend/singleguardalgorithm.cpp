@@ -92,7 +92,7 @@ bool SingleGuardAlgorithm::constructF0(tiledMatrix<elev_t>* elev){
     //Initialize all connected components (isComponentUsedForFrontier variable to false)
     for(int g=0;g<guards.size();g++){
         Guard *guard = &guards.at(g);
-        for(int c=0;c<guards.at(g).components.size();c++){
+        for(int c=0;guard->components.size();c++){
             guard->components.at(c).isComponentUsedForFrontier=false;
         }
     }
@@ -100,13 +100,13 @@ bool SingleGuardAlgorithm::constructF0(tiledMatrix<elev_t>* elev){
     std::vector<ConnectedComponent *> f0;
     for(int g=0;g<guards.size();g++){
         Guard *guard = &guards.at(g);
-        for(int c=0;c<guards.at(g).components.size();c++){
-            if(guards.at(g).components.at(c).minX==0){//Guard can see north with connected component "c"
-                if(guards.at(g).components.at(c).maxX==elev->nrows-1){//Guard can see the end (south)
+        for(int c=0;c<guard->components.size();c++){
+            if(guard->components.at(c).minX==0){//Guard can see north with connected component "c"
+                if(guard->components.at(c).maxX==elev->nrows-1){//Guard can see the end (south)
                     isEndFound=true;
                 }
-                f0.push_back(&(guards.at(g).components.at(c)));
-                guards.at(g).components.at(c).isComponentUsedForFrontier=true;//Make sure this connected component won't be used for later frontiers
+                f0.push_back(&(guard->components.at(c)));
+                guard->components.at(c).isComponentUsedForFrontier=true;//Make sure this connected component won't be used for later frontiers
             }
         }
     }

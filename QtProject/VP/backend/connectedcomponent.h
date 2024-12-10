@@ -21,7 +21,7 @@ public:
     Guard *owner;
     ConnectedComponent();
     // std::string name; -- Q to Amir: Why is name here?
-    static ConnectedComponent connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b);
+    static ConnectedComponent *connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b);
     static bool checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b);
     static int binarySearchIndex(ConnectedComponent *in, int rowIndex);
     std::vector<ConnectedRow> colRangeInRow;

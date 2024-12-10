@@ -2,8 +2,10 @@
 
 ConnectedComponent::ConnectedComponent() {}
 
-ConnectedComponent ConnectedComponent::connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b){
-
+ConnectedComponent *ConnectedComponent::connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b){
+    // Avoid compiling warning for now
+    // Return pointer instead of the entire object on the stack is faster and uses less stack memory
+    return NULL;
 }
 
 bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b){
