@@ -3,13 +3,12 @@
 #include "singleguardalgorithm.h"
 
 SingleGuardAlgorithm::SingleGuardAlgorithm() {
-
 }
 
-void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
-    initializeGuardsUniform(numGuards,height,radius,elev);
+void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType){
+    guards=initializeGuards(numGuards,height,radius,elev,initGuardType);
     //debugInitializeGuards(numGuards,height,elev);
-    bool isEndAchieved=constructF0(elev);
+    bool isEndAchieved=SingleGuardAlgorithm::constructF0(&guards,&pFrontier,elev);
     if(pFrontier.size()==0){
         cout<<"No solution exists! There is no guard who can see north."<<endl;
         return;
@@ -88,18 +87,18 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
     }
 }
 
-bool SingleGuardAlgorithm::constructF0(tiledMatrix<elev_t>* elev){
+bool SingleGuardAlgorithm::constructF0(std::vector<Guard> *guards, std::vector<std::vector<ConnectedComponent *>> *pFrontier, tiledMatrix<elev_t>* elev){
     //Initialize all connected components (isComponentUsedForFrontier variable to false)
-    for(int g=0;g<guards.size();g++){
-        Guard *guard = &guards.at(g);
-        for(int c=0;guard->components.size();c++){
+    for(int g=0;g<guards->size();g++){
+        Guard *guard = &guards->at(g);
+        for(int c=0;c<guard->components.size();c++){
             guard->components.at(c).isComponentUsedForFrontier=false;
         }
     }
     bool isEndFound=false;//Checks if the algorithm should finish with a single guard that sees north to south
     std::vector<ConnectedComponent *> f0;
-    for(int g=0;g<guards.size();g++){
-        Guard *guard = &guards.at(g);
+    for(int g=0;g<guards->size();g++){
+        Guard *guard = &guards->at(g);
         for(int c=0;c<guard->components.size();c++){
             if(guard->components.at(c).minX==0){//Guard can see north with connected component "c"
                 if(guard->components.at(c).maxX==elev->nrows-1){//Guard can see the end (south)
@@ -110,12 +109,12 @@ bool SingleGuardAlgorithm::constructF0(tiledMatrix<elev_t>* elev){
             }
         }
     }
-    pFrontier.push_back(f0);
+    pFrontier->push_back(f0);
     return isEndFound;//Return boolean indicating if a single guard is enough
 }
 
-void SingleGuardAlgorithm::initializeGuardsUniform(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
-    //*** Fib
+std::vector<Guard> SingleGuardAlgorithm::initializeGuardsFib(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
+    std::vector<Guard> localGuards;
     int counter=0;
     for(int i=1;i<=numGuards;i++){
         Guard *g=new Guard();
@@ -126,50 +125,65 @@ void SingleGuardAlgorithm::initializeGuardsUniform(int numGuards, int height, in
         g->r=radius;
         g->index=counter;
         g->findConnected();
-        guards.push_back(*g);
+        localGuards.push_back(*g);
         counter=counter+1;
     }
 
+    return localGuards;
 
-    //***
+}
 
-    // float nGRows=std::max(1.0,std::sqrt((numGuards)*(nrows/ncols)));
-    // float nGCols=std::max(1.0,std::sqrt((numGuards)*(ncols/nrows)));
+std::vector<Guard> SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
+    std::vector<Guard> localGuards;
+    float nGRows=std::max(1.0,std::sqrt((numGuards)*(nrows/ncols)));
+    float nGCols=std::max(1.0,std::sqrt((numGuards)*(ncols/nrows)));
 
-    // float nRowGuardPixels=std::floor(std::max(1.0f,((float)ncols/(float)(nGCols+1))));
-    // float nColGuardsPixels=std::floor(std::max(1.0f,((float)nrows/(float)(nGRows+1))));
+    float nRowGuardPixels=std::floor(std::max(1.0f,((float)ncols/(float)(nGCols+1))));
+    float nColGuardsPixels=std::floor(std::max(1.0f,((float)nrows/(float)(nGRows+1))));
 
-    // //int maxXSeenDebug=0;
+    //int maxXSeenDebug=0;
 
-    // int counter=0;
-    // for(int i=1;i<=nGRows;i++){
-    //     for(int j=1;j<=nGCols;j++){
-    //         Guard *g=new Guard();
-    //         g->x=i*nRowGuardPixels;
-    //         g->z=j*nColGuardsPixels;
-    //         g->h=50;
-    //         g->r=200;
-    //         g->index=counter;
-    //         g->findConnected();
-    //         guards.push_back(*g);
-    //         counter=counter+1;
-    //         // if(counter==4){
-    //         //     break;
-    //         // }
-    //         // for(int m=0;m<g.components.size();m++){
-    //         //     if(maxXSeenDebug<g.components.at(m).maxX){
-    //         //         maxXSeenDebug=g.components.at(m).maxX;
-    //         //     }
-    //         // }
-    //     }
-    //     // if(counter==4){
-    //     //     break;
-    //     // }
-    // }
+    int counter=0;
+    for(int i=1;i<=nGRows;i++){
+        for(int j=1;j<=nGCols;j++){
+            Guard *g=new Guard();
+            g->x=i*nRowGuardPixels;
+            g->z=j*nColGuardsPixels;
+            g->h=height;
+            g->r=radius;
+            g->index=counter;
+            g->findConnected();
+            localGuards.push_back(*g);
+            counter=counter+1;
+            // if(counter==4){
+            //     break;
+            // }
+            // for(int m=0;m<g.components.size();m++){
+            //     if(maxXSeenDebug<g.components.at(m).maxX){
+            //         maxXSeenDebug=g.components.at(m).maxX;
+            //     }
+            // }
+        }
+        // if(counter==4){
+        //     break;
+        // }
+    }
+    return localGuards;
+}
+
+std::vector<Guard> SingleGuardAlgorithm::initializeGuards(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType){
+    std::vector<Guard> guardsLocal;
+    if(initGuardType=="Fib"){
+        guardsLocal=initializeGuardsFib(numGuards,height,radius,elev);
+    }
+    if(initGuardType=="SqUniform"){
+        guardsLocal=initializeGuardsSquareUniform(numGuards,height,radius,elev);
+    }
+
+    return guardsLocal;
 }
 
 void SingleGuardAlgorithm::debugInitializeGuards(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
-    float nGRows=std::max(1.0,std::sqrt((numGuards)*(nrows/ncols)));
     Guard g1;
     g1.x=50;
     g1.z=50;
@@ -196,7 +210,7 @@ void SingleGuardAlgorithm::debugInitializeGuards(int numGuards, int height, int 
  */
 std::pair<float,float> SingleGuardAlgorithm::fibonacciLattice(uint32_t input, uint32_t nunItems)
 {
-    float x = ((float)(input)) / gR;
+    float x = ((float)(input)) / SingleGuardAlgorithm::gR;
     x -= int(x);
     float y = ((float)(input)) / ((float)(nunItems));
     return std::pair(x, y);

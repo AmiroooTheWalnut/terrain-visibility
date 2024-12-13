@@ -3,9 +3,95 @@
 ConnectedComponent::ConnectedComponent() {}
 
 ConnectedComponent *ConnectedComponent::connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b){
-    // Avoid compiling warning for now
-    // Return pointer instead of the entire object on the stack is faster and uses less stack memory
-    return NULL;
+    std::vector<std::vector<bool>> bitmap(nrows,std::vector<bool>(ncols));
+    for(int i=0;i<a->colRangeInRow.size();i++){
+        ConnectedRow row=a->colRangeInRow.at(i);
+        for(int j=0;j<row.xStart.size();j++){
+            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++){
+                bitmap[row.compRow][c]=1;
+            }
+        }
+    }
+    for(int i=0;i<b->colRangeInRow.size();i++){
+        ConnectedRow row=b->colRangeInRow.at(i);
+        for(int j=0;j<row.xStart.size();j++){
+            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++){
+                bitmap[row.compRow][c]=1;
+            }
+        }
+    }
+    ConnectedComponent *cc=setConnectedComponent(bitmap);
+    return cc;
+}
+
+ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::vector<bool>> bitmap)
+{
+    ConnectedComponent *component=new ConnectedComponent();
+    int maxX=-100000;
+    int minX=100000;
+    int maxZ=-100000;
+    int minZ=100000;
+    for(int i=0;i<nrows;i++)
+    {
+        bool lastSet = false;
+        int startPos = -1;
+        int endPos = -1;
+        ConnectedRow conR;
+        conR.compRow = i;
+        for (int j=0;j<ncols;j++)
+        {
+            if (bitmap.at(i).at(j)==1 && j<ncols-1)
+            {
+                if (!lastSet) startPos = j;
+                lastSet = true;
+            }
+            else if((j==ncols-1 && bitmap.at(i).at(j)==1)||bitmap.at(i).at(j)!=1)// If visited columns in the row never ends or if it ends
+            {
+                if (startPos != -1)
+                {
+                    conR.xStart.push_back(startPos);
+                    if(j==ncols-1 && bitmap.at(i).at(j)==1)
+                    {
+                        endPos = j;
+                    }else
+                    {
+                        endPos = j-1;
+                    }
+                    conR.xEnd.push_back(endPos);
+                    if(maxZ<endPos){
+                        maxZ=endPos;
+                    }
+
+                    if(minZ>startPos){
+                        minZ=startPos;
+                    }
+                    if(maxX<i){
+                        maxX=i;
+                    }
+                    if(minX>i){
+                        minX=i;
+                    }
+
+                    for (int k=startPos; k<= endPos; k++){
+                        bitmap[i][k]=0; /* Clear pixel after setting the ConnectedRow */
+                    }
+                    startPos = -1;
+                    endPos = -1;
+                }
+                lastSet = false;
+            }
+        }
+        if(conR.xStart.size()>0){
+            component->colRangeInRow.push_back(conR);
+        }
+    }
+    component->maxX=maxX;
+    component->minX=minX;
+    component->maxZ=maxZ;
+    component->minZ=minZ;
+    //component.owner=this;
+    //components.push_back(component);
+    return component;
 }
 
 bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b){
@@ -17,7 +103,7 @@ bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, Conn
         return false;
     }else{
         if(a->minX>=b->minX){//Check which connected component is ahead
-            int startingIndexB=binarySearchIndex(b,a->minX);//Find the index of row in b that refers to the start of a
+            int startingIndexB=a->minX-b->minX;//Find the index of row in b that refers to the start of a
             for(int rb=startingIndexB;rb<startingIndexB+(minHigh-maxLow)-1;rb++)//Iterate through rows in b that share X with a
             {
                 ConnectedRow *rowB = &b->colRangeInRow.at(rb);
@@ -40,7 +126,7 @@ bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, Conn
                 }
             }
         }else{//Check which connected component is ahead
-            int startingIndexA=binarySearchIndex(a,b->minX);//Find the index of row in a that refers to the start of b
+            int startingIndexA=b->minX-a->minX;//Find the index of row in a that refers to the start of b
             for(int ra=startingIndexA;ra<startingIndexA+(minHigh-maxLow)-1;ra++)//Iterate through rows in a that share X with b
             {
                 ConnectedRow *rowA = &a->colRangeInRow.at(ra);

@@ -221,7 +221,7 @@ Window {
         anchors.left: obsRLabel.right
         anchors.horizontalCenterOffset: 1
         id: obsRTextField
-        text: qsTr("500")
+        text: qsTr("120")
     }
 
     Button {
@@ -263,7 +263,15 @@ Window {
                 sufaceQMLItem.children[0].cameraYRotation=cameraYRotation;
                 sufaceQMLItem.children[0].cameraZoomLevel=cameraZoomLevel;
             }
-            var ret=dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+            var ret=dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],
+                                            sufaceQMLItem.children[0].seriesList[1],
+                                            obsXTextField.text,
+                                            obsZTextField.text,
+                                            obsHTextField.text,
+                                            obsRTextField.text,
+                                            255,
+                                            255,
+                                            0);
             //surfComponent = Qt.createComponent("surface_template.qml");
 
             //if (surfComponent.status == Component.Ready){
@@ -295,7 +303,15 @@ Window {
                 }
                 // var ret=backendContainer.drawSurface(heightSeries);
                 //var ret=backendContainer.drawViewSurface(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
-                var ret=dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+                var ret=dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],
+                                                sufaceQMLItem.children[0].seriesList[1],
+                                                obsXTextField.text,
+                                                obsZTextField.text,
+                                                obsHTextField.text,
+                                                obsRTextField.text,
+                                                255,
+                                                255,
+                                                0);
             } else if (surfComponent.status == Component.Error) {
                 // Error Handling
                 console.log("Error loading component:", component.errorString());
@@ -327,9 +343,11 @@ Window {
                     anchors.fill: parent
                     ColumnLayout {
                         RadioButton {
+                            id: squniguards
                             text: qsTr("Squared uniform guards")
                         }
                         RadioButton {
+                            id: fibguards
                             checked: true
                             text: qsTr("Fib Lattice guards")
                         }
@@ -357,7 +375,71 @@ Window {
                             //anchors.left: parent.left
                             //anchors.horizontalCenterOffset: 1
                             id: sgaNGTextField
-                            text: qsTr("16")
+                            text: qsTr("30")
+                        }
+
+                        Button {
+                            id: drawSingleGuardsButton
+                            text: qsTr("Draw single guards")
+                            onClicked: drawSingleGuardsAlg()
+                            function drawSingleGuardsAlg(){
+                                if (typeof sufaceQMLItem !== "undefined") {
+                                    //drawButton.drawMap();
+                                    sufaceQMLItem.destroy();
+                                }
+
+                                var numGuards=parseInt(sgaNGTextField.text);
+                                var seriesTrunk="";
+                                for(let i=0;i<numGuards;i++){
+                                    seriesTrunk=seriesTrunk+seriesTemplate1+i+seriesTemplate2;
+                                }
+
+                                sufaceQMLItem = Qt.createQmlObject(baseSurfaceText+seriesTrunk+baseEndSurfaceText,mainWindow);
+                                var seriesListRaw=sufaceQMLItem.children[0].seriesList;
+                                var seriesList=[];
+                                for (let j=1;j<seriesListRaw.length;j++){
+                                    seriesList.push(seriesListRaw[j]);
+                                }
+                                var initGuards;
+                                if(squniguards.checked==true){
+                                    initGuards="SqUniform";
+                                }
+                                if(fibguards.checked==true){
+                                    initGuards="Fib";
+                                }
+                                backendContainer.drawSingleGuards(sufaceQMLItem.children[0].seriesList[0],
+                                                                           seriesList,
+                                                                           parseInt(sgaNGTextField.text),
+                                                                           parseInt(obsHTextField.text),
+                                                                           parseInt(obsRTextField.text),
+                                                                           initGuards);
+                            }
+
+                            function finishCreation() {
+                                if (viewersSeriesObject.status == Component.Ready) {
+                                    var viewerList = viewersSeriesObject.createObject(sufaceQMLItem);
+                                    if (viewerList == null) {
+                                        // Error Handling
+                                        console.log("Error creating object");
+                                    }
+                                    var initGuards;
+                                    if(squniguards.checked==true){
+                                        initGuards="SqUniform";
+                                    }
+                                    if(fibguards.checked==true){
+                                        initGuards="Fib";
+                                    }
+                                    backendContainer.drawSingleGuards(sufaceQMLItem.children[0].seriesList[0],
+                                                                               parseInt(sgaNGTextField.text),
+                                                                               parseInt(obsHTextField.text),
+                                                                               parseInt(obsRTextField.text),
+                                                                               initGuards);
+                                    //dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+                                } else if (viewersSeriesObject.status == Component.Error) {
+                                    // Error Handling
+                                    console.log("Error loading component:", component.errorString());
+                                }
+                            }
                         }
 
                         Button {
@@ -387,9 +469,21 @@ Window {
                                 for (let j=1;j<seriesListRaw.length;j++){
                                     seriesList.push(seriesListRaw[j]);
                                 }
+                                var initGuards;
+                                if(squniguards.checked==true){
+                                    initGuards="SqUniform";
+                                }
+                                if(fibguards.checked==true){
+                                    initGuards="Fib";
+                                }
 
                                 //seriesList.shift();
-                                backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],seriesList, parseInt(sgaNGTextField.text), parseInt(obsHTextField.text), parseInt(obsRTextField.text));
+                                backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],
+                                                                           seriesList,
+                                                                           parseInt(sgaNGTextField.text),
+                                                                           parseInt(obsHTextField.text),
+                                                                           parseInt(obsRTextField.text),
+                                                                           initGuards);
 
                                 //if (viewersSeriesObject.status == Component.Ready){
                                 //        finishCreation();
@@ -405,8 +499,162 @@ Window {
                                         // Error Handling
                                         console.log("Error creating object");
                                     }
-                                    backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],parseInt(sgaNGTextField.text), parseInt(obsHTextField.text), parseInt(obsRTextField.text));
+                                    var initGuards;
+                                    if(squniguards.checked==true){
+                                        initGuards="SqUniform";
+                                    }
+                                    if(fibguards.checked==true){
+                                        initGuards="Fib";
+                                    }
+                                    backendContainer.runSingleGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],
+                                                                               parseInt(sgaNGTextField.text),
+                                                                               parseInt(obsHTextField.text),
+                                                                               parseInt(obsRTextField.text),
+                                                                               initGuards);
                                     //dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+                                } else if (viewersSeriesObject.status == Component.Error) {
+                                    // Error Handling
+                                    console.log("Error loading component:", component.errorString());
+                                }
+                            }
+                        }
+
+                        Label {
+                            id: orderPairingLabel
+                            text: "Order of pairing: "
+                        }
+
+                        TextField {
+                            width: 50
+                            id: orderPairingGTextField
+                            text: qsTr("2")
+                        }
+
+                        Button {
+                            id: drawMultiGuardsButton
+                            text: qsTr("Draw multi guards")
+                            onClicked: drawMultiGuardsAlg()
+                            function drawMultiGuardsAlg(){
+                                if (typeof sufaceQMLItem !== "undefined") {
+                                    //drawButton.drawMap();
+                                    sufaceQMLItem.destroy();
+                                }
+
+                                let numGuardsTemp=parseInt(sgaNGTextField.text);
+                                var numGuards=(numGuardsTemp*(numGuardsTemp-1))/2;
+                                var seriesTrunk="";
+                                for(let i=0;i<numGuards;i++){
+                                    seriesTrunk=seriesTrunk+seriesTemplate1+i+seriesTemplate2;
+                                }
+
+                                sufaceQMLItem = Qt.createQmlObject(baseSurfaceText+seriesTrunk+baseEndSurfaceText,mainWindow);
+                                var seriesListRaw=sufaceQMLItem.children[0].seriesList;
+                                var seriesList=[];
+                                for (let j=1;j<seriesListRaw.length;j++){
+                                    seriesList.push(seriesListRaw[j]);
+                                }
+                                var initGuards;
+                                if(squniguards.checked==true){
+                                    initGuards="SqUniform";
+                                }
+                                if(fibguards.checked==true){
+                                    initGuards="Fib";
+                                }
+                                backendContainer.drawMultiGuards(sufaceQMLItem.children[0].seriesList[0],
+                                                                           seriesList,
+                                                                           parseInt(sgaNGTextField.text),
+                                                                           parseInt(obsHTextField.text),
+                                                                           parseInt(obsRTextField.text),
+                                                                           initGuards,
+                                                                           parseInt(orderPairingGTextField.text));
+                            }
+
+                            function finishCreation() {
+                                if (viewersSeriesObject.status == Component.Ready) {
+                                    var viewerList = viewersSeriesObject.createObject(sufaceQMLItem);
+                                    if (viewerList == null) {
+                                        // Error Handling
+                                        console.log("Error creating object");
+                                    }
+                                    var initGuards;
+                                    if(squniguards.checked==true){
+                                        initGuards="SqUniform";
+                                    }
+                                    if(fibguards.checked==true){
+                                        initGuards="Fib";
+                                    }
+                                    backendContainer.drawMultiGuards(sufaceQMLItem.children[0].seriesList[0],
+                                                                               parseInt(sgaNGTextField.text),
+                                                                               parseInt(obsHTextField.text),
+                                                                               parseInt(obsRTextField.text),
+                                                                               initGuards,
+                                                                               parseInt(orderPairingGTextField.text));
+                                    //dispatchDrawViewRequest(sufaceQMLItem.children[0].seriesList[0],sufaceQMLItem.children[0].seriesList[1],obsXTextField.text,obsZTextField.text,obsHTextField.text,obsRTextField.text,255,255,0);
+                                } else if (viewersSeriesObject.status == Component.Error) {
+                                    // Error Handling
+                                    console.log("Error loading component:", component.errorString());
+                                }
+                            }
+                        }
+
+                        Button {
+                            id: multiGuardAlgButton
+                            text: qsTr("Multi Guard Algorithm")
+                            onClicked: multiGuardAlg()
+
+                            property var viewersSeriesObject;
+                            function multiGuardAlg(){
+                                if (typeof sufaceQMLItem !== "undefined") {
+                                    //drawButton.drawMap();
+                                    sufaceQMLItem.destroy();
+                                }
+                                var numGuards=parseInt(sgaNGTextField.text);
+                                var seriesTrunk="";
+                                for(let i=0;i<numGuards;i++){
+                                    seriesTrunk=seriesTrunk+seriesTemplate1+i+seriesTemplate2;
+                                }
+                                sufaceQMLItem = Qt.createQmlObject(baseSurfaceText+seriesTrunk+baseEndSurfaceText,mainWindow);
+                                var seriesListRaw=sufaceQMLItem.children[0].seriesList;
+                                var seriesList=[];
+                                for (let j=1;j<seriesListRaw.length;j++){
+                                    seriesList.push(seriesListRaw[j]);
+                                }
+                                var initGuards;
+                                if(squniguards.checked==true){
+                                    initGuards="SqUniform";
+                                }
+                                if(fibguards.checked==true){
+                                    initGuards="Fib";
+                                }
+                                backendContainer.runMultiGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],
+                                                                          seriesList,
+                                                                          parseInt(sgaNGTextField.text),
+                                                                          parseInt(obsHTextField.text),
+                                                                          parseInt(obsRTextField.text),
+                                                                          initGuards,
+                                                                          parseInt(orderPairingGTextField.text));
+                            }
+
+                            function finishCreation() {
+                                if (viewersSeriesObject.status == Component.Ready) {
+                                    var viewerList = viewersSeriesObject.createObject(sufaceQMLItem);
+                                    if (viewerList == null) {
+                                        // Error Handling
+                                        console.log("Error creating object");
+                                    }
+                                    var initGuards;
+                                    if(squniguards.checked==true){
+                                        initGuards="SqUniform";
+                                    }
+                                    if(fibguards.checked==true){
+                                        initGuards="Fib";
+                                    }
+                                    backendContainer.runMultiGuardAlgFrontend(sufaceQMLItem.children[0].seriesList[0],
+                                                                              parseInt(sgaNGTextField.text),
+                                                                              parseInt(obsHTextField.text),
+                                                                              parseInt(obsRTextField.text),
+                                                                              initGuards,
+                                                                              parseInt(orderPairingGTextField.text));
                                 } else if (viewersSeriesObject.status == Component.Error) {
                                     // Error Handling
                                     console.log("Error loading component:", component.errorString());
