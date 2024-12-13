@@ -62,7 +62,6 @@ if(WIN32)
         SOURCES sys/times.h
         SOURCES sys/times.c
         SOURCES sys/uio.h
-
     )
 
 elseif(UNIX)

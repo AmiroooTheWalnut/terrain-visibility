@@ -17,6 +17,7 @@
     #include <opencv2/core/mat.hpp>
 #endif
 #include "backend/singleguardalgorithm.h"
+#include "backend/multiguardalgorithm.h"
 #include "BackendContainer.h"
 //#include <QtGraphs/private/qquickgraphssurface_p.h>
 
@@ -560,9 +561,9 @@ QColor BackendContainer::interpolateColor(float in){
     return QColor(rNew,gNew,bNew);
 }
 
-void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius){
+void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType){
     SingleGuardAlgorithm *sga=new SingleGuardAlgorithm();
-    sga->run(numGuards,heightOffset,radius,elevData);
+    sga->run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
     std::vector<QSurface3DSeries*> vSeries;
     for(int i=0;i<vmSeries.size();i++){
         QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
@@ -573,6 +574,29 @@ void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const
     }
     //drawViewBatchSurface(series,vSeries,sga->guards,NULL);
 
+}
+
+void BackendContainer::drawSingleGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType){
+    drawViewBatchSurface(series,vSeries,SingleGuardAlgorithm::initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString()),NULL);
+}
+
+void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder){
+    MultiGuardAlgorithm *mga=new MultiGuardAlgorithm();
+    mga->run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString(),pairingOrder);
+    std::vector<QSurface3DSeries*> vSeries;
+    for(int i=0;i<vmSeries.size();i++){
+        QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
+        vSeries.push_back(targetSeries);
+    }
+    if(mga->pFrontier.size()>0){
+        drawFrontiers(series,vSeries,&(mga->pFrontier),&(mga->guards));
+    }
+}
+
+void BackendContainer::drawMultiGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder){
+    std::vector<Guard> rawGuards = SingleGuardAlgorithm::initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+    std::vector<Guard> guards = MultiGuardAlgorithm::mixGuardsToOrder(&rawGuards,pairingOrder);
+    drawViewBatchSurface(series,vSeries,guards,NULL);
 }
 
 /*
