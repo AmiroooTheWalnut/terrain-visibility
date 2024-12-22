@@ -50,6 +50,15 @@ Window {
         text: qsTr("tiles/N32W110.hgt")
     }
 
+    TextField {
+        width: 200
+        anchors.top: parent.top
+        anchors.left: elevDataNameTextField.right
+        anchors.horizontalCenterOffset: 1
+        id: elevImgNameTextField
+        text: qsTr("tiles/heightmap.png")
+    }
+
     Button {
         anchors.top: elevDataNameTextField.bottom
         anchors.left: parent.left
@@ -65,8 +74,22 @@ Window {
     }
 
     Button {
+        anchors.top: elevImgNameTextField.bottom
+        anchors.left: elevImgNameTextField.left
+        anchors.horizontalCenterOffset: 1
+
+        id: getElevImgDataButton
+        text: qsTr("Get data")
+        onClicked: getElevImgData()
+
+        function getElevImgData(){
+            backendContainer.readElevImgData(elevImgNameTextField.text);
+        }
+    }
+
+    Button {
         anchors.top: elevDataNameTextField.bottom
-        anchors.left: getElevDataButton.right
+        anchors.left: elevImgNameTextField.right
         anchors.horizontalCenterOffset: 1
 
         id: drawButton
@@ -159,7 +182,7 @@ Window {
     Label {
         id: obsXLabel
         anchors.top: parent.top
-        anchors.left: elevDataNameTextField.right
+        anchors.left: elevImgNameTextField.right
         text: "Obs X: "
         color: "black"
     }
@@ -226,7 +249,7 @@ Window {
 
     Button {
         anchors.top: elevDataNameTextField.bottom
-        anchors.left: obsXLabel.left
+        anchors.left: drawButton.right
         anchors.horizontalCenterOffset: 1
 
         id: drawViewButton

@@ -25,6 +25,7 @@ public:
     tiledMatrix<elev_t>* elevData;
     tiledMatrix<unsigned char>* viewshedData;
     Q_INVOKABLE void readElevData(const QString file_name);
+    Q_INVOKABLE void readElevImgData(const QString file_name);
     void updateVisibility(QString obsX, QString obsY, QString obsH,QString range);
     Q_INVOKABLE QList<QString> drawSurface(QSurface3DSeries *series);
     Q_INVOKABLE QList<QString> drawViewSurface(QSurface3DSeries *series, QSurface3DSeries *vSeries, const QString obsX, const QString obsY, const QString obsH, const QString range, int r,int g,int b);

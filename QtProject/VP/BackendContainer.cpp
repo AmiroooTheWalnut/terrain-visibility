@@ -9,6 +9,7 @@
 #include <QTransform>
 #include <QVariant>
 #include <stdlib.h>
+#include <QImageReader>
 #ifdef Q_OS_WIN
     #include "opencv2/opencv.hpp"
     #include "opencv2/core/mat.hpp"
@@ -42,6 +43,43 @@ void BackendContainer::readElevData(const QString file_name){
     Get_Options(8, options);
     Read_Elev();
     elevData = elevp;
+}
+
+void BackendContainer::readElevImgData(const QString file_name){
+    std::string file_name_str = file_name.toStdString();
+    QImageReader reader(file_name);
+    QImage img;
+    if ( reader.canRead()) {
+        img = reader.read();
+        //tiledMatrix<elev_t> tempElev;
+        nrows=img.height();
+        ncols=img.width();
+        int mem = 80;
+        int cellsize = sizeof(elev_t) + sizeof(unsigned char);
+        int numBlocks = (mem * 1024 * 1024) / (cellsize * blockSizeRows * blockSizeCols);
+        int nrows_aux = ((img.width() + blockSizeRows - 1) / blockSizeRows) * blockSizeRows;
+        int ncols_aux = ((img.height() + blockSizeCols - 1) / blockSizeCols) * blockSizeCols;
+        maxHeight=-1000000;
+        minHeight=1000000;
+        tiledMatrix<elev_t> *tempElev = new tiledMatrix<elev_t>(nrows_aux, ncols_aux, blockSizeRows, blockSizeCols, numBlocks, "tiles/_elev_");
+        for(int i=0;i<nrows;i++){
+            for(int j=0;j<ncols;j++){
+                QColor color=img.pixelColor(i,j);
+                int hVal = color.red();
+                tempElev->set(i,j,hVal);
+                if(maxHeight<hVal){
+                    maxHeight=hVal;
+                }
+                if(minHeight>hVal){
+                    minHeight=hVal;
+                }
+                //cout<<"i: "<<i<<" j: "<<j<<" "<<tempElev->get(i,j)<<endl;
+            }
+        }
+        elevData=tempElev;
+    } else{
+        cout << "cannot read image"<<endl;
+    }
 }
 
 /*
