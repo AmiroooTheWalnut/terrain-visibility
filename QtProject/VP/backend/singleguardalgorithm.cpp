@@ -68,17 +68,17 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
         }
         for(int f=0;f<returningPath.size();f++){
             cout << "Frontier: " << f << endl;
-            cout << "   Gaurd: " << returningPath.at(f)->owner->index << endl;
+            cout << "   Guard: " << returningPath.at(f)->owner->index << endl;
         }
         for(int f=0;f<pFrontier.size();f++){
             cout << "Frontier: " << f << endl;
-            std::unordered_set<int> gaurdsIndexSet;
+            std::unordered_set<int> guardsIndexSet;
             for(int c=0;c<pFrontier.at(f).size();c++){
-                gaurdsIndexSet.insert(pFrontier.at(f).at(c)->owner->index);
+                guardsIndexSet.insert(pFrontier.at(f).at(c)->owner->index);
             }
             cout << "   Guards: " << endl;
             unordered_set<int>::iterator itr;
-            for (itr = gaurdsIndexSet.begin(); itr != gaurdsIndexSet.end();itr++)
+            for (itr = guardsIndexSet.begin(); itr != guardsIndexSet.end();itr++)
                 cout << (*itr) << endl;
         }
 
