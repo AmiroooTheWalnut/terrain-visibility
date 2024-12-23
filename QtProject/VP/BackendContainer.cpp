@@ -77,6 +77,7 @@ void BackendContainer::readElevImgData(const QString file_name){
             }
         }
         elevData=tempElev;
+        elevp=tempElev;
     } else{
         cout << "cannot read image"<<endl;
     }
@@ -95,7 +96,11 @@ void BackendContainer::updateVisibility(QString obsX, QString obsY, QString obsH
     const char* obsH_p = obsH_str.c_str();
     std::string range_str = range.toStdString();
     const char* range_p = range_str.c_str();
-    const char *options[9]={"","1201","1201",obsX_p,obsY_p,obsH_p,range_p,in_file.c_str(),"100"};
+    std::string width_str = std::to_string(nrows);
+    const char* width_p = width_str.c_str();
+    std::string height_str = std::to_string(ncols);
+    const char* height_p = width_str.c_str();
+    const char *options[9]={"",width_p,height_p,obsX_p,obsY_p,obsH_p,range_p,in_file.c_str(),"100"};
 
     read_delta_time();           // Initialize the timer.
     Get_Options(8, options);

@@ -15,7 +15,11 @@ void Guard::findConnected(void) {
     std::string strH = std::to_string(h);
     std::string strZ = std::to_string(z);
     std::string strR = std::to_string(r);
-    const char *options[9]={"","1201","1201",strX.c_str(),strZ.c_str(),strH.c_str(),strR.c_str(),in_file.c_str(),"100"};
+    std::string width_str = std::to_string(nrows);
+    const char* width_p = width_str.c_str();
+    std::string height_str = std::to_string(ncols);
+    const char* height_p = width_str.c_str();
+    const char *options[9]={"",width_p,height_p,strX.c_str(),strZ.c_str(),strH.c_str(),strR.c_str(),in_file.c_str(),"100"};
 
     read_delta_time();           // Initialize the timer.
     Get_Options(8, options);

@@ -133,6 +133,8 @@ Window {
             var ret=backendContainer.drawSurface(sufaceQMLItem.children[0].seriesList[0]);
             maxHeight=Number(ret[0]);
             minHeight=Number(ret[1]);
+            maxHeight=maxHeight+(maxHeight-minHeight)/10
+            minHeight=minHeight-(maxHeight-minHeight)/10
             maxX=Number(ret[2]);
             maxZ=Number(ret[3]);
 
@@ -170,6 +172,8 @@ Window {
                 var ret=backendContainer.drawSurface(sufaceQMLItem.children[0].seriesList[0]);
                 maxHeight=Number(ret[0]);
                 minHeight=Number(ret[1]);
+                maxHeight=maxHeight+(maxHeight-minHeight)/10
+                minHeight=minHeight-(maxHeight-minHeight)/10
                 maxX=Number(ret[2]);
                 maxZ=Number(ret[3]);
             } else if (surfComponent.status == Component.Error) {
@@ -227,7 +231,7 @@ Window {
         anchors.left: obsHLabel.right
         anchors.horizontalCenterOffset: 1
         id: obsHTextField
-        text: qsTr("50")
+        text: qsTr("10")
     }
 
     Label {
