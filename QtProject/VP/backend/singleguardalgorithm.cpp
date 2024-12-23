@@ -47,7 +47,11 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
                                         isEndAchieved=true;
                                         returningPath.push_back(gConComp);
                                     }
+                                    break;
                                 }
+                            }
+                            if(successToAddPremiter==true){
+                                break;
                             }
                         }
                     }
