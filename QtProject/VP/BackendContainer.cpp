@@ -302,7 +302,7 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
             int hValue=elevData->get(i,j);
             float interpolatedHValue=(float)(hValue-minHeight)/(float)(maxHeight-minHeight);
             QColor c=interpolateColor(interpolatedHValue);
-            texture->setPixelColor(j,i,c);
+            texture->setPixelColor(i,j,c);
         }
     }
 
@@ -336,7 +336,7 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
         for(int i=0;i<nrows;i++){
             for(int j=0;j<ncols;j++){
                 if(viewshedData->get(i,j)!=0){
-                    texture->setPixelColor(j,i,yColor);
+                    texture->setPixelColor(i,j,yColor);
                 }
             }
         }
@@ -437,7 +437,7 @@ void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurf
             int hValue=elevData->get(i,j);
             float interpolatedHValue=(float)(hValue-minHeight)/(float)(maxHeight-minHeight);
             QColor c=interpolateColor(interpolatedHValue);
-            texture->setPixelColor(j,i,c);
+            texture->setPixelColor(i,j,c);
         }
     }
 
@@ -465,7 +465,7 @@ void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurf
                 ConnectedRow conR = pFrontier->at(f).at(ccI)->colRangeInRow.at(ccrI);
                 for(int pI=0;pI<conR.xStart.size();pI++){
                     for(int cI=conR.xStart.at(pI);cI<conR.xEnd.at(pI);cI++){
-                        texture->setPixelColor(cI,conR.compRow,yColor);
+                        texture->setPixelColor(conR.compRow,cI,yColor);
                     }
                 }
             }
