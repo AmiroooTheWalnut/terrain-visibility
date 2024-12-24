@@ -64,9 +64,9 @@ void BackendContainer::readElevImgData(const QString file_name){
         tiledMatrix<elev_t> *tempElev = new tiledMatrix<elev_t>(nrows_aux, ncols_aux, blockSizeRows, blockSizeCols, numBlocks, "tiles/_elev_");
         for(int i=0;i<nrows;i++){
             for(int j=0;j<ncols;j++){
-                QColor color=img.pixelColor(i,j);
+                QColor color=img.pixelColor(j,i); // Flipped
                 int hVal = color.red();
-                tempElev->set(i,j,hVal);
+                tempElev->set(j,i,hVal); // Flipped
                 if(maxHeight<hVal){
                     maxHeight=hVal;
                 }
@@ -99,7 +99,7 @@ void BackendContainer::updateVisibility(QString obsX, QString obsY, QString obsH
     std::string width_str = std::to_string(nrows);
     const char* width_p = width_str.c_str();
     std::string height_str = std::to_string(ncols);
-    const char* height_p = width_str.c_str();
+    const char* height_p = height_str.c_str();
     const char *options[9]={"",width_p,height_p,obsX_p,obsY_p,obsH_p,range_p,in_file.c_str(),"100"};
 
     read_delta_time();           // Initialize the timer.

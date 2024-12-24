@@ -139,8 +139,8 @@ std::vector<Guard> SingleGuardAlgorithm::initializeGuardsFib(int numGuards, int 
 
 std::vector<Guard> SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
     std::vector<Guard> localGuards;
-    float nGRows=std::max(1.0,std::sqrt((numGuards)*(nrows/ncols)));
-    float nGCols=std::max(1.0,std::sqrt((numGuards)*(ncols/nrows)));
+    float nGRows=std::max(1.0,std::sqrt(numGuards));
+    float nGCols=std::max(1.0,std::sqrt(numGuards));
 
     float nRowGuardPixels=std::floor(std::max(1.0f,((float)ncols/(float)(nGCols+1))));
     float nColGuardsPixels=std::floor(std::max(1.0f,((float)nrows/(float)(nGRows+1))));
@@ -151,8 +151,8 @@ std::vector<Guard> SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGu
     for(int i=1;i<=nGRows;i++){
         for(int j=1;j<=nGCols;j++){
             Guard *g=new Guard();
-            g->x=i*nRowGuardPixels;
-            g->z=j*nColGuardsPixels;
+            g->x=j*nColGuardsPixels;
+            g->z=i*nRowGuardPixels;
             g->h=height;
             g->r=radius;
             g->index=counter;
