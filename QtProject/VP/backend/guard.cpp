@@ -115,18 +115,18 @@ void Guard::setConnectedComponent(void)
                         endPos = j-1;
                     }
                     conR.xEnd.push_back(endPos);
-                    if(maxZ<endPos){
-                        maxZ=endPos;
+                    if(maxX<endPos){
+                        maxX=endPos;
                     }
 
-                    if(minZ>startPos){
-                        minZ=startPos;
+                    if(minX>startPos){
+                        minX=startPos;
                     }
-                    if(maxX<i){
-                        maxX=i;
+                    if(maxZ<i){
+                        maxZ=i;
                     }
-                    if(minX>i){
-                        minX=i;
+                    if(minZ>i){
+                        minZ=i;
                     }
 
                     for (int k=startPos; k<= endPos; k++){

@@ -42,7 +42,7 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
                                     gConComp->isComponentUsedForFrontier=true;//Block this connected component from being added later
                                     successToAddPremiter=true;
                                     //cout<<gConComp->maxX<<endl;
-                                    if(gConComp->maxX==nrows-1)
+                                    if(gConComp->maxZ==nrows-1)
                                     {//Check if south can be seen
                                         isEndAchieved=true;
                                         returningPath.push_back(gConComp);
@@ -104,8 +104,8 @@ bool SingleGuardAlgorithm::constructF0(std::vector<Guard> *guards, std::vector<s
     for(int g=0;g<guards->size();g++){
         Guard *guard = &guards->at(g);
         for(int c=0;c<guard->components.size();c++){
-            if(guard->components.at(c).minX==0){//Guard can see north with connected component "c"
-                if(guard->components.at(c).maxX==elev->nrows-1){//Guard can see the end (south)
+            if(guard->components.at(c).minZ==0){//Guard can see north with connected component "c"
+                if(guard->components.at(c).maxZ==elev->nrows-1){//Guard can see the end (south)
                     isEndFound=true;
                 }
                 f0.push_back(&(guard->components.at(c)));

@@ -58,18 +58,18 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
                         endPos = j-1;
                     }
                     conR.xEnd.push_back(endPos);
-                    if(maxZ<endPos){
-                        maxZ=endPos;
+                    if(maxX<endPos){
+                        maxX=endPos;
                     }
 
-                    if(minZ>startPos){
-                        minZ=startPos;
+                    if(minX>startPos){
+                        minX=startPos;
                     }
-                    if(maxX<i){
-                        maxX=i;
+                    if(maxZ<i){
+                        maxZ=i;
                     }
-                    if(minX>i){
-                        minX=i;
+                    if(minZ>i){
+                        minZ=i;
                     }
 
                     for (int k=startPos; k<= endPos; k++){
@@ -97,13 +97,13 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
 bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b){
     // int minHigh=std::min(a.colRangeInRow.back().compRow,b.colRangeInRow.back().compRow);
     // int maxLow=std::max(a.colRangeInRow.at(0).compRow,b.colRangeInRow.at(0).compRow);
-    int minHigh=std::min(a->maxX,b->maxX);
-    int maxLow=std::max(a->minX,b->minX);
+    int minHigh=std::min(a->maxZ,b->maxZ);
+    int maxLow=std::max(a->minZ,b->minZ);
     if(minHigh<maxLow){
         return false;
     }else{
-        if(a->minX>=b->minX){//Check which connected component is ahead
-            int startingIndexB=a->minX-b->minX;//Find the index of row in b that refers to the start of a
+        if(a->minZ>=b->minZ){//Check which connected component is ahead
+            int startingIndexB=a->minZ-b->minZ;//Find the index of row in b that refers to the start of a
             for(int rb=startingIndexB;rb<startingIndexB+(minHigh-maxLow)-1;rb++)//Iterate through rows in b that share X with a
             {
                 ConnectedRow *rowB = &b->colRangeInRow.at(rb);
@@ -126,7 +126,7 @@ bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, Conn
                 }
             }
         }else{//Check which connected component is ahead
-            int startingIndexA=b->minX-a->minX;//Find the index of row in a that refers to the start of b
+            int startingIndexA=b->minZ-a->minZ;//Find the index of row in a that refers to the start of b
             for(int ra=startingIndexA;ra<startingIndexA+(minHigh-maxLow)-1;ra++)//Iterate through rows in a that share X with b
             {
                 ConnectedRow *rowA = &a->colRangeInRow.at(ra);

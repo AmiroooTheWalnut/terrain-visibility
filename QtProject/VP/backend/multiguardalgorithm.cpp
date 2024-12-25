@@ -41,7 +41,7 @@ void MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix
                                     gConComp->isComponentUsedForFrontier=true;//Block this connected component from being added later
                                     successToAddPremiter=true;
                                     //cout<<gConComp->maxX<<endl;
-                                    if(gConComp->maxX==nrows-1)
+                                    if(gConComp->maxZ==nrows-1)
                                     {//Check if south can be seen
                                         isEndAchieved=true;
                                         returningPath.push_back(gConComp);
