@@ -83,7 +83,7 @@ void Guard::floodFill(uint16_t sr, uint16_t sc)
 /* Put connected component data in the correct format */
 void Guard::setConnectedComponent(void)
 {
-    ConnectedComponent component;
+    ConnectedComponent *component=new ConnectedComponent();
     int maxX=-100000;
     int minX=100000;
     int maxZ=-100000;
@@ -139,14 +139,14 @@ void Guard::setConnectedComponent(void)
             }
         }
         if(conR.xStart.size()>0){
-            component.colRangeInRow.push_back(conR);
+            component->colRangeInRow.push_back(conR);
         }
     }
-    component.maxX=maxX;
-    component.minX=minX;
-    component.maxZ=maxZ;
-    component.minZ=minZ;
-    component.owner=this;
-    components.push_back(component);
+    component->maxX=maxX;
+    component->minX=minX;
+    component->maxZ=maxZ;
+    component->minZ=minZ;
+    component->owner=this;
+    components.push_back(*component);
 }
 
