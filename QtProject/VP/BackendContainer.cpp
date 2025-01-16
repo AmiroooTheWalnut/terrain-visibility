@@ -42,6 +42,11 @@ void BackendContainer::readElevData(const QString file_name){
     read_delta_time();           // Initialize the timer.
     Get_Options(8, options);
     Read_Elev();
+
+    trueNRows=nrows;
+    trueNCols=ncols;
+    //nrows=std::max(nrows,ncols);
+    //ncols=std::max(nrows,ncols);
     elevData = elevp;
 }
 
@@ -51,9 +56,14 @@ void BackendContainer::readElevImgData(const QString file_name){
     QImage img;
     if ( reader.canRead()) {
         img = reader.read();
+        //QImage rotatedImg = img.transformed(QTransform().rotate(90.0));
         //tiledMatrix<elev_t> tempElev;
-        nrows=img.height();
-        ncols=img.width();
+        nrows=img.width();
+        ncols=img.height();
+        trueNRows=nrows;
+        trueNCols=ncols;
+        //nrows=std::max(nrows,ncols);
+        //ncols=std::max(nrows,ncols);
         int mem = 80;
         int cellsize = sizeof(elev_t) + sizeof(unsigned char);
         int numBlocks = (mem * 1024 * 1024) / (cellsize * blockSizeRows * blockSizeCols);
@@ -62,11 +72,11 @@ void BackendContainer::readElevImgData(const QString file_name){
         maxHeight=-1000000;
         minHeight=1000000;
         tiledMatrix<elev_t> *tempElev = new tiledMatrix<elev_t>(nrows_aux, ncols_aux, blockSizeRows, blockSizeCols, numBlocks, "tiles/_elev_");
-        for(int i=0;i<nrows;i++){
-            for(int j=0;j<ncols;j++){
-                QColor color=img.pixelColor(j,i); // Flipped
+        for(int i=0;i<trueNRows;i++){
+            for(int j=0;j<trueNCols;j++){
+                QColor color=img.pixelColor(i,j);
                 int hVal = color.red();
-                tempElev->set(j,i,hVal); // Flipped
+                tempElev->set(j,i,hVal);
                 if(maxHeight<hVal){
                     maxHeight=hVal;
                 }
@@ -96,15 +106,21 @@ void BackendContainer::updateVisibility(QString obsX, QString obsY, QString obsH
     const char* obsH_p = obsH_str.c_str();
     std::string range_str = range.toStdString();
     const char* range_p = range_str.c_str();
-    std::string width_str = std::to_string(nrows);
+    std::string width_str = std::to_string(trueNRows);
     const char* width_p = width_str.c_str();
-    std::string height_str = std::to_string(ncols);
+    std::string height_str = std::to_string(trueNCols);
     const char* height_p = height_str.c_str();
-    const char *options[9]={"",width_p,height_p,obsX_p,obsY_p,obsH_p,range_p,in_file.c_str(),"100"};
+    const char *options[9]={"",height_p,width_p,obsX_p,obsY_p,obsH_p,range_p,in_file.c_str(),"100"};
 
     read_delta_time();           // Initialize the timer.
     Get_Options(8, options);
+
+
     Calc_Vis();
+
+    //int tempnCols=ncols;
+    //ncols=nrows;
+    //nrows=tempnCols;
 
     viewshedData=viewshedp;
 }
@@ -115,16 +131,16 @@ void BackendContainer::updateVisibility(QString obsX, QString obsY, QString obsH
 */
 QList<QString> BackendContainer::drawSurface(QSurface3DSeries *series)
 {
-    QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
+    QImage *texture=new QImage(trueNRows,trueNCols,QImage::Format_ARGB32);
 
     if(!surfaceData->isEmpty()){
         surfaceData->clear();
     }
 
     //QSurfaceDataArray *m_resetArray=new QSurfaceDataArray();
-    for(int i=0;i<ncols;i++){
+    for(int i=0;i<trueNCols;i++){
         QSurfaceDataRow *a=new QSurfaceDataRow();
-        for(int j=0;j<nrows;j++){
+        for(int j=0;j<trueNRows;j++){
             QSurfaceDataItem *d=new QSurfaceDataItem();
             int hValue=elevData->get(i,j);
             d->setX(j);
@@ -173,7 +189,7 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
     QColor yColor(r,g,b);
     vSeries->setWireframeColor(yColor);
     updateVisibility(obsX,obsZ,obsH,range);
-    QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
+    QImage *texture=new QImage(ncols,nrows,QImage::Format_ARGB32);
     //QImage *vTexture=new QImage(2,2,QImage::Format_ARGB32);
     for(int i=0;i<nrows;i++){
         for(int j=0;j<ncols;j++){
@@ -295,14 +311,14 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
 
 void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards, std::vector<QColor> *explicitColors){
     BackendContainer::drawSurface(series);
-    QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
+    QImage *texture=new QImage(ncols,nrows,QImage::Format_ARGB32);
 
     for(int i=0;i<nrows;i++){
         for(int j=0;j<ncols;j++){
             int hValue=elevData->get(i,j);
             float interpolatedHValue=(float)(hValue-minHeight)/(float)(maxHeight-minHeight);
             QColor c=interpolateColor(interpolatedHValue);
-            texture->setPixelColor(i,j,c);
+            texture->setPixelColor(j,i,c);
         }
     }
 
@@ -336,7 +352,7 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
         for(int i=0;i<nrows;i++){
             for(int j=0;j<ncols;j++){
                 if(viewshedData->get(i,j)!=0){
-                    texture->setPixelColor(i,j,yColor);
+                    texture->setPixelColor(j,i,yColor);
                 }
             }
         }
@@ -430,14 +446,14 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
 
 void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<std::vector<ConnectedComponent *>> *pFrontier, std::vector<Guard> *guards){
     BackendContainer::drawSurface(series);
-    QImage *texture=new QImage(nrows,ncols,QImage::Format_ARGB32);
+    QImage *texture=new QImage(ncols,nrows,QImage::Format_ARGB32);
 
     for(int i=0;i<nrows;i++){
         for(int j=0;j<ncols;j++){
             int hValue=elevData->get(i,j);
             float interpolatedHValue=(float)(hValue-minHeight)/(float)(maxHeight-minHeight);
             QColor c=interpolateColor(interpolatedHValue);
-            texture->setPixelColor(i,j,c);
+            texture->setPixelColor(j,i,c);
         }
     }
 
@@ -465,7 +481,7 @@ void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurf
                 ConnectedRow conR = pFrontier->at(f).at(ccI)->colRangeInRow.at(ccrI);
                 for(int pI=0;pI<conR.xStart.size();pI++){
                     for(int cI=conR.xStart.at(pI);cI<conR.xEnd.at(pI);cI++){
-                        texture->setPixelColor(conR.compRow,cI,yColor);
+                        texture->setPixelColor(cI,conR.compRow,yColor);
                     }
                 }
             }
@@ -620,7 +636,8 @@ void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const
 }
 
 void BackendContainer::drawSingleGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType){
-    drawViewBatchSurface(series,vSeries,SingleGuardAlgorithm::initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString()),NULL);
+    std::vector<Guard> genGuards=SingleGuardAlgorithm::initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+    drawViewBatchSurface(series,vSeries,genGuards,NULL);
 }
 
 void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder){

@@ -42,7 +42,7 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
                                     gConComp->isComponentUsedForFrontier=true;//Block this connected component from being added later
                                     successToAddPremiter=true;
                                     //cout<<gConComp->maxX<<endl;
-                                    if(gConComp->maxZ==nrows-1)
+                                    if(gConComp->maxX==trueNRows-1)
                                     {//Check if south can be seen
                                         isEndAchieved=true;
                                         returningPath.push_back(gConComp);
@@ -104,8 +104,8 @@ bool SingleGuardAlgorithm::constructF0(std::vector<Guard> *guards, std::vector<s
     for(int g=0;g<guards->size();g++){
         Guard *guard = &guards->at(g);
         for(int c=0;c<guard->components.size();c++){
-            if(guard->components.at(c).minZ==0){//Guard can see north with connected component "c"
-                if(guard->components.at(c).maxZ==elev->nrows-1){//Guard can see the end (south)
+            if(guard->components.at(c).minX==0){//Guard can see north with connected component "c"
+                if(guard->components.at(c).maxX==trueNRows-1){//Guard can see the end (south)
                     isEndFound=true;
                 }
                 f0.push_back(&(guard->components.at(c)));
@@ -123,8 +123,10 @@ std::vector<Guard> SingleGuardAlgorithm::initializeGuardsFib(int numGuards, int 
     for(int i=1;i<=numGuards;i++){
         Guard *g=new Guard();
         std::pair<float,float> out=fibonacciLattice(counter+1,numGuards+1);
-        g->x=out.first*nrows;
-        g->z=out.second*ncols;
+        g->x=(int)(out.first*trueNCols);
+        g->z=(int)(out.second*trueNRows);
+        cout<<"X: "<<g->x<<endl;
+        cout<<"Z: "<<g->z<<endl;
         g->h=height;
         g->r=radius;
         g->index=counter;
@@ -139,11 +141,11 @@ std::vector<Guard> SingleGuardAlgorithm::initializeGuardsFib(int numGuards, int 
 
 std::vector<Guard> SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev){
     std::vector<Guard> localGuards;
-    float nGRows=std::max(1.0,std::sqrt(numGuards));
-    float nGCols=std::max(1.0,std::sqrt(numGuards));
+    float nGRows=std::max(1.0,std::sqrt((numGuards)*(trueNRows/trueNCols)));
+    float nGCols=std::max(1.0,std::sqrt((numGuards)*(trueNCols/trueNRows)));
 
-    float nRowGuardPixels=std::floor(std::max(1.0f,((float)ncols/(float)(nGCols+1))));
-    float nColGuardsPixels=std::floor(std::max(1.0f,((float)nrows/(float)(nGRows+1))));
+    float nRowGuardPixels=std::floor(std::max(1.0f,((float)trueNCols/(float)(nGCols+1))));
+    float nColGuardsPixels=std::floor(std::max(1.0f,((float)trueNRows/(float)(nGRows+1))));
 
     //int maxXSeenDebug=0;
 
@@ -151,8 +153,8 @@ std::vector<Guard> SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGu
     for(int i=1;i<=nGRows;i++){
         for(int j=1;j<=nGCols;j++){
             Guard *g=new Guard();
-            g->x=j*nColGuardsPixels;
-            g->z=i*nRowGuardPixels;
+            g->x=i*nRowGuardPixels;
+            g->z=j*nColGuardsPixels;
             g->h=height;
             g->r=radius;
             g->index=counter;

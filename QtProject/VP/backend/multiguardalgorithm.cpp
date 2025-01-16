@@ -41,7 +41,7 @@ void MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix
                                     gConComp->isComponentUsedForFrontier=true;//Block this connected component from being added later
                                     successToAddPremiter=true;
                                     //cout<<gConComp->maxX<<endl;
-                                    if(gConComp->maxZ==nrows-1)
+                                    if(gConComp->maxX==trueNRows-1)
                                     {//Check if south can be seen
                                         isEndAchieved=true;
                                         returningPath.push_back(gConComp);
@@ -88,8 +88,7 @@ void MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix
     }
 }
 
-std::vector<Guard> MultiGuardAlgorithm::mixGuardsToOrder(std::vector<Guard> *input,int pairingOrder)
-{
+std::vector<Guard> MultiGuardAlgorithm::mixGuardsToOrder(std::vector<Guard> *input,int pairingOrder){
     std::vector<Guard> localGuards;
     int n=input->size();
     // int guardIndices[n];
@@ -103,26 +102,19 @@ std::vector<Guard> MultiGuardAlgorithm::mixGuardsToOrder(std::vector<Guard> *inp
     do {
         Guard *g=new Guard();
         g->index=newIndexCounter;
-        for (int i = 0; i < n; ++i)
-        {
-            if (v[i])
-            {
-                Guard *pGuard = &input->at(i);
-                g->x=pGuard->x;
-                g->z=pGuard->z;
-                g->h=pGuard->h;
-                g->r=pGuard->r;
-                for(int c = 0; c < pGuard->components.size(); c++)
-                {
-                    ConnectedComponent *current = &pGuard->components.at(c);  // Use pointers to avoid copying for speed and avoid shallow copy just in case
-
+        for (int i = 0; i < n; ++i) {
+            if (v[i]) {
+                g->x=input->at(i).x;
+                g->z=input->at(i).z;
+                g->h=input->at(i).h;
+                g->r=input->at(i).r;
+                for(int c = 0; c < input->at(i).components.size(); c++){
+                    ConnectedComponent current=input->at(i).components.at(c);
                     bool intersecWithPrevious=false;
-                    for(int prevC=0;prevC<g->components.size();prevC++)
-                    {
-                        ConnectedComponent *prev = &g->components.at(prevC);
-                        if(ConnectedComponent::checkComponentsIntersection(prev,current)==true)
-                        {
-                            ConnectedComponent *merged = ConnectedComponent::connectTwoComponents(prev,current);
+                    for(int prevC=0;prevC<g->components.size();prevC++){
+                        ConnectedComponent prev=g->components.at(prevC);
+                        if(ConnectedComponent::checkComponentsIntersection(&prev,&current)==true){
+                            ConnectedComponent *merged=ConnectedComponent::connectTwoComponents(&prev,&current);
                             g->components.erase(g->components.begin()+prevC);
                             merged->owner=g;
                             g->components.insert(g->components.begin()+prevC,*merged);
@@ -131,10 +123,9 @@ std::vector<Guard> MultiGuardAlgorithm::mixGuardsToOrder(std::vector<Guard> *inp
                             intersecWithPrevious=true;
                         }
                     }
-                    if(intersecWithPrevious==false)
-                    {
-                        current->owner=g;
-                        g->components.push_back(*current);
+                    if(intersecWithPrevious==false){
+                        input->at(i).components.at(c).owner=g;
+                        g->components.push_back(input->at(i).components.at(c));
                     }
                 }
                 cout << (i + 1) << " ";

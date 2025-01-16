@@ -95,6 +95,7 @@ template < class C > inline C square(const C a)
 #include <stdio.h>
 
 int nrows=0,ncols=0;                      // Number of rows, cols in elev.
+int trueNRows=0, trueNCols=0;             // Number of rows, cols in elev for none squared inputs. messy trick
 int maxHeight=-100000;                        //Maximum height of elev
 int minHeight=100000;                        //Minimum height of elev
 unsigned long long n=0;                     // nrows*ncols
@@ -187,8 +188,8 @@ void Get_Options(const int argc, const char** const argv)
 		("VIEWSHED requires 10 arguments: NROWS, NCOLS, OBSERVER[0], OBSERVER[1], OBSERVER_HT, RADIUS, IN_FILE, MEM, [ BLOCKSIZE_ROWS, BLOCKSIZE_COLS ]");
 	}
 
-	nrows = atoi(argv[1]);
-	ncols = atoi(argv[2]);
+    nrows = atoi(argv[1]);
+    ncols = atoi(argv[2]);
 	observer[0] = atoi(argv[3]);
 	observer[1] = atoi(argv[4]);
 	observer_ht = atoi(argv[5]);

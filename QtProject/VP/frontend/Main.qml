@@ -56,7 +56,7 @@ Window {
         anchors.left: elevDataNameTextField.right
         anchors.horizontalCenterOffset: 1
         id: elevImgNameTextField
-        text: qsTr("tiles/heightmap.png")
+        text: qsTr("tiles/test3.png")
     }
 
     Button {

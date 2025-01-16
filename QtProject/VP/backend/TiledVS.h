@@ -20,6 +20,7 @@ typedef int elev_t; //using 4 bytes per elevation value!
 /**; GLOBAL VARIABLES */
 
 extern int nrows, ncols;                      // Number of rows, cols in elev.
+extern int trueNRows, trueNCols;            // Number of rows, cols in elev for none squared inputs. messy trick
 extern int maxHeight;                       //Maximum height of elev
 extern int minHeight;                       //Minimum height of elev
 extern unsigned long long n;                     // nrows*ncols

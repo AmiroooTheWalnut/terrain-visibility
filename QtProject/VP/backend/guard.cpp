@@ -15,11 +15,11 @@ void Guard::findConnected(void) {
     std::string strH = std::to_string(h);
     std::string strZ = std::to_string(z);
     std::string strR = std::to_string(r);
-    std::string width_str = std::to_string(nrows);
+    std::string width_str = std::to_string(trueNRows);
     const char* width_p = width_str.c_str();
-    std::string height_str = std::to_string(ncols);
+    std::string height_str = std::to_string(trueNCols);
     const char* height_p = height_str.c_str();
-    const char *options[9]={"",width_p,height_p,strX.c_str(),strZ.c_str(),strH.c_str(),strR.c_str(),in_file.c_str(),"100"};
+    const char *options[9]={"",height_p,width_p,strX.c_str(),strZ.c_str(),strH.c_str(),strR.c_str(),in_file.c_str(),"100"};
 
     read_delta_time();           // Initialize the timer.
     Get_Options(8, options);
@@ -30,9 +30,9 @@ void Guard::findConnected(void) {
     {
         /* Find a non-zero pixel to start */
         bool found = false;
-        for(uint16_t i=0;i<nrows;i++)
+        for(uint16_t i=0;i<trueNRows;i++)
         {
-            for(uint16_t j=0;j<ncols;j++)
+            for(uint16_t j=0;j<trueNCols;j++)
             {
                 if (viewshedp->get(i,j)==1)
                 {
@@ -83,7 +83,7 @@ void Guard::floodFill(uint16_t sr, uint16_t sc)
 /* Put connected component data in the correct format */
 void Guard::setConnectedComponent(void)
 {
-    ConnectedComponent *component=new ConnectedComponent();
+    ConnectedComponent component;
     int maxX=-100000;
     int minX=100000;
     int maxZ=-100000;
@@ -115,18 +115,18 @@ void Guard::setConnectedComponent(void)
                         endPos = j-1;
                     }
                     conR.xEnd.push_back(endPos);
-                    if(maxX<endPos){
-                        maxX=endPos;
+                    if(maxZ<endPos){
+                        maxZ=endPos;
                     }
 
-                    if(minX>startPos){
-                        minX=startPos;
+                    if(minZ>startPos){
+                        minZ=startPos;
                     }
-                    if(maxZ<i){
-                        maxZ=i;
+                    if(maxX<i){
+                        maxX=i;
                     }
-                    if(minZ>i){
-                        minZ=i;
+                    if(minX>i){
+                        minX=i;
                     }
 
                     for (int k=startPos; k<= endPos; k++){
@@ -139,14 +139,14 @@ void Guard::setConnectedComponent(void)
             }
         }
         if(conR.xStart.size()>0){
-            component->colRangeInRow.push_back(conR);
+            component.colRangeInRow.push_back(conR);
         }
     }
-    component->maxX=maxX;
-    component->minX=minX;
-    component->maxZ=maxZ;
-    component->minZ=minZ;
-    component->owner=this;
-    components.push_back(*component);
+    component.maxX=maxX;
+    component.minX=minX;
+    component.maxZ=maxZ;
+    component.minZ=minZ;
+    component.owner=this;
+    components.push_back(component);
 }
 
