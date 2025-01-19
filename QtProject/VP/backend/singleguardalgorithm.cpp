@@ -70,10 +70,12 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
         while(!(returningPath.back()->intersectingCC.empty())){
             returningPath.push_back(returningPath.back()->intersectingCC.at(0));
         }
+        cout << "Returning Path:" << endl;
         for(int f=0;f<returningPath.size();f++){
-            cout << "Frontier: " << f << endl;
+            //cout << "Frontier: " << f << endl; - It is not frontier index, remove this for clarification
             cout << "   Guard: " << returningPath.at(f)->owner->index << endl;
         }
+        cout << "Frontier Details:" << endl;
         for(int f=0;f<pFrontier.size();f++){
             cout << "Frontier: " << f << endl;
             std::unordered_set<int> guardsIndexSet;
