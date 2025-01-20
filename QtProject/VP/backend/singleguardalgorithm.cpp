@@ -21,19 +21,19 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
         {
             successToAddPremiter=false;
             std::vector<ConnectedComponent *> constructingFrontier;//Currently constructing frontier
-            for(int g=0;g<guards.size();g++)
+            for(int g=0;g<guards.size()&&isEndAchieved==false;g++)
             {
                 Guard *guard = &(guards.at(g));
-                for(int c=0;c<guard->components.size();c++)
+                for(int c=0;c<guard->components.size()&&isEndAchieved==false;c++)
                 {
                     ConnectedComponent *gConComp=&(guard->components.at(c));
                     if(gConComp->isComponentUsedForFrontier==false)
                     {
-                        for(int of=prevFrontierIndex;of>=0;of--)//*** Index for other frontiers (potentially redundant because we only need to check with last frontier)
-                        {
-                            for(int cp=0;cp<pFrontier.at(of).size();cp++)//Connected component index from previous frontier
+                        //for(int of=prevFrontierIndex;of>=0;of--)//*** Index for other frontiers (potentially redundant because we only need to check with last frontier)
+                        //{
+                            for(int cp=0;cp<pFrontier.at(prevFrontierIndex).size()&&isEndAchieved==false;cp++)//Connected component index from previous frontier
                             {
-                                ConnectedComponent *ofConComp=pFrontier.at(of).at(cp);//Connected component from other frontier
+                                ConnectedComponent *ofConComp=pFrontier.at(prevFrontierIndex).at(cp);//Connected component from previous frontier
                                 if(ConnectedComponent::checkComponentsIntersection(gConComp,ofConComp))
                                 {
                                     gConComp->intersectingCC.push_back(ofConComp);
@@ -53,7 +53,7 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
                             if(successToAddPremiter==true){
                                 break;
                             }
-                        }
+                        //}
                     }
                 }
             }
