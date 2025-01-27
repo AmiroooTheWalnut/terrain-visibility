@@ -4,17 +4,18 @@
 #include <vector>
 #include "backend/TiledVS.h"
 #include "connectedcomponent.h"
+#include "singleguardalgorithm.h"
 #include "guard.h"
 
-class MultiGuardAlgorithm
+class MultiGuardAlgorithm : public SingleGuardAlgorithm
 {
 public:
     MultiGuardAlgorithm();
-    static std::vector<Guard> mixGuardsToOrder(std::vector<Guard> *input,int pairingOrder);
-    void run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder);// PairingOrder refers to the order of considering guards together.
-                                                                                                                            // For instance two guards at a time or three and so on.
-    std::vector<std::vector<ConnectedComponent *>> pFrontier; // The boundary of the algorithm until iteration i
-    std::vector<Guard> guards;
+    void mixGuardsToOrder(int pairingOrder);
+    void run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder);// PairingOrder refers to the order of considering guards together.                                                                                                                            // For instance two guards at a time or three and so on.
+    inline std::vector<Guard *> *getGuards(void) { return SingleGuardAlgorithm::getGuards(); }
+    inline std::vector<std::vector<ConnectedComponent *>> *getFrontier(void) { return SingleGuardAlgorithm::getFrontier(); }
 };
+
 
 #endif // MULTIGUARDALGORITHM_H

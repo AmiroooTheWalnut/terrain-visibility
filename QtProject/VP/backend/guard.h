@@ -16,10 +16,13 @@ public:
     int z;
     int r;
     int index;
-    std::vector<ConnectedComponent> components;
+    std::vector<ConnectedComponent *> components; // Use pointers to make sure of persistent memory and prevent copy
     void findConnected(void);
     void floodFill(uint16_t sr, uint16_t sc);
     void setConnectedComponent(void);
+
+    void resetUsedForFrontier(void);
+    void clear(void);
 };
 
 #endif // GUARD_H

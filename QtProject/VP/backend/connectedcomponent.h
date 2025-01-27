@@ -20,7 +20,6 @@ class ConnectedComponent
 public:
     Guard *owner;
     ConnectedComponent();
-    // std::string name; -- Q to Amir: Why is name here?
     static ConnectedComponent* connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b);
     static ConnectedComponent* setConnectedComponent(std::vector<std::vector<bool>> bitmap);
     static bool checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b);
@@ -32,6 +31,7 @@ public:
     int minZ;
     bool isComponentUsedForFrontier=false;
     std::vector<ConnectedComponent*> intersectingCC;
+    inline void resetUsedForFrontier(void) { isComponentUsedForFrontier = false; }
 };
 
 #endif // CONNECTEDCOMPONENT_H

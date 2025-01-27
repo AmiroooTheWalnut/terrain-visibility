@@ -3,94 +3,32 @@
 
 MultiGuardAlgorithm::MultiGuardAlgorithm() {}
 
-void MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder){
-    std::vector<Guard> rawGuards=SingleGuardAlgorithm::initializeGuards(numGuards,height,radius,elev,initGuardType);
-    guards=mixGuardsToOrder(&rawGuards,pairingOrder);
+void MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder)
+{
+    SingleGuardAlgorithm::initializeGuards(numGuards,height,radius,elev,initGuardType);
+
+    mixGuardsToOrder(pairingOrder);
+
+    // Pairing Order shouldn't matter!!! Remove it?
+
     //debugInitializeGuards(numGuards,height,elev);
-    bool isEndAchieved=SingleGuardAlgorithm::constructF0(&guards,&pFrontier,elev);
-    if(pFrontier.size()==0){
+    bool isEndAchieved=SingleGuardAlgorithm::constructF0(elev);
+    if(frontier.size()==0)
+    {
         cout<<"No solution exists! There is no guard who can see north."<<endl;
         return;
     }
-    std::vector<ConnectedComponent*> returningPath;
-    if(isEndAchieved==false){
-        bool successToAddPremiter=true;
-        int prevFrontierIndex=0;
-        while(successToAddPremiter==true && isEndAchieved==false)
-        {
-            successToAddPremiter=false;
-            std::vector<ConnectedComponent *> constructingFrontier;//Currently constructing frontier
-            for(int g=0;g<guards.size();g++)
-            {
-                Guard *guard = &(guards.at(g));
-                for(int c=0;c<guard->components.size();c++)
-                {
-                    ConnectedComponent *gConComp=&(guard->components.at(c));
-                    if(gConComp->isComponentUsedForFrontier==false)
-                    {
-                        for(int of=prevFrontierIndex;of>=0;of--)//*** Index for other frontiers (potentially redundant because we only need to check with last frontier)
-                        {
-                            for(int cp=0;cp<pFrontier.at(of).size();cp++)//Connected component index from previous frontier
-                            {
-                                ConnectedComponent *ofConComp=pFrontier.at(of).at(cp);//Connected component from other frontier
-                                if(ConnectedComponent::checkComponentsIntersection(gConComp,ofConComp))
-                                {
-                                    gConComp->intersectingCC.push_back(ofConComp);
-                                    //ofConComp->intersectingCC.push_back(gConComp);//Only backward path is needed, this is redundant
-                                    constructingFrontier.push_back(gConComp);
-                                    gConComp->isComponentUsedForFrontier=true;//Block this connected component from being added later
-                                    successToAddPremiter=true;
-                                    //cout<<gConComp->maxX<<endl;
-                                    if(gConComp->maxX==trueNRows-1)
-                                    {//Check if south can be seen
-                                        isEndAchieved=true;
-                                        returningPath.push_back(gConComp);
-                                    }
-                                    break;
-                                }
-                            }
-                            if(successToAddPremiter==true){
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if(successToAddPremiter==true)
-            {
-                pFrontier.push_back(constructingFrontier);
-                prevFrontierIndex=prevFrontierIndex+1;
-            }
-        }
-        if(returningPath.size()==0){
-            cout<<"No solution exists! There is no path from north to south."<<endl;
-            return;
-        }
-        while(!(returningPath.back()->intersectingCC.empty())){
-            returningPath.push_back(returningPath.back()->intersectingCC.at(0));
-        }
-        for(int f=0;f<returningPath.size();f++){
-            cout << "Frontier: " << f << endl;
-            cout << "   Guard: " << returningPath.at(f)->owner->index << endl;
-        }
-        for(int f=0;f<pFrontier.size();f++){
-            cout << "Frontier: " << f << endl;
-            std::unordered_set<int> guardsIndexSet;
-            for(int c=0;c<pFrontier.at(f).size();c++){
-                guardsIndexSet.insert(pFrontier.at(f).at(c)->owner->index);
-            }
-            cout << "   Guards: " << endl;
-            unordered_set<int>::iterator itr;
-            for (itr = guardsIndexSet.begin(); itr != guardsIndexSet.end();itr++)
-                cout << (*itr) << endl;
-        }
-        cout<<"End of multi Guard frontier algorithm"<<endl;
-    }
+
+    // It is the same code and should be, so may as well just call it, so we only keep track of a single copy
+    SingleGuardAlgorithm::run(numGuards, height, radius, elev, initGuardType);
 }
 
-std::vector<Guard> MultiGuardAlgorithm::mixGuardsToOrder(std::vector<Guard> *input,int pairingOrder){
-    std::vector<Guard> localGuards;
+void MultiGuardAlgorithm::mixGuardsToOrder(int pairingOrder)
+{
+    std::vector<Guard *> localGuards;
+    std::vector<Guard *> *input = &guards;
     int n=input->size();
+
     // int guardIndices[n];
     // for(int i=0;i<n;i++){
     //     guardIndices[i]=i;
@@ -102,36 +40,42 @@ std::vector<Guard> MultiGuardAlgorithm::mixGuardsToOrder(std::vector<Guard> *inp
     do {
         Guard *g=new Guard();
         g->index=newIndexCounter;
-        for (int i = 0; i < n; ++i) {
-            if (v[i]) {
-                g->x=input->at(i).x;
-                g->z=input->at(i).z;
-                g->h=input->at(i).h;
-                g->r=input->at(i).r;
-                for(int c = 0; c < input->at(i).components.size(); c++){
-                    ConnectedComponent current=input->at(i).components.at(c);
+        for (int i = 0; i < n; ++i)
+        {
+            if (v[i])
+            {
+                Guard *gg = input->at(i);
+                g->x = gg->x;
+                g->z = gg->z;
+                g->h = gg->h;
+                g->r = gg->r;
+                for (std::vector<ConnectedComponent *>::iterator it = gg->components.begin(); it != gg->components.end(); ++it)
+                {
+                    ConnectedComponent *current = *it;
                     bool intersecWithPrevious=false;
-                    for(int prevC=0;prevC<g->components.size();prevC++){
-                        ConnectedComponent prev=g->components.at(prevC);
-                        if(ConnectedComponent::checkComponentsIntersection(&prev,&current)==true){
-                            ConnectedComponent *merged=ConnectedComponent::connectTwoComponents(&prev,&current);
-                            g->components.erase(g->components.begin()+prevC);
+
+                    for (std::vector<ConnectedComponent *>::iterator it2 = g->components.begin(); it2 != g->components.end(); ++it2)
+                    {
+                        ConnectedComponent *prev = *it2;
+                        if(ConnectedComponent::checkComponentsIntersection(prev, current)==true)
+                        {
+                            ConnectedComponent *merged=ConnectedComponent::connectTwoComponents(prev, current);
+                            g->components.erase(it2);
                             merged->owner=g;
-                            g->components.insert(g->components.begin()+prevC,*merged);
-                            //g->components.push_back(*merged);
-                            //prevC=prevC-1;
+                            g->components.insert(it2, merged);
                             intersecWithPrevious=true;
                         }
                     }
-                    if(intersecWithPrevious==false){
-                        input->at(i).components.at(c).owner=g;
-                        g->components.push_back(input->at(i).components.at(c));
+                    if(intersecWithPrevious==false)
+                    {
+                        current->owner=g;
+                        g->components.push_back(current);
                     }
                 }
                 cout << (i + 1) << " ";
             }
         }
-        localGuards.push_back(*g);
+        localGuards.push_back(g);
         newIndexCounter=newIndexCounter+1;
         cout << endl;
     } while (std::next_permutation(v.begin(), v.end()));
@@ -156,5 +100,7 @@ std::vector<Guard> MultiGuardAlgorithm::mixGuardsToOrder(std::vector<Guard> *inp
     //     newIndexCounter=newIndexCounter+1;
     //     cout << endl;
     // } while (next_permutation(guardIndices, guardIndices + n));
-    return localGuards;
+
+    // Replace the guard vector with this new vector
+    guards = localGuards;
 }

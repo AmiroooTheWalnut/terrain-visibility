@@ -2,20 +2,27 @@
 
 ConnectedComponent::ConnectedComponent() {}
 
-ConnectedComponent *ConnectedComponent::connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b){
+ConnectedComponent *ConnectedComponent::connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b)
+{
     std::vector<std::vector<bool>> bitmap(nrows,std::vector<bool>(ncols));
-    for(int i=0;i<a->colRangeInRow.size();i++){
+    for(int i=0;i<a->colRangeInRow.size();i++)
+    {
         ConnectedRow row=a->colRangeInRow.at(i);
-        for(int j=0;j<row.xStart.size();j++){
-            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++){
+        for(int j=0;j<row.xStart.size();j++)
+        {
+            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++)
+            {
                 bitmap[row.compRow][c]=1;
             }
         }
     }
-    for(int i=0;i<b->colRangeInRow.size();i++){
+    for(int i=0;i<b->colRangeInRow.size();i++)
+    {
         ConnectedRow row=b->colRangeInRow.at(i);
-        for(int j=0;j<row.xStart.size();j++){
-            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++){
+        for(int j=0;j<row.xStart.size();j++)
+        {
+            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++)
+            {
                 bitmap[row.compRow][c]=1;
             }
         }
@@ -58,21 +65,26 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
                         endPos = j-1;
                     }
                     conR.xEnd.push_back(endPos);
-                    if(maxZ<endPos){
+                    if(maxZ<endPos)
+                    {
                         maxZ=endPos;
                     }
 
-                    if(minZ>startPos){
+                    if(minZ>startPos)
+                    {
                         minZ=startPos;
                     }
-                    if(maxX<i){
+                    if(maxX<i)
+                    {
                         maxX=i;
                     }
-                    if(minX>i){
+                    if(minX>i)
+                    {
                         minX=i;
                     }
 
-                    for (int k=startPos; k<= endPos; k++){
+                    for (int k=startPos; k<= endPos; k++)
+                    {
                         bitmap[i][k]=0; /* Clear pixel after setting the ConnectedRow */
                     }
                     startPos = -1;
@@ -81,7 +93,8 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
                 lastSet = false;
             }
         }
-        if(conR.xStart.size()>0){
+        if(conR.xStart.size()>0)
+        {
             component->colRangeInRow.push_back(conR);
         }
     }
@@ -94,14 +107,17 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
     return component;
 }
 
-bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b){
+bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b)
+{
     // int minHigh=std::min(a.colRangeInRow.back().compRow,b.colRangeInRow.back().compRow);
     // int maxLow=std::max(a.colRangeInRow.at(0).compRow,b.colRangeInRow.at(0).compRow);
     int minHigh=std::min(a->maxX,b->maxX);
     int maxLow=std::max(a->minX,b->minX);
-    if(minHigh<maxLow){
+    if(minHigh<maxLow)
+    {
         return false;
-    }else{
+    }else
+    {
         if(a->minX>=b->minX){//Check which connected component is ahead
             int startingIndexB=a->minX-b->minX;//Find the index of row in b that refers to the start of a
             for(int rb=startingIndexB;rb<startingIndexB+(minHigh-maxLow)-1;rb++)//Iterate through rows in b that share X with a
@@ -114,18 +130,21 @@ bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, Conn
                     {
                         //Check if start of a is in the middle of start and end of b
                         if(rowB->xStart.at(startb)<=rowA->xStart.at(starta) &&
-                            rowA->xStart.at(starta)<=rowB->xEnd.at(startb)) {
+                            rowA->xStart.at(starta)<=rowB->xEnd.at(startb))
+                        {
                             return true;
                         }
                         //Check if start of b is in the middle of start and end of a
                         if(rowA->xStart.at(starta)<=rowB->xStart.at(startb) &&
-                            rowB->xStart.at(startb)<=rowA->xEnd.at(starta)) {
+                            rowB->xStart.at(startb)<=rowA->xEnd.at(starta))
+                        {
                             return true;
                         }
                     }
                 }
             }
-        }else{//Check which connected component is ahead
+        }else
+        {//Check which connected component is ahead
             int startingIndexA=b->minX-a->minX;//Find the index of row in a that refers to the start of b
             for(int ra=startingIndexA;ra<startingIndexA+(minHigh-maxLow)-1;ra++)//Iterate through rows in a that share X with b
             {
@@ -137,12 +156,14 @@ bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, Conn
                     {
                         //Check if start of a is in the middle of start and end of b
                         if(rowB->xStart.at(startb)<=rowA->xStart.at(starta) &&
-                            rowA->xStart.at(starta)<=rowB->xEnd.at(startb)) {
+                            rowA->xStart.at(starta)<=rowB->xEnd.at(startb))
+                        {
                             return true;
                         }
                         //Check if start of b is in the middle of start and end of a
                         if(rowA->xStart.at(starta)<=rowB->xStart.at(startb) &&
-                            rowB->xStart.at(startb)<=rowA->xEnd.at(starta)) {
+                            rowB->xStart.at(startb)<=rowA->xEnd.at(starta))
+                        {
                             return true;
                         }
                     }
@@ -158,10 +179,12 @@ bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, Conn
  * Input is a connected component and a target row value
  * Output is the target row index in input connected component
  */
-int ConnectedComponent::binarySearchIndex(ConnectedComponent *in, int targetRow){
+int ConnectedComponent::binarySearchIndex(ConnectedComponent *in, int targetRow)
+{
     int min=0;
     int max=in->colRangeInRow.size()-1;
-    while (min <= max) {
+    while (min <= max)
+    {
         int mid = min + (max - min) / 2;
         if (in->colRangeInRow.at(mid).compRow == targetRow)
             return mid;
