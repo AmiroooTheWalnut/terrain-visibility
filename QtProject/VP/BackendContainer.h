@@ -13,6 +13,9 @@
 #include <QtGraphs/qsurface3dseries.h>
 //#include <QtGraphs/qsurface3d.h>
 #include <QtQml/qqmlregistration.h>
+#include "backend/singleguardalgorithm.h"
+#include "backend/multiguardalgorithm.h"
+
 
 class BackendContainer : public QObject
 {
@@ -29,10 +32,10 @@ public:
     void updateVisibility(QString obsX, QString obsY, QString obsH,QString range);
     Q_INVOKABLE QList<QString> drawSurface(QSurface3DSeries *series);
     Q_INVOKABLE QList<QString> drawViewSurface(QSurface3DSeries *series, QSurface3DSeries *vSeries, const QString obsX, const QString obsY, const QString obsH, const QString range, int r,int g,int b);
-    void drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards, std::vector<QColor> *explicitColors);
+    void drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard *> *guards, std::vector<QColor> *explicitColors);
     Q_INVOKABLE void drawSingleGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType);
     Q_INVOKABLE void drawMultiGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder);
-    void drawFrontiers(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<std::vector<ConnectedComponent *>> *pFrontier, std::vector<Guard> *guards);
+    void drawFrontiers(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<std::vector<ConnectedComponent *>> *pFrontier, std::vector<Guard *> *guards);
     QColor interpolateColor(float in);
     Q_INVOKABLE void removeSelection(QSurface3DSeries *series);
     Q_INVOKABLE void runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType);
@@ -41,6 +44,9 @@ public:
 
     QSurfaceDataArray *viewerData=new QSurfaceDataArray();
     QSurfaceDataArray *surfaceData=new QSurfaceDataArray();
+
+    SingleGuardAlgorithm theSga;
+    MultiGuardAlgorithm theMga;
 };
 
 

@@ -17,8 +17,6 @@
     #include <opencv2/opencv.hpp>
     #include <opencv2/core/mat.hpp>
 #endif
-#include "backend/singleguardalgorithm.h"
-#include "backend/multiguardalgorithm.h"
 #include "BackendContainer.h"
 //#include <QtGraphs/private/qquickgraphssurface_p.h>
 
@@ -33,7 +31,8 @@ BackendContainer::BackendContainer(QObject *parent)
  * This function calls the backend to calculate visibility and keeps a pointer to the results.
  * The size of the surface is fixed for now.
  */
-void BackendContainer::readElevData(const QString file_name){
+void BackendContainer::readElevData(const QString file_name)
+{
     std::string file_name_str = file_name.toStdString();
     const char* file_name_p = file_name_str.c_str();
     const char *options[9]={"","1201","1201","50","50","10","10",file_name_p,"100"};
@@ -50,7 +49,8 @@ void BackendContainer::readElevData(const QString file_name){
     elevData = elevp;
 }
 
-void BackendContainer::readElevImgData(const QString file_name){
+void BackendContainer::readElevImgData(const QString file_name)
+{
     std::string file_name_str = file_name.toStdString();
     QImageReader reader(file_name);
     QImage img;
@@ -97,7 +97,8 @@ void BackendContainer::readElevImgData(const QString file_name){
  * This function calls the backend to calculate visibility and keeps a pointer to the results.
  * The size of the surface is fixed for now.
  */
-void BackendContainer::updateVisibility(QString obsX, QString obsY, QString obsH, QString range){
+void BackendContainer::updateVisibility(QString obsX, QString obsY, QString obsH, QString range)
+{
     std::string obsX_str = obsX.toStdString();
     const char* obsX_p = obsX_str.c_str();
     std::string obsY_str = obsY.toStdString();
@@ -309,7 +310,8 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
     return qList;
 }
 
-void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard> guards, std::vector<QColor> *explicitColors){
+void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<Guard *> *guards, std::vector<QColor> *explicitColors)
+{
     BackendContainer::drawSurface(series);
     QImage *texture=new QImage(ncols,nrows,QImage::Format_ARGB32);
 
@@ -326,7 +328,7 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
     int saturation = 255; // Fixed saturation
     int value = 255;      // Fixed value
 
-    for(int g=0;g<guards.size();g++){
+    for(int g=0;g<guards->size();g++){
         QColor yColor;
         if(explicitColors==NULL){
             int hue = g * hueStep;
@@ -342,10 +344,10 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
             yColor=explicitColors->at(g);
         }
         vSeries.at(g)->setWireframeColor(yColor);
-        QString obsX=QString::fromStdString(std::to_string(guards.at(g).x));
-        QString obsZ=QString::fromStdString(std::to_string(guards.at(g).z));
-        QString obsH=QString::fromStdString(std::to_string(guards.at(g).h));
-        QString range=QString::fromStdString(std::to_string(guards.at(g).r));
+        QString obsX=QString::fromStdString(std::to_string(guards->at(g)->x));
+        QString obsZ=QString::fromStdString(std::to_string(guards->at(g)->z));
+        QString obsH=QString::fromStdString(std::to_string(guards->at(g)->h));
+        QString range=QString::fromStdString(std::to_string(guards->at(g)->r));
         updateVisibility(obsX,obsZ,obsH,range);
 
         //QImage *vTexture=new QImage(2,2,QImage::Format_ARGB32);
@@ -444,7 +446,8 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
     series->setTexture(*texture);
 }
 
-void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<std::vector<ConnectedComponent *>> *pFrontier, std::vector<Guard> *guards){
+void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<std::vector<ConnectedComponent *>> *pFrontier, std::vector<Guard *> *guards)
+{
     BackendContainer::drawSurface(series);
     QImage *texture=new QImage(ncols,nrows,QImage::Format_ARGB32);
 
@@ -491,7 +494,7 @@ void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurf
 
     for(int g=0;g<vSeries.size();g++){
         QColor yColor;
-        if (usedGuardsIds.find(guards->at(g).index) != usedGuardsIds.end()) {
+        if (usedGuardsIds.find(guards->at(g)->index) != usedGuardsIds.end()) {
             yColor.setRed(255);
             yColor.setGreen(0);
             yColor.setBlue(0);
@@ -503,10 +506,10 @@ void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurf
         vSeries.at(g)->setWireframeColor(yColor);
 
         QSurfaceDataArray *viewerData=new QSurfaceDataArray();
-        int x=guards->at(g).x;
-        int z=guards->at(g).z;
+        int x=guards->at(g)->x;
+        int z=guards->at(g)->z;
         int sH=elevData->get(x,z);
-        int y=guards->at(g).h+sH;
+        int y=guards->at(g)->h+sH;
 
         QSurfaceDataRow *a=new QSurfaceDataRow();
         QSurfaceDataItem *d=new QSurfaceDataItem();
@@ -620,43 +623,45 @@ QColor BackendContainer::interpolateColor(float in){
     return QColor(rNew,gNew,bNew);
 }
 
-void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType){
-    SingleGuardAlgorithm *sga=new SingleGuardAlgorithm();
-    sga->run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType)
+{
+    theSga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
     std::vector<QSurface3DSeries*> vSeries;
     for(int i=0;i<vmSeries.size();i++){
         QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
         vSeries.push_back(targetSeries);
     }
-    if(sga->pFrontier.size()>0){
-        drawFrontiers(series,vSeries,&(sga->pFrontier),&(sga->guards));
+    if(theSga.getFrontier()->size()>0){
+        drawFrontiers(series,vSeries,theSga.getFrontier(), theSga.getGuards());
     }
     //drawViewBatchSurface(series,vSeries,sga->guards,NULL);
 
 }
 
-void BackendContainer::drawSingleGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType){
-    std::vector<Guard> genGuards=SingleGuardAlgorithm::initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
-    drawViewBatchSurface(series,vSeries,genGuards,NULL);
+void BackendContainer::drawSingleGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType)
+{
+    theSga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+    drawViewBatchSurface(series,vSeries,theSga.getGuards(),NULL);
 }
 
-void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder){
-    MultiGuardAlgorithm *mga=new MultiGuardAlgorithm();
-    mga->run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString(),pairingOrder);
+void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder)
+{
+    theMga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString(),pairingOrder);
     std::vector<QSurface3DSeries*> vSeries;
     for(int i=0;i<vmSeries.size();i++){
         QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
         vSeries.push_back(targetSeries);
     }
-    if(mga->pFrontier.size()>0){
-        drawFrontiers(series,vSeries,&(mga->pFrontier),&(mga->guards));
+    if(theMga.getFrontier()->size()>0){
+        drawFrontiers(series,vSeries,theMga.getFrontier(),theMga.getGuards());
     }
 }
 
-void BackendContainer::drawMultiGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder){
-    std::vector<Guard> rawGuards = SingleGuardAlgorithm::initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
-    std::vector<Guard> guards = MultiGuardAlgorithm::mixGuardsToOrder(&rawGuards,pairingOrder);
-    drawViewBatchSurface(series,vSeries,guards,NULL);
+void BackendContainer::drawMultiGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder)
+{
+    theMga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+    theMga.MultiGuardAlgorithm::mixGuardsToOrder(pairingOrder);
+    drawViewBatchSurface(series,vSeries,theMga.getGuards(),NULL);
 }
 
 /*
