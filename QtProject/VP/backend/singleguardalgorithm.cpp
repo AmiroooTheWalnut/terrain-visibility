@@ -8,8 +8,6 @@ SingleGuardAlgorithm::SingleGuardAlgorithm()
 
 void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder)
 {
-    clear(); // Clear all memory before we start over
-
     initializeGuards(numGuards,height,radius,elev,initGuardType);
 
     //debugInitializeGuards(numGuards,height,elev);
@@ -30,11 +28,6 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
         {
             successToAddPremiter=false;
             std::vector<ConnectedComponent *> constructingFrontier;//Currently constructing frontier
-
-            for (Guard *g : guards)
-            {
-                g->resetUsedForFrontier();
-            }
 
             for (Guard *guard : guards)
             {
@@ -117,10 +110,7 @@ bool SingleGuardAlgorithm::constructF0(tiledMatrix<elev_t>* elev)
 
     for (Guard *g : guards)
     {
-        for (ConnectedComponent *c: g->components)
-        {
-            c->isComponentUsedForFrontier = false;
-        }
+        g->resetUsedForFrontier();
     }
 
     bool isEndFound=false;//Checks if the algorithm should finish with a single guard that sees north to south
@@ -205,6 +195,8 @@ void SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGuards, int heig
 
 void SingleGuardAlgorithm::initializeGuards(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType)
 {
+    clear(); // Clear all memory before we start over
+
     if(initGuardType=="Fib")
     {
         initializeGuardsFib(numGuards,height,radius,elev);
@@ -247,4 +239,15 @@ std::pair<float,float> SingleGuardAlgorithm::fibonacciLattice(uint32_t input, ui
     x -= int(x);
     float y = ((float)(input)) / ((float)(nunItems));
     return std::pair(x, y);
+}
+
+void  SingleGuardAlgorithm::clear(void)
+{
+    for (Guard *g: guards)
+    {
+        g->clear();
+    }
+
+    guards.clear();
+    guards.shrink_to_fit();
 }

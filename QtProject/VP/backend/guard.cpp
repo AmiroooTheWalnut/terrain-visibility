@@ -159,5 +159,8 @@ void Guard::clear(void)
 {
     for (ConnectedComponent *c: components)
         delete(c);
+
+    components.clear();
+    components.shrink_to_fit();
 }
 

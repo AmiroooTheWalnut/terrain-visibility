@@ -23,7 +23,7 @@ public:
 
     static inline float gR = (1.0f + std::sqrt(5.0f)) / 2.0f;
     std::pair<float,float> fibonacciLattice(uint32_t i, uint32_t n);
-    inline void clear(void) { for (Guard *g: guards) g->clear(); }
+    void clear(void);
 
 protected:
     std::vector<Guard *> guards;
