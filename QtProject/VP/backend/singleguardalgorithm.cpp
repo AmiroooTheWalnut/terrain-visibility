@@ -85,9 +85,11 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
             cout << "   Guard: " << cc->owner->index << endl;
         }
         cout << "Frontier Details:" << endl;
+
         for(int f=0;f<frontier.size();f++)
         {
             cout << "Frontier: " << f << endl;
+
             std::unordered_set<int> guardsIndexSet;
             for(int c=0;c<frontier.at(f).size();c++)
             {
@@ -195,7 +197,7 @@ void SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGuards, int heig
 
 void SingleGuardAlgorithm::initializeGuards(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType)
 {
-    clear(); // Clear all memory before we start over
+    clearAll(); // Clear all memory before we start over
 
     if(initGuardType=="Fib")
     {
@@ -241,8 +243,9 @@ std::pair<float,float> SingleGuardAlgorithm::fibonacciLattice(uint32_t input, ui
     return std::pair(x, y);
 }
 
-void  SingleGuardAlgorithm::clear(void)
+void  SingleGuardAlgorithm::clearAll(void)
 {
+    // Clear memory of Guard and ConnectedComponent
     for (Guard *g: guards)
     {
         g->clear();
@@ -250,4 +253,11 @@ void  SingleGuardAlgorithm::clear(void)
 
     guards.clear();
     guards.shrink_to_fit();
+
+    // Clear std::vector of frontier
+    for(int f=0;f<frontier.size();f++)
+    {
+        frontier.at(f).clear();
+    }
+    frontier.clear();
 }

@@ -25,8 +25,8 @@ class BackendContainer : public QObject
 public:
     explicit BackendContainer(QObject *parent = nullptr);
     const float viewerSize=5;
-    tiledMatrix<elev_t>* elevData;
-    tiledMatrix<unsigned char>* viewshedData;
+    tiledMatrix<elev_t>* elevData=NULL;
+    tiledMatrix<unsigned char>* viewshedData=NULL;
     Q_INVOKABLE void readElevData(const QString file_name);
     Q_INVOKABLE void readElevImgData(const QString file_name);
     void updateVisibility(QString obsX, QString obsY, QString obsH,QString range);

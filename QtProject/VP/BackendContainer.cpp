@@ -86,6 +86,10 @@ void BackendContainer::readElevImgData(const QString file_name)
                 //cout<<"i: "<<i<<" j: "<<j<<" "<<tempElev->get(i,j)<<endl;
             }
         }
+        if (elevData)
+        {
+            delete(elevData);
+        }
         elevData=tempElev;
         elevp=tempElev;
     } else{
@@ -173,6 +177,8 @@ QList<QString> BackendContainer::drawSurface(QSurface3DSeries *series)
     qList.append(strHmin);
     qList.append(strXmax);
     qList.append(strZmax);
+
+    delete(texture);
 
     return qList;
 }
@@ -307,6 +313,9 @@ QList<QString> BackendContainer::drawViewSurface(QSurface3DSeries *series, QSurf
     //vSeries->setTexture(*vTexture);
 
     QList<QString> qList;
+
+    delete(texture);
+
     return qList;
 }
 
@@ -444,6 +453,8 @@ void BackendContainer::drawViewBatchSurface(QSurface3DSeries *series, std::vecto
         vSeries.at(g)->dataProxy()->resetArray(*viewerData);
     }
     series->setTexture(*texture);
+
+    delete(texture);
 }
 
 void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, std::vector<std::vector<ConnectedComponent *>> *pFrontier, std::vector<Guard *> *guards)
@@ -580,6 +591,8 @@ void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurf
         vSeries.at(g)->dataProxy()->resetArray(*viewerData);
     }
     series->setTexture(*texture);
+
+    delete(texture);
 }
 
 void BackendContainer::removeSelection(QSurface3DSeries *series){
