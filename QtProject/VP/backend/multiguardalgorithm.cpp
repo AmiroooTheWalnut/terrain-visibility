@@ -3,8 +3,12 @@
 
 MultiGuardAlgorithm::MultiGuardAlgorithm() {}
 
-void MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder)
+bool MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder)
 {
+    bool retVal = true;
+
+    Print_Time((char*)"MultiGuardAlgorithm::run start");
+
     SingleGuardAlgorithm::initializeGuards(numGuards,height,radius,elev,initGuardType);
 
     mixGuardsToOrder(pairingOrder);
@@ -15,12 +19,19 @@ void MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix
     bool isEndAchieved=SingleGuardAlgorithm::constructF0(elev);
     if(frontier.size()==0)
     {
-        cout<<"No solution exists! There is no guard who can see north."<<endl;
-        return;
+        cout<<"No solution exists! Failed to construct F0"<<endl;
+        retVal = false;
     }
 
     // It is the same code and should be, so may as well just call it, so we only keep track of a single copy
-    SingleGuardAlgorithm::run(numGuards, height, radius, elev, initGuardType);
+    if (retVal)
+    {
+        retVal = SingleGuardAlgorithm::run(numGuards, height, radius, elev, initGuardType);
+    }
+
+    Print_Time((char*)"MultiGuardAlgorithm::run end");
+
+    return retVal;
 }
 
 void MultiGuardAlgorithm::mixGuardsToOrder(int pairingOrder)

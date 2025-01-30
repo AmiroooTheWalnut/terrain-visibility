@@ -46,6 +46,10 @@ void BackendContainer::readElevData(const QString file_name)
     trueNCols=ncols;
     //nrows=std::max(nrows,ncols);
     //ncols=std::max(nrows,ncols);
+    if (elevData)
+    {
+        delete(elevData);
+    }
     elevData = elevp;
 }
 
@@ -503,7 +507,7 @@ void BackendContainer::drawFrontiers(QSurface3DSeries *series, std::vector<QSurf
         }
     }
 
-    for(int g=0;g<vSeries.size();g++){
+    for(int g=0;g<vSeries.size() && g<guards->size();g++){
         QColor yColor;
         if (usedGuardsIds.find(guards->at(g)->index) != usedGuardsIds.end()) {
             yColor.setRed(255);
@@ -638,14 +642,16 @@ QColor BackendContainer::interpolateColor(float in){
 
 void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType)
 {
-    theSga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
-    std::vector<QSurface3DSeries*> vSeries;
-    for(int i=0;i<vmSeries.size();i++){
-        QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
-        vSeries.push_back(targetSeries);
-    }
-    if(theSga.getFrontier()->size()>0){
-        drawFrontiers(series,vSeries,theSga.getFrontier(), theSga.getGuards());
+    if (theSga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString()))
+    {
+        std::vector<QSurface3DSeries*> vSeries;
+        for(int i=0;i<vmSeries.size();i++){
+            QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
+            vSeries.push_back(targetSeries);
+        }
+        if(theSga.getFrontier()->size()>0){
+            drawFrontiers(series,vSeries,theSga.getFrontier(), theSga.getGuards());
+        }
     }
     //drawViewBatchSurface(series,vSeries,sga->guards,NULL);
 
@@ -659,14 +665,16 @@ void BackendContainer::drawSingleGuards(QSurface3DSeries *series, std::vector<QS
 
 void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder)
 {
-    theMga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString(),pairingOrder);
-    std::vector<QSurface3DSeries*> vSeries;
-    for(int i=0;i<vmSeries.size();i++){
-        QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
-        vSeries.push_back(targetSeries);
-    }
-    if(theMga.getFrontier()->size()>0){
-        drawFrontiers(series,vSeries,theMga.getFrontier(),theMga.getGuards());
+    if (theMga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString(),pairingOrder))
+    {
+        std::vector<QSurface3DSeries*> vSeries;
+        for(int i=0;i<vmSeries.size();i++){
+            QSurface3DSeries *targetSeries = qvariant_cast<QSurface3DSeries*>(vmSeries.at(i));
+            vSeries.push_back(targetSeries);
+        }
+        if(theMga.getFrontier()->size()>0){
+            drawFrontiers(series,vSeries,theMga.getFrontier(),theMga.getGuards());
+        }
     }
 }
 

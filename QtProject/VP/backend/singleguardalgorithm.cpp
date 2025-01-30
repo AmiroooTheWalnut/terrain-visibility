@@ -6,25 +6,29 @@ SingleGuardAlgorithm::SingleGuardAlgorithm()
 {
 }
 
-void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder)
+bool SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder)
 {
+    bool retVal = true;
+
+    Print_Time((char*)"SingleGuardAlgorithm::run start");
+
     initializeGuards(numGuards,height,radius,elev,initGuardType);
 
     //debugInitializeGuards(numGuards,height,elev);
     bool isEndAchieved=constructF0(elev);
     if(frontier.size()==0)
     {
-        cout<<"No solution exists! There is no guard who can see north."<<endl;
-        return;
+        cout<<"No solution exists! Failed to construct F0."<<endl;
+        retVal = false;
     }
-    std::vector<ConnectedComponent*> returningPath;
-    if(isEndAchieved==false)
+    if(isEndAchieved==false && retVal)
     {
+        std::vector<ConnectedComponent*> returningPath;
         bool successToAddPremiter=true;
         int prevFrontierIndex=0;
         std::vector<ConnectedComponent *> prevFrontier = frontier.at(0);
 
-        while(successToAddPremiter==true && isEndAchieved==false)
+        while(successToAddPremiter==true && isEndAchieved==false && retVal)
         {
             successToAddPremiter=false;
             std::vector<ConnectedComponent *> constructingFrontier;//Currently constructing frontier
@@ -71,9 +75,9 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
         if(returningPath.size()==0)
         {
             cout<<"No solution exists! There is no path from north to south."<<endl;
-            return;
+            retVal = false;
         }
-        while(!(returningPath.back()->intersectingCC.empty()))
+        while(retVal && !(returningPath.back()->intersectingCC.empty()))
         {
             returningPath.push_back(returningPath.back()->intersectingCC.at(0));
         }
@@ -104,6 +108,9 @@ void SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
         cout<<"End of single Guard frontier algorithm"<<endl;
 
     }
+    Print_Time((char*)"SingleGuardAlgorithm::run end");
+
+    return retVal;
 }
 
 bool SingleGuardAlgorithm::constructF0(tiledMatrix<elev_t>* elev)

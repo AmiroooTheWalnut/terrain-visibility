@@ -10,7 +10,7 @@ class SingleGuardAlgorithm
 {
 public:
     SingleGuardAlgorithm();
-    virtual void run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder=0);
+    virtual bool run(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType, int pairingOrder=0);
     virtual inline std::vector<Guard *> *getGuards(void) { return &guards; }
     virtual inline std::vector<std::vector<ConnectedComponent *>> *getFrontier(void) { return &frontier; }
 
