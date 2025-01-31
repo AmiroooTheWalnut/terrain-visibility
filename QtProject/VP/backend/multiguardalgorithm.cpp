@@ -9,11 +9,10 @@ bool MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix
 
     Print_Time((char*)"MultiGuardAlgorithm::run start");
 
-    SingleGuardAlgorithm::initializeGuards(numGuards,height,radius,elev,initGuardType);
-
     mixGuardsToOrder(pairingOrder);
 
-    // Pairing Order shouldn't matter!!! Remove it?
+    // Update numGuards after guards are paired
+    numGuards = guards.size();
 
     //debugInitializeGuards(numGuards,height,elev);
     bool isEndAchieved=SingleGuardAlgorithm::constructF0(elev);
@@ -37,81 +36,67 @@ bool MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix
 void MultiGuardAlgorithm::mixGuardsToOrder(int pairingOrder)
 {
     std::vector<Guard *> localGuards;
-    std::vector<Guard *> *input = &guards;
-    int n=input->size();
 
-    // int guardIndices[n];
-    // for(int i=0;i<n;i++){
-    //     guardIndices[i]=i;
-    // }
-
-    std::vector<bool> v(n);
-    std::fill(v.end() - pairingOrder, v.end(), true);
     int newIndexCounter=0;
-    do {
-        Guard *g=new Guard();
-        g->index=newIndexCounter;
-        for (int i = 0; i < n; ++i)
-        {
-            if (v[i])
-            {
-                Guard *gg = input->at(i);
-                g->x = gg->x;
-                g->z = gg->z;
-                g->h = gg->h;
-                g->r = gg->r;
-                for (std::vector<ConnectedComponent *>::iterator it = gg->components.begin(); it != gg->components.end(); ++it)
-                {
-                    ConnectedComponent *current = *it;
-                    bool intersecWithPrevious=false;
+    int paired = 0;
 
-                    for (std::vector<ConnectedComponent *>::iterator it2 = g->components.begin(); it2 != g->components.end(); ++it2)
+    do
+    {
+        Guard *ng=new Guard();
+        ng->index=newIndexCounter;
+
+        for(std::vector<Guard *>::iterator iter = guards.begin(); iter != guards.end(); iter++)
+        {   // Should randomize the order of the guards!
+            Guard *gg = *iter;
+
+            ng->x = gg->x;
+            ng->z = gg->z;
+            ng->h = gg->h;
+            ng->r = gg->r;
+
+            // Merge all the components from the ith guard into the current guard
+            // Combine the components if there is intersection
+            for (std::vector<ConnectedComponent *>::iterator it = gg->components.begin(); it != gg->components.end(); ++it)
+            {
+                ConnectedComponent *current = *it;
+                bool intersecWithPrevious=false;
+
+                for (std::vector<ConnectedComponent *>::iterator it2 = ng->components.begin(); it2 != ng->components.end(); ++it2)
+                {
+                    ConnectedComponent *prev = *it2;
+                    if(ConnectedComponent::checkComponentsIntersection(prev, current)==true)
                     {
-                        ConnectedComponent *prev = *it2;
-                        if(ConnectedComponent::checkComponentsIntersection(prev, current)==true)
-                        {
-                            ConnectedComponent *merged=ConnectedComponent::connectTwoComponents(prev, current);
-                            g->components.erase(it2);
-                            merged->owner=g;
-                            g->components.insert(it2, merged);
-                            intersecWithPrevious=true;
-                        }
-                    }
-                    if(intersecWithPrevious==false)
-                    {
-                        current->owner=g;
-                        g->components.push_back(current);
+                        ConnectedComponent *merged=ConnectedComponent::connectTwoComponents(prev, current);
+                        ng->components.erase(it2);
+                        merged->owner=ng;
+                        ng->components.insert(it2, merged);
+                        intersecWithPrevious=true;
                     }
                 }
-                cout << (i + 1) << " ";
+                if(intersecWithPrevious==false)
+                {
+                    current->owner=ng;
+                    ng->components.push_back(current);
+                }
+            }
+            // Remove the guard from the list since it has been merged into ng
+            guards.erase(iter);
+            cout << "Guard size = " << guards.size() << endl;
+            paired++;
+            if (paired == pairingOrder)
+            {
+                paired = 0;
+                break;
+            }
+            if (guards.size() == 0)
+            {
+                break;
             }
         }
-        localGuards.push_back(g);
+        localGuards.push_back(ng);
         newIndexCounter=newIndexCounter+1;
-        cout << endl;
-    } while (std::next_permutation(v.begin(), v.end()));
+        // Need to not merge guards that have already been merged
+    } while (guards.size() > 0);
 
-
-    // sort(guardIndices, guardIndices + n);
-    // int newIndexCounter=0;
-    // do {
-    //     Guard *g=new Guard();
-    //     g->x=input[guardIndices[0]].x;
-    //     g->z=input[guardIndices[0]].z;
-    //     g->h=input[guardIndices[0]].h;
-    //     g->r=input[guardIndices[0]].r;
-    //     g->index=newIndexCounter;
-    //     for(int i = 0; i < n; i++){
-    //         for(int c = 0; c < input[guardIndices[0]].components.size(); c++){
-    //             g->components.push_back(input[guardIndices[0]].components[c]);
-    //         }
-    //         cout << guardIndices[i] << " ";
-    //     }
-    //     localGuards.push_back(*g);
-    //     newIndexCounter=newIndexCounter+1;
-    //     cout << endl;
-    // } while (next_permutation(guardIndices, guardIndices + n));
-
-    // Replace the guard vector with this new vector
     guards = localGuards;
 }

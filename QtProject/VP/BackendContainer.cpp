@@ -642,6 +642,7 @@ QColor BackendContainer::interpolateColor(float in){
 
 void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType)
 {
+    theSga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
     if (theSga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString()))
     {
         std::vector<QSurface3DSeries*> vSeries;
@@ -665,6 +666,7 @@ void BackendContainer::drawSingleGuards(QSurface3DSeries *series, std::vector<QS
 
 void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder)
 {
+    theMga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
     if (theMga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString(),pairingOrder))
     {
         std::vector<QSurface3DSeries*> vSeries;
@@ -681,7 +683,7 @@ void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const 
 void BackendContainer::drawMultiGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder)
 {
     theMga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
-    theMga.MultiGuardAlgorithm::mixGuardsToOrder(pairingOrder);
+    theMga.mixGuardsToOrder(pairingOrder);
     drawViewBatchSurface(series,vSeries,theMga.getGuards(),NULL);
 }
 

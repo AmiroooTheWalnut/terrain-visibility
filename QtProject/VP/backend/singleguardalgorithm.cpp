@@ -12,8 +12,6 @@ bool SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
 
     Print_Time((char*)"SingleGuardAlgorithm::run start");
 
-    initializeGuards(numGuards,height,radius,elev,initGuardType);
-
     //debugInitializeGuards(numGuards,height,elev);
     bool isEndAchieved=constructF0(elev);
     if(frontier.size()==0)
