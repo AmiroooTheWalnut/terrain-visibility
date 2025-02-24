@@ -35,9 +35,9 @@ Directed Edges:
 '''
 
 def run(f, verbose):    
-    MAX_GUARD = 300
-    MAX_CC_PER_GUARD = 300
-    MAX_CC = 1000
+    MAX_GUARD = 500
+    MAX_CC_PER_GUARD = 500
+    MAX_CC = 2000
 
     nGuard = 0  # Number of guards
     gcArray = [[0] * MAX_CC_PER_GUARD for _ in range(MAX_GUARD)]  # Array to map each guard to its CCs
@@ -80,6 +80,10 @@ def run(f, verbose):
         else:
             raise Exception("Uncognized type!")
 
+    if len(crossNorth) == 0 or len(crossSouth) == 0:
+        print("There is no north-crossing or no south-crossing connected components!")
+        return;
+
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
 
@@ -88,8 +92,10 @@ def run(f, verbose):
 
     # Define the flow variables: continuous variables representing Path each edge
     # Fij > 0 if flow is from i to j
-    flowfromN = [LpVariable(f'FN_{crossNorth[j]}', lowBound=-1, upBound=1, cat="Continuous") for j in range(len(crossNorth))]
-    flowtoS = [LpVariable(f'F{crossSouth[j]}_S', lowBound=-1, upBound=1, cat="Continuous") for j in range(len(crossSouth))]
+    # FNj should never be negative (flow is always from N to j)
+    # FiS should never be negative (flow is always from i to S)
+    flowfromN = [LpVariable(f'FN_{crossNorth[j]}', lowBound=0, upBound=1, cat="Continuous") for j in range(len(crossNorth))]
+    flowtoS = [LpVariable(f'F{crossSouth[j]}_S', lowBound=0, upBound=1, cat="Continuous") for j in range(len(crossSouth))]
     # Only needs to use those with i < j to avoid duplication
     flowArray = []
     for i in range(ccCount):
@@ -159,19 +165,18 @@ def run(f, verbose):
     # Guard must be selected for the flow to be selected
     # If Fij is selected, then parent guards of Ci/Cj must be selected
     # Convention is that i < j.  The flow for i > j is duplicated.
+    # FNi and FiS are never negative.
     for i in range(ccCount):
         k = ccParent[i]
         for var in flowfromN:
             if var.name == f'FN_{i}':
                 prob += var <= guardArray[k], f'Constraint_N_{i}'
-                prob += var >= -guardArray[k], f'Constraint_N_{i}_'
                 if verbose:
                     print(f'{var} <= guardArray{k}')
                     print(f'{var} >= -guardArray{k}')
         for var in flowtoS:
             if var.name == f'F{i}_S':
                 prob += var <= guardArray[k], f'Constraint_{i}_S'
-                prob += var >= -guardArray[k], f'Constraint_{i}_S_'
                 if verbose:
                     print(f'{var} <= guardArray{k}')
                     print(f'{var} >= -guardArray{k}')
