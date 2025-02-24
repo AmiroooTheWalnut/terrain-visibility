@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <unordered_set>
 #include "singleguardalgorithm.h"
 
@@ -102,7 +103,6 @@ bool SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
             for (itr = guardsIndexSet.begin(); itr != guardsIndexSet.end();itr++)
                 cout << (*itr) << endl;
         }
-
         cout<<"End of single Guard frontier algorithm"<<endl;
 
     }
@@ -202,7 +202,9 @@ void SingleGuardAlgorithm::initializeGuardsSquareUniform(int numGuards, int heig
 
 void SingleGuardAlgorithm::initializeGuards(int numGuards, int height, int radius, tiledMatrix<elev_t>* elev, std::string initGuardType)
 {
-    clearAll(); // Clear all memory before we start over
+    Print_Time((char*)"SingleGuardAlgorithm::initializeGuards start");
+
+    reset(); // Clear all memory before we start over
 
     if(initGuardType=="Fib")
     {
@@ -248,12 +250,75 @@ std::pair<float,float> SingleGuardAlgorithm::fibonacciLattice(uint32_t input, ui
     return std::pair(x, y);
 }
 
-void  SingleGuardAlgorithm::clearAll(void)
+void SingleGuardAlgorithm::exportForILP(std::string filename)
+{
+    Print_Time((char*)"exportForILP start");
+    std::ofstream outputFile(filename);
+
+    if (!outputFile) {
+        std::cerr << "Error opening file for writing!" << std::endl;
+        return;
+    }
+
+    // Fill out Connected Component index
+    int cIndex = 0;
+    for (Guard *g: guards)
+    {
+        for (ConnectedComponent *cc: g->components)
+        {
+            cc->cIndex = cIndex++;
+        }
+    }
+    // Now output the Guards, their Connected Components, and Intersecting Connected Components.
+    for (Guard *g: guards)
+    {
+        outputFile << "Guard " << g->index << std::endl;
+        for (ConnectedComponent *cc: g->components)
+        {
+            outputFile << "ConnectedComponent " << cc->cIndex << std::endl;
+
+            // Revisit intersecting
+            // Cannot use intersectingCC which is impacted by F0
+            for (Guard *gg: guards)
+            {
+                for (ConnectedComponent *dd: gg->components)
+                {
+                    if (dd != cc && ConnectedComponent::checkComponentsIntersection(cc, dd))
+                    {
+                        outputFile << "Intersecting " << dd->cIndex << std::endl;
+                    }
+                }
+            }
+        }
+    }
+    // Output the Connected Components that overlaps North and South
+    for (Guard *g : guards)
+    {
+        for (ConnectedComponent *cc: g->components)
+        {
+            if(cc->minX==0)
+            {
+                outputFile << "CrossNorth " << cc->cIndex << std::endl;
+            }
+            if(cc->maxX==trueNRows-1)
+            {
+                outputFile << "CrossSouth " << cc->cIndex << std::endl;
+            }
+        }
+    }
+
+    // Close the file
+    outputFile.close();
+
+    cout << "Finished outputting file for ILP" << std::endl;
+}
+
+void  SingleGuardAlgorithm::reset(void)
 {
     // Clear memory of Guard and ConnectedComponent
     for (Guard *g: guards)
     {
-        g->clear();
+        g->reset();
     }
 
     guards.clear();
@@ -265,4 +330,6 @@ void  SingleGuardAlgorithm::clearAll(void)
         frontier.at(f).clear();
     }
     frontier.clear();
+
+    guardsPaired = false;
 }

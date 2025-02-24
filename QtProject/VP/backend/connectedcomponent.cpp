@@ -2,36 +2,37 @@
 
 ConnectedComponent::ConnectedComponent() {}
 
+// Merge two components to one.
+// Assume the caller has already checked that the two components intersects.
 ConnectedComponent *ConnectedComponent::connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b)
 {
     std::vector<std::vector<bool>> bitmap(nrows,std::vector<bool>(ncols));
-    for(int i=0;i<a->colRangeInRow.size();i++)
-    {
-        ConnectedRow row=a->colRangeInRow.at(i);
-        for(int j=0;j<row.xStart.size();j++)
-        {
-            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++)
-            {
-                bitmap[row.compRow][c]=1;
-            }
-        }
-    }
-    for(int i=0;i<b->colRangeInRow.size();i++)
-    {
-        ConnectedRow row=b->colRangeInRow.at(i);
-        for(int j=0;j<row.xStart.size();j++)
-        {
-            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++)
-            {
-                bitmap[row.compRow][c]=1;
-            }
-        }
-    }
-    ConnectedComponent *cc=setConnectedComponent(bitmap);
+
+    unwrapComponent(a, &bitmap);
+    unwrapComponent(b, &bitmap);
+    ConnectedComponent *cc=setConnectedComponent(&bitmap);
     return cc;
 }
 
-ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::vector<bool>> bitmap)
+// Unwrap component into a bitmap
+void ConnectedComponent::unwrapComponent(ConnectedComponent *cc, std::vector<std::vector<bool>> *bitmap)
+{
+    for(int i=0;i<cc->colRangeInRow.size();i++)
+    {
+        ConnectedRow row=cc->colRangeInRow.at(i);
+        for(int j=0;j<row.xStart.size();j++)
+        {
+            for(int c=row.xStart.at(j);c<row.xEnd.at(j);c++)
+            {
+                (*bitmap)[row.compRow][c]=1;
+            }
+        }
+    }
+}
+
+// Convert a bitmap into a Connected Component with one or more ConnectedRows.
+// Pass pointer to bitmap instead of bitmap to save stack and avoid copying
+ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::vector<bool>> *bitmap)
 {
     ConnectedComponent *component=new ConnectedComponent();
     int maxX=-100000;
@@ -47,17 +48,17 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
         conR.compRow = i;
         for (int j=0;j<ncols;j++)
         {
-            if (bitmap.at(i).at(j)==1 && j<ncols-1)
+            if (bitmap->at(i).at(j)==1 && j<ncols-1)
             {
                 if (!lastSet) startPos = j;
                 lastSet = true;
             }
-            else if((j==ncols-1 && bitmap.at(i).at(j)==1)||bitmap.at(i).at(j)!=1)// If visited columns in the row never ends or if it ends
+            else if((j==ncols-1 && bitmap->at(i).at(j)==1)||bitmap->at(i).at(j)!=1)// If visited columns in the row never ends or if it ends
             {
                 if (startPos != -1)
                 {
                     conR.xStart.push_back(startPos);
-                    if(j==ncols-1 && bitmap.at(i).at(j)==1)
+                    if(j==ncols-1 && bitmap->at(i).at(j)==1)
                     {
                         endPos = j;
                     }else
@@ -85,7 +86,7 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
 
                     for (int k=startPos; k<= endPos; k++)
                     {
-                        bitmap[i][k]=0; /* Clear pixel after setting the ConnectedRow */
+                        (*bitmap)[i][k]=0; /* Clear pixel after setting the ConnectedRow */
                     }
                     startPos = -1;
                     endPos = -1;
@@ -107,6 +108,7 @@ ConnectedComponent* ConnectedComponent::setConnectedComponent(std::vector<std::v
     return component;
 }
 
+// Check that two components intersect
 bool ConnectedComponent::checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b)
 {
     // int minHigh=std::min(a.colRangeInRow.back().compRow,b.colRangeInRow.back().compRow);

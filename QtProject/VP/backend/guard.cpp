@@ -9,21 +9,26 @@ bool debugFlag=false;
 Guard::Guard() {
 }
 
-void Guard::findConnected(void) {
-    /* Construct the connected components per guard based on the viewshed information */
-    std::string strX = std::to_string(x);
-    std::string strH = std::to_string(h);
-    std::string strZ = std::to_string(z);
-    std::string strR = std::to_string(r);
-    std::string width_str = std::to_string(trueNRows);
-    const char* width_p = width_str.c_str();
-    std::string height_str = std::to_string(trueNCols);
-    const char* height_p = height_str.c_str();
-    const char *options[9]={"",height_p,width_p,strX.c_str(),strZ.c_str(),strH.c_str(),strR.c_str(),in_file.c_str(),"100"};
+void Guard::findConnected(bool findVisibility)
+{
+    // If findVisibility = false, viewshedp is set elsewhere
+    if (findVisibility)
+    {
+        /* Construct the connected components per guard based on the viewshed information */
+        std::string strX = std::to_string(x);
+        std::string strH = std::to_string(h);
+        std::string strZ = std::to_string(z);
+        std::string strR = std::to_string(r);
+        std::string width_str = std::to_string(trueNRows);
+        const char* width_p = width_str.c_str();
+        std::string height_str = std::to_string(trueNCols);
+        const char* height_p = height_str.c_str();
+        const char *options[9]={"",height_p,width_p,strX.c_str(),strZ.c_str(),strH.c_str(),strR.c_str(),in_file.c_str(),"100"};
 
-    read_delta_time();           // Initialize the timer.
-    Get_Options(8, options);
-    Calc_Vis();
+        read_delta_time();           // Initialize the timer.
+        Get_Options(8, options);
+        Calc_Vis();
+    }
 
     bool done = false;
     while (!done)
@@ -155,8 +160,17 @@ void Guard::resetUsedForFrontier(void)
     for (ConnectedComponent *c: components)
         c->resetUsedForFrontier();
 }
-void Guard::clear(void)
+
+void Guard::resetCombined(void)
 {
+    for (ConnectedComponent *c: components)
+        c->resetCombined();
+}
+
+void Guard::reset(void)
+{
+    resetUsedForFrontier();
+    resetCombined();
     for (ConnectedComponent *c: components)
         delete(c);
 
@@ -164,3 +178,40 @@ void Guard::clear(void)
     components.shrink_to_fit();
 }
 
+/* Union two guards to form a new guard */
+/* Merging components a pair at a time will take too long.  Easiest is to unwrap the
+ * components into a bitmap and than redefine the Connected Components */
+/* New guard does not know its index. It's up to the caller to correctly assign it */
+Guard *Guard::unionTwoGuards(Guard *g1, Guard *g2)
+{
+    // Unwrap all the components of the 2 guards into the same bitmap
+    std::vector<std::vector<bool>> bitmap(nrows,std::vector<bool>(ncols));
+    for (ConnectedComponent *cc: g1->components)
+    {
+        ConnectedComponent::unwrapComponent(cc, &bitmap);
+    }
+    for (ConnectedComponent *cc: g2->components)
+    {
+        ConnectedComponent::unwrapComponent(cc, &bitmap);
+    }
+
+    // Manually set viewshedp
+    for(uint16_t i=0;i<nrows;i++)
+    {
+        for (uint16_t j=0;j<ncols;j++)
+        {
+            viewshedp->set(i, j, bitmap.at(i).at(j));
+        }
+    }
+
+    Guard *ng = new(Guard);
+    // Place the new guard in between the two guards with same radius
+    ng->h = (g1->h + g2->h) / 2;
+    ng->x = (g1->x + g2->x) / 2;
+    ng->z = (g1->z + g2->z) / 2;
+    ng->r = g1->r;
+
+    ng->findConnected(false);
+
+    return(ng);
+}

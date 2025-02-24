@@ -21,7 +21,8 @@ public:
     Guard *owner;
     ConnectedComponent();
     static ConnectedComponent* connectTwoComponents(ConnectedComponent *a, ConnectedComponent *b);
-    static ConnectedComponent* setConnectedComponent(std::vector<std::vector<bool>> bitmap);
+    static void unwrapComponent(ConnectedComponent *cc, std::vector<std::vector<bool>> *bitmap);
+    static ConnectedComponent* setConnectedComponent(std::vector<std::vector<bool>> *bitmap);
     static bool checkComponentsIntersection(ConnectedComponent *a, ConnectedComponent *b);
     static int binarySearchIndex(ConnectedComponent *in, int rowIndex);
     std::vector<ConnectedRow> colRangeInRow;
@@ -29,9 +30,12 @@ public:
     int minX;
     int maxZ;
     int minZ;
+    int cIndex; // Only used in a local function
     bool isComponentUsedForFrontier=false;
-    std::vector<ConnectedComponent*> intersectingCC;
+    bool combined=false; // Only used during merging
+    std::vector<ConnectedComponent*> intersectingCC; // Only used in a local function
     inline void resetUsedForFrontier(void) { isComponentUsedForFrontier = false; }
+    inline void resetCombined(void) { combined = false; }
 };
 
 #endif // CONNECTEDCOMPONENT_H
