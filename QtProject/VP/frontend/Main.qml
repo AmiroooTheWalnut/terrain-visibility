@@ -568,7 +568,7 @@ Window {
                                 }
 
                                 let numGuardsTemp=parseInt(sgaNGTextField.text);
-                                var numGuards=(numGuardsTemp*(numGuardsTemp-1))/2;
+                                var numGuards=(numGuardsTemp*(numGuardsTemp+1))/2; // Enough to hold the extra paired guards
                                 var seriesTrunk="";
                                 for(let i=0;i<numGuards;i++){
                                     seriesTrunk=seriesTrunk+seriesTemplate1+i+seriesTemplate2;
