@@ -643,6 +643,7 @@ QColor BackendContainer::interpolateColor(float in){
 void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType)
 {
     theSga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+
     if (theSga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString()))
     {
         std::vector<QSurface3DSeries*> vSeries;
@@ -653,6 +654,10 @@ void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const
         if(theSga.getFrontier()->size()>0){
             drawFrontiers(series,vSeries,theSga.getFrontier(), theSga.getGuards());
         }
+        else
+        {
+            cout << "No solution!" << endl;
+        }
     }
     //drawViewBatchSurface(series,vSeries,sga->guards,NULL);
 
@@ -661,12 +666,18 @@ void BackendContainer::runSingleGuardAlgFrontend(QSurface3DSeries *series, const
 void BackendContainer::drawSingleGuards(QSurface3DSeries *series, std::vector<QSurface3DSeries*> vSeries, int numGuards, int heightOffset, int radius, QString initGuardType)
 {
     theSga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+    // Need a new button
+    theSga.exportForILP();
     drawViewBatchSurface(series,vSeries,theSga.getGuards(),NULL);
 }
 
 void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const QVariantList &vmSeries, int numGuards, int heightOffset, int radius, QString initGuardType, int pairingOrder)
 {
     theMga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
+    theMga.mixGuardsToOrder(pairingOrder);
+    std::vector<Guard *> *guards = theMga.getGuards();
+    numGuards = guards->size(); // Size changes after running mixGuardsToOrder()
+
     if (theMga.run(numGuards,heightOffset,radius,elevData,initGuardType.toStdString(),pairingOrder))
     {
         std::vector<QSurface3DSeries*> vSeries;
@@ -677,6 +688,10 @@ void BackendContainer::runMultiGuardAlgFrontend(QSurface3DSeries *series, const 
         if(theMga.getFrontier()->size()>0){
             drawFrontiers(series,vSeries,theMga.getFrontier(),theMga.getGuards());
         }
+        else
+        {
+            cout << "No solution!" << endl;
+        }
     }
 }
 
@@ -684,6 +699,7 @@ void BackendContainer::drawMultiGuards(QSurface3DSeries *series, std::vector<QSu
 {
     theMga.initializeGuards(numGuards,heightOffset,radius,elevData,initGuardType.toStdString());
     theMga.mixGuardsToOrder(pairingOrder);
+    theMga.exportForILP();
     drawViewBatchSurface(series,vSeries,theMga.getGuards(),NULL);
 }
 
