@@ -12,14 +12,6 @@ bool MultiGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatrix
     // Update numGuards after guards are paired
     numGuards = guards.size();
 
-    //debugInitializeGuards(numGuards,height,elev);
-    bool isEndAchieved=SingleGuardAlgorithm::constructF0(elev);
-    if(frontier.size()==0)
-    {
-        cout<<"No solution exists! Failed to construct F0"<<endl;
-        retVal = false;
-    }
-
     // It is the same code and should be, so may as well just call it, so we only keep track of a single copy
     if (retVal)
     {
