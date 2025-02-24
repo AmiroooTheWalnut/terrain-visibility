@@ -20,6 +20,10 @@ bool SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
         cout<<"No solution exists! Failed to construct F0."<<endl;
         retVal = false;
     }
+    if (isEndAchieved)
+    {
+        cout<<"F0 reached the South!"<<endl;
+    }
     if(isEndAchieved==false && retVal)
     {
         std::vector<ConnectedComponent*> returningPath;
