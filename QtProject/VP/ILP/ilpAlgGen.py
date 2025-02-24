@@ -1,4 +1,5 @@
 import argparse
+import collections
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 
 '''
@@ -35,15 +36,11 @@ Directed Edges:
 '''
 
 def run(f, verbose):    
-    MAX_GUARD = 500
-    MAX_CC_PER_GUARD = 500
-    MAX_CC = 2000
-
     nGuard = 0  # Number of guards
-    gcArray = [[0] * MAX_CC_PER_GUARD for _ in range(MAX_GUARD)]  # Array to map each guard to its CCs
-    ccParent = [0] * MAX_CC # Reverse lookup from CC to Guard number
-    nCompPG = [0] * MAX_GUARD  # Number of CC per guard
-    edgeArray = [[0] * MAX_CC for _ in range(MAX_CC)] # indexed by cc, 1 = intersect, 0 = no intersect
+    gcArray = []  # Guard * Connected Components
+    ccParent = [] # Reverse lookup from CC to Guard number
+    nCompPG = []  # Number of CC per guard
+    edgeArray = collections.defaultdict(lambda: collections.defaultdict(int)) # indexed by cc * cc, 1 = intersect, 0 = no intersect
     crossNorth = [] # Array of cc that crosses North
     crossSouth = [] # Array of cc that crosses South
     ccCount = 0 # Total connected components
@@ -57,19 +54,17 @@ def run(f, verbose):
         if typeStr == "Guard":
             #print("Got guard = " + str(num))
             guard = num
-            assert num >= 0 and num < MAX_GUARD, "Invalid guard number"
+            nCompPG.append(0) # Got a new guard
+            gcArray.append([]) # Got a new guard
             nGuard += 1
         elif typeStr == "ConnectedComponent":
             #print("Got cc = " + str(num))
-            assert num >= 0 and num < MAX_CC, "Invalid intersecting Component index"
-            assert (nCompPG[guard] >= 0 and nCompPG[guard] < MAX_CC_PER_GUARD), "Invalid connected component number"
-            gcArray[guard][nCompPG[guard]] = num # Connected Component index
+            gcArray[guard].append(num) # Connected Component index
             nCompPG[guard] += 1
-            ccParent[ccCount] = guard
+            ccParent.append(guard)
             ccCount += 1
         elif typeStr == "Intersecting":
             #print("Got intersection = " + str(num))
-            assert num >= 0 and num < MAX_CC, "Invalid intersecting Component index"
             edgeArray[ccCount-1][num] = 1
         elif typeStr == "CrossNorth":
             #print("Got north = " + str(num))
@@ -113,6 +108,8 @@ def run(f, verbose):
                 print(f"{i} = {gcArray[i][j]}") 
         print("nCompPG:")
         print(nCompPG[:nGuard])
+        print("ccParent:")
+        print(ccParent)
         print("edgeArray:")
         for i in range(ccCount):
             for j in range(MAX_CC):
