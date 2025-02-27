@@ -3,17 +3,21 @@ import collections
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 
 '''
+-------------------------------------------------------------------------------------
+Control Experiment of ilpAlgGen
+-- This algorithm optimizes the number of Connected Components
+-------------------------------------------------------------------------------------
 g0, ..., gn-1 are integers, 0 = not selected, 1 = selected
 Nodes: (CN = Component North, CS = Component South)
 
 For each gi, a list of connected components with unique indices belong to it.
 Each connected component has a list of intersecting components.
-(See format in file ilpExport*.txt)
+(See format in file ilpExport?.txt)
 
 Fij are floats, 0 = not selected, Non-zero = selected
 i, j are 0 to m-1
 
-Minimize Sum(gi)
+Minimize Sum(cci)
 
 -gk <= fij <= gk, for all k, i, j where gk is the parent of ci
 
@@ -82,8 +86,8 @@ def run(f, verbose):
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
 
-    # Define the guard variables: 1 if guard is used, 0 otherwise
-    lpGuardArray = [LpVariable(f'g{i}', cat=LpBinary) for i in range(nGuard)]
+    # Define the connected component variables: 1 if cc is used, 0 otherwise
+    lpCCArray = [LpVariable(f'cc{i}', cat=LpBinary) for i in range(sum(nCompPG))]
 
     # Define the flow variables: continuous variables representing Path each edge
     # Fij > 0 if flow is from i to j
@@ -93,10 +97,10 @@ def run(f, verbose):
     lpFlowtoS = [LpVariable(f'F{crossSouth[j]}_S', lowBound=0, upBound=1, cat="Continuous") for j in range(len(crossSouth))]
     # Only needs to use those with i < j to avoid duplication
     lpFlowArray = []
-    for i in range(ccCount):
-        for j in range(i+1, ccCount):
-            if edgeArray[i][j]:
-                lpFlowArray.append(LpVariable(f'F{i}_{j}', lowBound=-1, upBound=1, cat="Continuous"))
+    for key1, sub_dict in edgeArray.items():
+        for key2, value in sub_dict.items():
+            if key2 > key1 and edgeArray[key1][key2]:
+                lpFlowArray.append(LpVariable(f'F{key1}_{key2}', lowBound=-1, upBound=1, cat="Continuous"))
 
     # Debug print
     if verbose:
@@ -111,17 +115,17 @@ def run(f, verbose):
         print("ccParent:")
         print(ccParent)
         print("edgeArray:")
-        for i in range(ccCount):
-            for j in range(MAX_CC):
-                if edgeArray[i][j]:
-                    print(f"Connected: {i}, {j}")
+        for key1, sub_dict in edgeArray.items():
+            for key2, value in sub_dict.items():
+                if edgeArray[key1][key2]:
+                    print(f"Connected: {key1}, {key2}")
         print("crossNorth:")
         print(crossNorth)
         print("crossSouth:")
         print(crossSouth)
         print("----------LpVariables----------")
-        print("lpGuardArray LpVariable:")
-        print(lpGuardArray)
+        print("lpCCArray LpVariable:")
+        print(lpCCArray)
         print("lpFlowfromN LpVariable:")
         print(lpFlowfromN)
         print("lpFlowtoS LpVariable:")
@@ -130,7 +134,7 @@ def run(f, verbose):
         print(lpFlowArray)
 
     # Define the objective function: Minimize the total cost
-    prob += sum(lpGuardArray)
+    prob += sum(lpCCArray)
 
     # Define the constraints:
     # At North/South, from N to i, and from j to S
@@ -167,31 +171,29 @@ def run(f, verbose):
         k = ccParent[i]
         for var in lpFlowfromN:
             if var.name == f'FN_{i}':
-                prob += var <= lpGuardArray[k], f'Constraint_N_{i}'
+                prob += var <= lpCCArray[i], f'Constraint_N_{i}'
                 if verbose:
-                    print(f'{var} <= lpGuardArray{k}')
-                    print(f'{var} >= -lpGuardArray{k}')
+                    print(f'{var} <= lpCCArray{i}')
+                    print(f'{var} >= -lpCCArray{i}')
         for var in lpFlowtoS:
             if var.name == f'F{i}_S':
-                prob += var <= lpGuardArray[k], f'Constraint_{i}_S'
+                prob += var <= lpCCArray[i], f'Constraint_{i}_S'
                 if verbose:
-                    print(f'{var} <= lpGuardArray{k}')
-                    print(f'{var} >= -lpGuardArray{k}')
+                    print(f'{var} <= lpCCArray{i}')
+                    print(f'{var} >= -lpCCArray{i}')
         for j in range(i+1, ccCount):
             for var in lpFlowArray:
                 if var.name == f'F{i}_{j}':
-                    k = ccParent[i]
-                    prob += var <= lpGuardArray[k], f'Constraint1_{i}_{j}_g{k}'
-                    prob += var >= -lpGuardArray[k], f'Constraint1_{i}_{j}_g{k}_'
+                    prob += var <= lpCCArray[i], f'Constraint1_{i}_{j}_g{k}'
+                    prob += var >= -lpCCArray[i], f'Constraint1_{i}_{j}_g{k}_'
                     if verbose:
-                        print(f'{var} <= lpGuardArray{k}')
-                        print(f'{var} >= -lpGuardArray{k}')
-                    k = ccParent[j]
-                    prob += var <= lpGuardArray[k], f'Constraint2_{i}_{j}_g{k}'
-                    prob += var >= -lpGuardArray[k], f'Constraint2_{i}_{j}_g{k}_'
+                        print(f'{var} <= lpCCArray{i}')
+                        print(f'{var} >= -lpCCArray{i}')
+                    prob += var <= lpCCArray[j], f'Constraint2_{i}_{j}_g{k}'
+                    prob += var >= -lpCCArray[j], f'Constraint2_{i}_{j}_g{k}_'
                     if verbose:
-                        print(f'{var} <= lpGuardArray{k}')
-                        print(f'{var} >= -lpGuardArray{k}')
+                        print(f'{var} <= lpCCArray{j}')
+                        print(f'{var} >= -lpCCArray{j}')
               
     # Solve the problem
     prob.solve()
@@ -199,7 +201,7 @@ def run(f, verbose):
     # Print the results
     print(f"Status: {prob.status}")    
     print("Non-zero flow values below:")    
-    for var in lpGuardArray:
+    for var in lpCCArray:
         if var.varValue != 0.0:
             print(f"Path {var.name}: {var.varValue}")
 
