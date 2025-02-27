@@ -1,5 +1,6 @@
 import argparse
 import collections
+import time
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 
 '''
@@ -78,6 +79,8 @@ def run(f, verbose):
     if len(crossNorth) == 0 or len(crossSouth) == 0:
         print("There is no north-crossing or no south-crossing connected components!")
         return
+
+    start_time = time.time()
 
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
@@ -196,7 +199,9 @@ def run(f, verbose):
     # Solve the problem
     prob.solve()
 
-    # Print the results
+    end_time = time.time()
+
+    # ------------ Print output -------------
     print(f"Status: {prob.status}")    
     print("Non-zero flow values below:")    
     for var in lpGuardArray:
@@ -216,6 +221,9 @@ def run(f, verbose):
             print(f"Path {var.name}: {var.varValue}")
     
     print(f"Total Cost: {prob.objective.value()}")
+
+    elapsed_time = end_time - start_time
+    print(f"Time to execute algorithm = {elapsed_time:.2g} seconds")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ILP')

@@ -1,6 +1,7 @@
 import argparse
 import collections
 import numpy as np
+import time
 
 '''
 -------------------------------------------------------------------------------------
@@ -63,6 +64,8 @@ def run(f, verbose):
     ccUsedForFrontier = [0] * len(ccParent) # Flag set if cc is picked already
     ccIntersect1 = [] # Intersecting CC in the Frontier
     ccIntersect2 = [] # Intersecting CC in the Frontier
+
+    start_time = time.time()
 
     # F0
     for cc in crossNorth:
@@ -142,6 +145,9 @@ def run(f, verbose):
     if len(returningPath) == 0:
         print("No solution exists!")
 
+    end_time = time.time()
+
+    # ------------ Print output -------------
     print("Building returningPath")
     done = False     # Done if there is no intersection
     cc = returningPath[-1]    
@@ -164,6 +170,9 @@ def run(f, verbose):
         print(f"Frontier: {i}")
         for j in range(nCCPerFrontier[i]):
             print(f"Guards: {ccParent[frontier[i][j]]}")
+
+    elapsed_time = end_time - start_time
+    print(f"Time to execute algorithm = {elapsed_time:.2g} seconds")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ILP')
