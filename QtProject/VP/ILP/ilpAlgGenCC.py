@@ -2,6 +2,7 @@ import argparse
 import collections
 import time
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
+from TerrainInput import classComp, classGuard, readInput
 
 '''
 -------------------------------------------------------------------------------------
@@ -13,7 +14,7 @@ Nodes: (CN = Component North, CS = Component South)
 
 For each gi, a list of connected components with unique indices belong to it.
 Each connected component has a list of intersecting components.
-(See format in file ilpExport?.txt)
+(See format in file ilpExport*.txt)
 
 Fij are floats, 0 = not selected, Non-zero = selected
 i, j are 0 to m-1
@@ -41,91 +42,31 @@ Directed Edges:
 '''
 
 def run(f, verbose):    
-    nGuard = 0  # Number of guards
-    gcArray = []  # Guard * Connected Components
-    ccParent = [] # Reverse lookup from CC to Guard number
-    nCompPG = []  # Number of CC per guard
-    edgeArray = collections.defaultdict(lambda: collections.defaultdict(int)) # indexed by cc * cc, 1 = intersect, 0 = no intersect
-    crossNorth = [] # Array of cc that crosses North
-    crossSouth = [] # Array of cc that crosses South
-    ccCount = 0 # Total connected components
-    guardnum = -1
- 
-    # Read input file and build the connectedness map
-    for l in f.readlines():
-        typeStr, numStr = l.split()
-        num = int(numStr)
+    gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 
-        if typeStr == "Guard":
-            #print("Got guard = " + str(num))
-            guardnum = num
-            nCompPG.append(0) # Got a new guard
-            gcArray.append([]) # Got a new guard
-            nGuard += 1
-        elif typeStr == "ConnectedComponent":
-            #print("Got cc = " + str(num))
-            gcArray[guardnum].append(num) # Connected Component index
-            nCompPG[guardnum] += 1
-            ccParent.append(guardnum)
-            ccCount += 1
-        elif typeStr == "Intersecting":
-            #print("Got intersection = " + str(num))
-            edgeArray[ccCount-1][num] = 1
-        elif typeStr == "CrossNorth":
-            #print("Got north = " + str(num))
-            crossNorth.append(num)
-        elif typeStr == "CrossSouth":
-            #print("Got sourth = " + str(num))
-            crossSouth.append(num)
-        else:
-            raise Exception("Uncognized type!")
-
-    if len(crossNorth) == 0 or len(crossSouth) == 0:
-        print("There is no north-crossing or no south-crossing connected components!")
-        return
-    
     start_time = time.time()
 
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
 
     # Define the connected component variables: 1 if cc is used, 0 otherwise
-    lpCCArray = [LpVariable(f'cc{i}', cat=LpBinary) for i in range(sum(nCompPG))]
+    lpCCArray = [LpVariable(f'cc{i}', cat=LpBinary) for i in range(len(gComps))]
 
     # Define the flow variables: continuous variables representing Path each edge
     # Fij > 0 if flow is from i to j
     # FNj should never be negative (flow is always from N to j)
     # FiS should never be negative (flow is always from i to S)
-    lpFlowfromN = [LpVariable(f'FN_{crossNorth[j]}', lowBound=0, upBound=1, cat="Continuous") for j in range(len(crossNorth))]
-    lpFlowtoS = [LpVariable(f'F{crossSouth[j]}_S', lowBound=0, upBound=1, cat="Continuous") for j in range(len(crossSouth))]
+    lpFlowfromN = [LpVariable(f'FN_{gNorths[j]}', lowBound=0, upBound=1, cat="Continuous") for j in range(len(gNorths))]
+    lpFlowtoS = [LpVariable(f'F{gSouths[j]}_S', lowBound=0, upBound=1, cat="Continuous") for j in range(len(gSouths))]
     # Only needs to use those with i < j to avoid duplication
     lpFlowArray = []
-    for key1, sub_dict in edgeArray.items():
-        for key2, value in sub_dict.items():
-            if key2 > key1 and edgeArray[key1][key2]:
-                lpFlowArray.append(LpVariable(f'F{key1}_{key2}', lowBound=-1, upBound=1, cat="Continuous"))
+    for i in range(len(gComps)):
+        for j in range(i+1, len(gComps)):
+            if j in gComps[i].intersects:
+                lpFlowArray.append(LpVariable(f'F{i}_{j}', lowBound=-1, upBound=1, cat="Continuous"))
 
     # Debug print
     if verbose:
-        print("----------Guard/Region Info----------")
-        print("nGuard = " + str(nGuard))
-        print("gcArray:")
-        for i in range(nGuard):
-            for j in range(nCompPG[i]):
-                print(f"{i} = {gcArray[i][j]}") 
-        print("nCompPG:")
-        print(nCompPG[:nGuard])
-        print("ccParent:")
-        print(ccParent)
-        print("edgeArray:")
-        for key1, sub_dict in edgeArray.items():
-            for key2, value in sub_dict.items():
-                if edgeArray[key1][key2]:
-                    print(f"Connected: {key1}, {key2}")
-        print("crossNorth:")
-        print(crossNorth)
-        print("crossSouth:")
-        print(crossSouth)
         print("----------LpVariables----------")
         print("lpCCArray LpVariable:")
         print(lpCCArray)
@@ -148,7 +89,7 @@ def run(f, verbose):
     # Flip sign if Fij is defined as Fji
     # At each vertex, sum of all flows into/out of the vertex = 0
     # Only use the lpFlowArray index with i < j
-    for i in range(ccCount):
+    for i in range(len(gComps)):
         constraint_expr = 0
         for var in lpFlowfromN:
             if var.name == f'FN_{i}':
@@ -156,7 +97,7 @@ def run(f, verbose):
         for var in lpFlowtoS:
             if var.name == f'F{i}_S':
                 constraint_expr -= var
-        for j in range(ccCount):
+        for j in range(len(gComps)):
             for var in lpFlowArray:
                 if var.name == f'F{i}_{j}':
                     constraint_expr -= var   
@@ -170,8 +111,8 @@ def run(f, verbose):
     # If Fij is selected, then parent guards of Ci/Cj must be selected
     # Convention is that i < j.  The flow for i > j is duplicated.
     # FNi and FiS are never negative.
-    for i in range(ccCount):
-        k = ccParent[i]
+    for i in range(len(gComps)):
+        k = gComps[i].parentID
         for var in lpFlowfromN:
             if var.name == f'FN_{i}':
                 prob += var <= lpCCArray[i], f'Constraint_N_{i}'
@@ -184,7 +125,7 @@ def run(f, verbose):
                 if verbose:
                     print(f'{var} <= lpCCArray{i}')
                     print(f'{var} >= -lpCCArray{i}')
-        for j in range(i+1, ccCount):
+        for j in range(i+1, len(gComps)):
             for var in lpFlowArray:
                 if var.name == f'F{i}_{j}':
                     prob += var <= lpCCArray[i], f'Constraint1_{i}_{j}_g{k}'
@@ -201,7 +142,9 @@ def run(f, verbose):
     # Solve the problem
     prob.solve()
 
-    # Print the results
+    end_time = time.time()
+
+    # ------------ Print output -------------
     print(f"Status: {prob.status}")    
     print("Non-zero flow values below:")    
     for var in lpCCArray:
@@ -220,11 +163,8 @@ def run(f, verbose):
         if var.varValue != 0.0:
             print(f"Path {var.name}: {var.varValue}")
     
-    end_time = time.time()
-
-    # ------------ Print output -------------
-
     print(f"Total Cost: {prob.objective.value()}")
+
     elapsed_time = end_time - start_time
     print(f"Time to execute algorithm = {elapsed_time:.2g} seconds")
 

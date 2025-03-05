@@ -2,6 +2,7 @@ import argparse
 import collections
 import numpy as np
 import time
+from TerrainInput import classComp, classGuard, readInput
 
 '''
 -------------------------------------------------------------------------------------
@@ -12,48 +13,9 @@ Control Experiment of ilpAlgGen
 '''
 
 def run(f, verbose):    
-    nGuard = 0  # Number of guards
-    gcArray = []  # Guard * Connected Components
-    ccParent = [] # Reverse lookup from CC to Guard number
-    nCompPG = []  # Number of CC per guard
-    edgeArray = collections.defaultdict(lambda: collections.defaultdict(int)) # indexed by cc * cc, 1 = intersect, 0 = no intersect
-    crossNorth = [] # Array of cc that crosses North
-    crossSouth = [] # Array of cc that crosses South
-    ccCount = 0 # Total connected components
-    guardnum = -1
- 
-    # Read input file and build the connectedness map
-    for l in f.readlines():
-        typeStr, numStr = l.split()
-        num = int(numStr)
+    gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 
-        if typeStr == "Guard":
-            #print("Got guard = " + str(num))
-            guardnum = num
-            nCompPG.append(0) # Got a new guard
-            gcArray.append([]) # Got a new guard
-            nGuard += 1
-        elif typeStr == "ConnectedComponent":
-            #print("Got cc = " + str(num))
-            gcArray[guardnum].append(num) # Connected Component index
-            nCompPG[guardnum] += 1
-            ccParent.append(guardnum)
-            ccCount += 1
-        elif typeStr == "Intersecting":
-            #print("Got intersection = " + str(num))
-            edgeArray[ccCount-1][num] = 1
-        elif typeStr == "CrossNorth":
-            #print("Got north = " + str(num))
-            crossNorth.append(num)
-        elif typeStr == "CrossSouth":
-            #print("Got sourth = " + str(num))
-            crossSouth.append(num)
-        else:
-            raise Exception("Uncognized type!")
-
-    if len(crossNorth) == 0 or len(crossSouth) == 0:
-        print("There is no north-crossing or no south-crossing connected components!")
-        return
+    start_time = time.time()
 
     MAX_FRONTIERS = 30
     MAX_CC_PER_FRONTIER = 100
@@ -61,14 +23,12 @@ def run(f, verbose):
     nFrontiers = 0
     nCCPerFrontier = [0] * MAX_FRONTIERS  # Number of CC in each Frontier
     frontier = np.zeros((MAX_FRONTIERS, MAX_CC_PER_FRONTIER), dtype=int) # CC indices in each Frontier
-    ccUsedForFrontier = [0] * len(ccParent) # Flag set if cc is picked already
+    ccUsedForFrontier = [0] * len(gComps) # Flag set if cc is picked already
     ccIntersect1 = [] # Intersecting CC in the Frontier
     ccIntersect2 = [] # Intersecting CC in the Frontier
 
-    start_time = time.time()
-
     # F0
-    for cc in crossNorth:
+    for cc in gNorths:
         ccUsedForFrontier[cc] = 1
         count = nCCPerFrontier[0]
         frontier[0][count] = cc
@@ -92,10 +52,11 @@ def run(f, verbose):
             print(f"F{nFrontier}")
 
         # Loop through all the CC, check all the unmarked CC
-        for k in range(nGuard):
-            for i in range(nCompPG[k]):
-
-                cc = gcArray[k][i]
+        for k in range(len(gGuards)):
+            guard = gGuards[k]
+            for j in range(len(guard.comps)):
+                comp = guard.comps[j]
+                cc = comp.id
                 
                 if verbose:
                     print(f"Checking Connected Component {cc}")
@@ -112,7 +73,8 @@ def run(f, verbose):
                         dd = frontier[nFrontier-1][i]
                         if verbose:
                             print(f"Checking Connected Component {dd} from last Frontier {nFrontier-1}")
-                        if edgeArray[cc][dd] == 1:
+
+                        if dd in comp.intersects:
                             if verbose:
                                 print("Intersected")
                             # remember the intersecting CC
@@ -124,7 +86,7 @@ def run(f, verbose):
                             success = True
                             nCCPerFrontier[nFrontier] += 1
 
-                            if cc in crossSouth:
+                            if cc in gSouths:
                                 if verbose:
                                     print(f"Intersecting South")
                                 done = True
@@ -164,12 +126,12 @@ def run(f, verbose):
     # Print returningPath:
     print("Returning Path:")
     for cc in returningPath:
-        print(f"Guard: {ccParent[cc]}")
+        print(f"Guard: {gComps[cc].parentID}")
     print("Frontier Details:")
     for i in range(nFrontier):
         print(f"Frontier: {i}")
         for j in range(nCCPerFrontier[i]):
-            print(f"Guards: {ccParent[frontier[i][j]]}")
+            print(f"Guards: {gComps[frontier[i][j]].parentID}")
 
     elapsed_time = end_time - start_time
     print(f"Time to execute algorithm = {elapsed_time:.2g} seconds")
