@@ -17,6 +17,12 @@ class classComp:
     def addIntersect(self, id):
         self.intersects.append(id)
 
+    # For Geogebra export
+    def setLocation(self, cx, cy, radius):
+        self.cx = cx
+        self.cy = cy
+        self.radius = radius
+
 class classGuard:
     def __init__(self, id):
         self.id = id

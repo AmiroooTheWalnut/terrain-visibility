@@ -28,11 +28,12 @@ def run(f, verbose):
     ccIntersect2 = [] # Intersecting CC in the Frontier
 
     # F0
+    count = 0
     for cc in gNorths:
         ccUsedForFrontier[cc] = 1
-        count = nCCPerFrontier[0]
         frontier[0][count] = cc
-        nCCPerFrontier[0] += 1
+        count += 1
+    nCCPerFrontier[0] = count
 
     if verbose:
         print("F0:")
@@ -42,7 +43,7 @@ def run(f, verbose):
     nFrontier = 1
     success = True
 
-    # Subsequent frontiersf
+    # Subsequent frontiers
     returningPath = []
     done = False
     while done == False and success == True:
@@ -52,15 +53,12 @@ def run(f, verbose):
             print(f"F{nFrontier}")
 
         # Loop through all the CC, check all the unmarked CC
-        for k in range(len(gGuards)):
-            guard = gGuards[k]
-            for j in range(len(guard.comps)):
-                comp = guard.comps[j]
+        for guard in gGuards:
+            for comp in guard.comps:
                 cc = comp.id
-                
                 if verbose:
-                    print(f"Checking Connected Component {cc}")
-
+                    print(f"Checking {cc} for new Frontier")
+                
                 if ccUsedForFrontier[cc] == 0:
 
                     count = nCCPerFrontier[nFrontier]
@@ -72,11 +70,10 @@ def run(f, verbose):
                     for i in range(nCCPerFrontier[nFrontier-1]): 
                         dd = frontier[nFrontier-1][i]
                         if verbose:
-                            print(f"Checking Connected Component {dd} from last Frontier {nFrontier-1}")
-
+                            print(f"Checking {dd} from last Frontier")
                         if dd in comp.intersects:
                             if verbose:
-                                print("Intersected")
+                                print(f"Component {cc} intersects Component {dd} from last Frontier")
                             # remember the intersecting CC
                             ccIntersect1.append(cc)
                             ccIntersect2.append(dd)
@@ -93,7 +90,8 @@ def run(f, verbose):
                                 returningPath.append(cc)
                             break
 
-                    if done or success:
+                    if done:
+                        print(f"Done1 here {cc}, {dd}, {done}, {success}")
                         break
                 if done:
                     break
@@ -104,8 +102,7 @@ def run(f, verbose):
             nFrontier += 1
             
     # Build returningPath
-    if len(returningPath) == 0:
-        print("No solution exists!")
+    assert len(returningPath) > 0, "No solution exists!"
 
     end_time = time.time()
 
@@ -126,7 +123,7 @@ def run(f, verbose):
     # Print returningPath:
     print("Returning Path:")
     for cc in returningPath:
-        print(f"Guard: {gComps[cc].parentID}")
+        print(f"Guard/Comp: {gComps[cc].parentID}, {cc}")
     print("Frontier Details:")
     for i in range(nFrontier):
         print(f"Frontier: {i}")
