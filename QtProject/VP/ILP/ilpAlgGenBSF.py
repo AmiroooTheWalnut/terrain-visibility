@@ -1,5 +1,4 @@
 import argparse
-import collections
 import numpy as np
 import time
 from TerrainInput import classComp, classGuard, readInput

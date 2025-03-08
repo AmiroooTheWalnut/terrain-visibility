@@ -1,5 +1,4 @@
 import argparse
-import collections
 import time
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 from TerrainInput import classComp, classGuard, readInput
