@@ -59,7 +59,7 @@ bool SingleGuardAlgorithm::run(int numGuards, int height, int radius, tiledMatri
                                 break;
                             }
                         }
-                        if(successToAddPremiter || isEndAchieved)
+                        if(isEndAchieved)
                         {
                             break;
                         }
