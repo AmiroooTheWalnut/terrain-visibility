@@ -11,8 +11,7 @@ Control Experiment of ilpAlgGen
 
 '''
 
-def run(f, verbose):    
-    gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
+def runBSF(gGuards, gComps, gNorths, gSouths, verbose):
 
     start_time = time.time()
 
@@ -90,7 +89,6 @@ def run(f, verbose):
                             break
 
                     if done:
-                        print(f"Done1 here {cc}, {dd}, {done}, {success}")
                         break
                 if done:
                     break
@@ -127,10 +125,13 @@ def run(f, verbose):
     for i in range(nFrontier):
         print(f"Frontier: {i}")
         for j in range(nCCPerFrontier[i]):
-            print(f"Guards: {gComps[frontier[i][j]].parentID}")
+            comp = gComps[frontier[i][j]]
+            print(f"Component: {comp.id}, Guards: {comp.parentID}")
 
     elapsed_time = end_time - start_time
     print(f"Time to execute algorithm = {elapsed_time:.2g} seconds")
+
+    return nFrontier
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ILP')
@@ -140,4 +141,7 @@ if __name__ == "__main__":
    
     f = open(args.INPUT, 'r')
 
-    run(f, args.verbose)
+    gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
+
+    nFrontier = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
+    print(f"Number of Connected Components needed = {nFrontier}")
