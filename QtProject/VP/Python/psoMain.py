@@ -76,7 +76,7 @@ def bsfScore(guard_positions):
     setup(guard_positions)
     nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
     print(f"nFrontier = {nFrontier}")
-    print(guard_positions)
+    #print(guard_positions)
 
     return nFrontier  # Lower cost the better
 
@@ -107,11 +107,14 @@ if __name__ == "__main__":
     lb = np.array([0] * dimensions)
     ub = np.tile([nrows, ncols], numGuards)
    
+    # Two options:
+    # Option 1: n_particles = numGuards, dimensions = 2     - Optimize individual position    
+    # Option 2: n_particles = 1, dimensions = numGuards * 2 - Optimize entire set
     optimizer = ps.single.GlobalBestPSO(n_particles=1, dimensions=dimensions,
-                                        options={'c1': 0.5, 'c2': 0.3, 'w': 0.9},
+                                        options={'c1': 0.8, 'c2': 0.3, 'w': 0.7},
                                         bounds=(lb, ub))
     
-    cost, pos = optimizer.optimize(bsfScore, iters=50)
+    cost, pos = optimizer.optimize(bsfScore, iters=10)
     best_positions = pos.reshape((numGuards, 2))
 
     end_time = time.time()

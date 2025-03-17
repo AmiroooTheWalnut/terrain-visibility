@@ -107,7 +107,7 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
         print(f"Time to execute BSF algorithm = {end_time - start_time:.2g} seconds")
 
     # ------------ Print output -------------
-    print("Building returningPath")
+    #print("Building returningPath")
     done = False     # Done if there is no intersection
     cc = returningPath[-1]    
     while done == False:
@@ -124,12 +124,14 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
     print("Returning Path:")
     for cc in returningPath:
         print(f"Guard/Comp: {gComps[cc].parentID}, {cc}")
-    print("Frontier Details:")
-    for i in range(nFrontier):
-        print(f"Frontier: {i}")
-        for j in range(nCCPerFrontier[i]):
-            comp = gComps[frontier[i][j]]
-            print(f"Component: {comp.id}, Guards: {comp.parentID}")
+
+    if verbose:
+        print("Frontier Details:")
+        for i in range(nFrontier):
+            print(f"Frontier: {i}")
+            for j in range(nCCPerFrontier[i]):
+                comp = gComps[frontier[i][j]]
+                print(f"Component: {comp.id}, Guards: {comp.parentID}")
 
     return nFrontier
 
