@@ -7,6 +7,7 @@ from ReadElevImg import read_png, show_terrain
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 from ilpAlgGenBSF import runBSF
+import time
 
 #---------------------------------------
 # Function to generate Fibonacci lattice
@@ -55,13 +56,14 @@ def setup(filename, verbose):
     printGuards(verbose)
 
 #---------------------------------------
-# Reinforcement Learning
+# Particle Swarm Optimization
 #---------------------------------------
 def train(verbose):
 
     # Perform BSF
     nFrontier = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
 
+    return nFrontier
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate Visibility')
@@ -69,8 +71,15 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     args = parser.parse_args()
    
+    time1 = time.time()
     setup(args.INPUT, args.verbose)
-    train(args.verbose)
+    time2 = time.time()
+    print(f"Setup time = {time2 - time1:.2g} seconds")    
+
+    nFrontier = train(args.verbose)
+    time3 = time.time()
+    print(f"Training time = {time3 - time2:.2g} seconds") 
+    print(f"Number of Connected Components = {nFrontier}")   
 
     
 
