@@ -11,7 +11,7 @@ Control Experiment of ilpAlgGen
 
 '''
 
-def runBSF(gGuards, gComps, gNorths, gSouths, verbose):
+def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
 
     start_time = time.time()
 

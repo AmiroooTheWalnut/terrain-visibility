@@ -7,7 +7,7 @@ from ReadElevImg import read_png, show_terrain
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 from ilpAlgGenBSF import runBSF
-import time
+#import pyswarms as ps
 
 #---------------------------------------
 # Function to generate Fibonacci lattice
@@ -25,15 +25,12 @@ def fibonacci_lattice(n_points, nrows, ncols):
     return points
 
 #---------------------------------------
-# Set Up
+# Set up G(V, E)
+# Visibility, guard/connected component information
 #---------------------------------------
-def setup(filename, verbose):    
-    bitmap = read_png(filename, verbose)
+def setup(guard_positions, bitmap, verbose=False):    
     nrows, ncols = bitmap.shape
 
-    # Initial parameters and guard locations
-    # Number of guards, height, radius, terrain bitmap, verbose
-    numGuards = 100
     elev = 10     # Default = 10
     radius = 30  # Default = 123
 
@@ -58,12 +55,15 @@ def setup(filename, verbose):
 #---------------------------------------
 # Particle Swarm Optimization
 #---------------------------------------
-def train(verbose):
+def bsfScore(guard_positions):
+    global numGuards, bitmap
 
-    # Perform BSF
-    nFrontier = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
-
-    return nFrontier
+    score = 0
+    guard_points = guard_points.reshape((numGuards, 2))
+    setup(guard_positions, args.verbose)
+    nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
+    print(f"nFrontier = {nFrontier}")
+    return -nFrontier  # Negative because we minimize the number of Frontiers
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate Visibility')
@@ -71,15 +71,35 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     args = parser.parse_args()
    
-    time1 = time.time()
-    setup(args.INPUT, args.verbose)
-    time2 = time.time()
-    print(f"Setup time = {time2 - time1:.2g} seconds")    
+    # Read bitmap, set up initial guard positions
+    numGuards = 100
+    bitmap = read_png(args.INPUT, args.verbose)
+    nrows, ncols = bitmap.shape
+    guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
-    nFrontier = train(args.verbose)
+    setup(guard_positions, bitmap, args.verbose)
+    nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
+
+    """
+    # Define bounds for the guards - Don't move too far from original locations
+    limit = 10
+    lb = guard_positions
+    ub = guard_positions
+    for k in range(len(guard_positions)):
+        lb[k] = max(guard_positions[k][0]-limit, guard_positions[k][1]-limit)
+        ub[k] = min(guard_positions[k][0]+limit, guard_positions[k][1]+limit)
+
+    dimensions = 2
+    optimizer = ps.single.GlobalBestPSO(n_particles=30, dimensions=numGuards*dimensions,
+                                        options={'c1': 0.5, 'c2': 0.3, 'w': 0.9},
+                                        bounds=(lb, ub))
+    
+    cost, pos = optimizer.optimize(bsfScore, iters=10)
+    best_positions = pos.reshape((numGuards, dimensions))
+
     time3 = time.time()
-    print(f"Training time = {time3 - time2:.2g} seconds") 
-    print(f"Number of Connected Components = {nFrontier}")   
+    print(f"Total running time = {time3 - time1:.2g} seconds")    
+    """
 
     
 

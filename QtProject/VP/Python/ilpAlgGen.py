@@ -36,7 +36,7 @@ Directed Edges:
 
 '''
 
-def run(f, verbose):    
+def runILP(f, verbose=False):    
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 
     start_time = time.time()
@@ -173,4 +173,4 @@ if __name__ == "__main__":
    
     f = open(args.INPUT, 'r')
 
-    run(f, args.verbose)
+    runILP(f, args.verbose)
