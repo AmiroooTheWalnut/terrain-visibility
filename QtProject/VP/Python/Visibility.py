@@ -8,6 +8,9 @@ import time
 # See Franklin's viewshed algorithm
 # ---------------------------------
 def calc_vis(guard, elev, verbose):
+    if verbose:
+        start_time = time.time()
+
     nrows, ncols = elev.shape
     viewshed = np.zeros((nrows, ncols), dtype=int)
 
@@ -108,6 +111,9 @@ def calc_vis(guard, elev, verbose):
 
     #debugPrintViewShed(viewshed)
 
+    if verbose:
+        print(f"Time to execute Visibility algorithm = {end_time - start_time:.2g} seconds")
+	
     return viewshed
 
 # -----------------------------

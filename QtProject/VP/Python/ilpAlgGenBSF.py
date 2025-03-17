@@ -13,10 +13,11 @@ Control Experiment of ilpAlgGen
 
 def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
 
-    start_time = time.time()
+    if verbose:
+        start_time = time.time()
 
     MAX_FRONTIERS = 30
-    MAX_CC_PER_FRONTIER = 100
+    MAX_CC_PER_FRONTIER = 500
 
     nFrontiers = 0
     nCCPerFrontier = [0] * MAX_FRONTIERS  # Number of CC in each Frontier
@@ -101,7 +102,9 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
     # Build returningPath
     assert len(returningPath) > 0, "No solution exists!"
 
-    end_time = time.time()
+    if verbose:
+        end_time = time.time()
+        print(f"Time to execute BSF algorithm = {end_time - start_time:.2g} seconds")
 
     # ------------ Print output -------------
     print("Building returningPath")
@@ -127,9 +130,6 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
         for j in range(nCCPerFrontier[i]):
             comp = gComps[frontier[i][j]]
             print(f"Component: {comp.id}, Guards: {comp.parentID}")
-
-    elapsed_time = end_time - start_time
-    print(f"Time to execute algorithm = {elapsed_time:.2g} seconds")
 
     return nFrontier
 

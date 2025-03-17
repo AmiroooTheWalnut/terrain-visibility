@@ -43,7 +43,8 @@ Directed Edges:
 def runILP(f, verbose=False):    
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 
-    start_time = time.time()
+    if verbose:
+        start_time = time.time()
 
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
@@ -141,7 +142,10 @@ def runILP(f, verbose=False):
     # Solve the problem
     prob.solve()
 
-    end_time = time.time()
+    if verbose:
+        end_time = time.time()
+        print(f"Time to execute ILP algorithm = {end_time - start_time:.2g} seconds")
+
 
     # ------------ Print output -------------
     print(f"Status: {prob.status}")    
@@ -163,9 +167,6 @@ def runILP(f, verbose=False):
             print(f"Path {var.name}: {var.varValue}")
     
     print(f"Total Cost: {prob.objective.value()}")
-
-    elapsed_time = end_time - start_time
-    print(f"Time to execute algorithm = {elapsed_time:.2g} seconds")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ILP')

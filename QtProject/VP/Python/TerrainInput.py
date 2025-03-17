@@ -101,6 +101,15 @@ def readInput(f, verbose):
     return gGuards, gComps, gNorths, gSouths
 
 # -----------------------------
+# Clear all the data
+# -----------------------------
+def clearAll():
+    gGuards.clear()
+    gComps.clear()
+    gNorths.clear()
+    gSouths.clear()    
+
+# -----------------------------
 # Find intersecting components
 # -----------------------------
 def findIntersections(verbose):

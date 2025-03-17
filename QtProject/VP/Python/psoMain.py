@@ -4,10 +4,11 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from Visibility import calc_vis
 from ReadElevImg import read_png, show_terrain
-from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards
+from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards, clearAll
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 from ilpAlgGenBSF import runBSF
-#import pyswarms as ps
+import pyswarms as ps
+import time
 
 #---------------------------------------
 # Function to generate Fibonacci lattice
@@ -28,7 +29,9 @@ def fibonacci_lattice(n_points, nrows, ncols):
 # Set up G(V, E)
 # Visibility, guard/connected component information
 #---------------------------------------
-def setup(guard_positions, bitmap, verbose=False):    
+def setup(guard_positions):    
+    global verbose
+
     nrows, ncols = bitmap.shape
 
     elev = 10     # Default = 10
@@ -36,6 +39,11 @@ def setup(guard_positions, bitmap, verbose=False):
 
     lattice_points = fibonacci_lattice(numGuards, nrows, ncols)
     x_coords, y_coords = zip(*lattice_points)
+
+    if verbose:
+        start_time = time.time()
+
+    clearAll()
 
     for guardnum in range(numGuards):
         guard = classGuard(guardnum)
@@ -52,55 +60,63 @@ def setup(guard_positions, bitmap, verbose=False):
     findIntersections(verbose)
     printGuards(verbose)
 
+    if verbose:
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Time to set up guard/connected components = {elapsed_time:.2g} seconds")
+
 #---------------------------------------
 # Particle Swarm Optimization
 #---------------------------------------
 def bsfScore(guard_positions):
-    global numGuards, bitmap
+    global numGuards, bitmap, last_pos
 
     score = 0
-    guard_points = guard_points.reshape((numGuards, 2))
-    setup(guard_positions, args.verbose)
+    guard_positions = np.round(guard_positions).reshape((numGuards, 2))
+    setup(guard_positions)
     nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
     print(f"nFrontier = {nFrontier}")
-    return -nFrontier  # Negative because we minimize the number of Frontiers
+    print(guard_positions)
+
+    return nFrontier  # Lower cost the better
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('INPUT', type=str, help="test.png")
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     args = parser.parse_args()
-   
+    input = args.INPUT
+    verbose = args.verbose
+
+    start_time = time.time()   
+
     # Read bitmap, set up initial guard positions
     numGuards = 100
-    bitmap = read_png(args.INPUT, args.verbose)
+    bitmap = read_png(input, verbose)
 
     nrows, ncols = bitmap.shape
     guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
-    setup(guard_positions, bitmap, args.verbose)
+    setup(guard_positions)
     nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
 
-    """
-    # Define bounds for the guards - Don't move too far from original locations
-    limit = 10
-    lb = guard_positions
-    ub = guard_positions
-    for k in range(len(guard_positions)):
-        lb[k] = max(guard_positions[k][0]-limit, guard_positions[k][1]-limit)
-        ub[k] = min(guard_positions[k][0]+limit, guard_positions[k][1]+limit)
+    last_pos = guard_positions
 
-    dimensions = 2
-    optimizer = ps.single.GlobalBestPSO(n_particles=30, dimensions=numGuards*dimensions,
+    # Define bounds for the guards - Don't move too far from original locations
+    dimensions = 2 * numGuards
+    lb = np.array([0] * dimensions)
+    ub = np.tile([nrows, ncols], numGuards)
+   
+    optimizer = ps.single.GlobalBestPSO(n_particles=1, dimensions=dimensions,
                                         options={'c1': 0.5, 'c2': 0.3, 'w': 0.9},
                                         bounds=(lb, ub))
     
-    cost, pos = optimizer.optimize(bsfScore, iters=10)
-    best_positions = pos.reshape((numGuards, dimensions))
+    cost, pos = optimizer.optimize(bsfScore, iters=50)
+    best_positions = pos.reshape((numGuards, 2))
 
-    time3 = time.time()
-    print(f"Total running time = {time3 - time1:.2g} seconds")    
-    """
+    end_time = time.time()
+    print(f"Total running time = {end_time - start_time:.2g} seconds")    
+
 
     
 
