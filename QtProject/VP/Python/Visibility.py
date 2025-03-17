@@ -94,14 +94,14 @@ def calc_vis(guard, elev, verbose):
             # Slope from the observer, incl the observer_ht, to this point, at ground
             # level.  The slope is projected into the plane XZ or YZ, depending on
             # whether X or Y is varying faster, and thus being iterated thru.
-            s = float(pelev - obsAltitude) / float(abs((p[inciny] - obs[inciny])))
+            s = (float(pelev) - float(obsAltitude)) / float(abs((p[inciny] - obs[inciny])))
 
             if horizon_slope < s:
                 horizon_slope = s
 
             horizon_alt = obsAltitude + horizon_slope * abs(p[inciny] - obs[inciny])
 
-            if pelev + guard.h >= horizon_alt:
+            if float(pelev) + float(guard.h) >= horizon_alt:
                 viewshed[p[0]][p[1]] = 1
 
             i += sig

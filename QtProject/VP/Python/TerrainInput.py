@@ -173,7 +173,7 @@ def setConnectedComponent(guard, verbose):
     maxZ=-100000
     minZ=100000
 
-    bitmap = np.zeros((nrows, ncols), dtype=int)
+    bitmap = np.zeros((nrows, ncols), dtype=np.uint32)
 
     for i in range(nrows):
         for j in range(ncols):

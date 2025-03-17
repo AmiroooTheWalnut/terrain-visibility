@@ -74,6 +74,7 @@ if __name__ == "__main__":
     # Read bitmap, set up initial guard positions
     numGuards = 100
     bitmap = read_png(args.INPUT, args.verbose)
+
     nrows, ncols = bitmap.shape
     guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
