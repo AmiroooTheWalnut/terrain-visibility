@@ -27,7 +27,7 @@ def calc_vis(guard, elev, verbose):
     viewshed[obs[0]][obs[1]] = 1 # Observer is visible from itself
 
     # Observer distance about sea level, incl distance above ground.
-    obsAltitude = elev[obs[0]][obs[1]] + guard.h
+    obsAltitude = float(elev[obs[0]][obs[1]]) + float(guard.h)
 
     # The target is in turn every point along the smaller of the border or a box
     # of side 2*radius around the observer.
@@ -92,19 +92,19 @@ def calc_vis(guard, elev, verbose):
                 if valX * valX + valY * valY > radius * radius:
                     break
 
-            pelev = elev[p[0]][p[1]]
+            pelev = float(elev[p[0]][p[1]])
 
             # Slope from the observer, incl the observer_ht, to this point, at ground
             # level.  The slope is projected into the plane XZ or YZ, depending on
             # whether X or Y is varying faster, and thus being iterated thru.
-            s = (float(pelev) - float(obsAltitude)) / float(abs((p[inciny] - obs[inciny])))
+            s = (pelev - obsAltitude) / float(abs((p[inciny] - obs[inciny])))
 
             if horizon_slope < s:
                 horizon_slope = s
 
             horizon_alt = obsAltitude + horizon_slope * abs(p[inciny] - obs[inciny])
 
-            if float(pelev) + float(guard.h) >= horizon_alt:
+            if pelev + float(guard.h) >= horizon_alt:
                 viewshed[p[0]][p[1]] = 1
 
             i += sig
