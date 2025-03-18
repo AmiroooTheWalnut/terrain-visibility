@@ -53,8 +53,8 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
 
         # Loop through all the CC, check all the unmarked CC
         for guard in gGuards:
-            for comp in guard.comps:
-                cc = comp.id
+            for cc in guard.compIDs:
+                comp = gComps[cc]
                 if verbose:
                     print(f"Checking {cc} for new Frontier")
                 
@@ -99,39 +99,42 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
         if success:                 
             nFrontier += 1
             
-    # Build returningPath
-    assert len(returningPath) > 0, "No solution exists!"
-
     if verbose:
         end_time = time.time()
         print(f"Time to execute BSF algorithm = {end_time - start_time:.2g} seconds")
 
-    # ------------ Print output -------------
-    #print("Building returningPath")
-    done = False     # Done if there is no intersection
-    cc = returningPath[-1]    
-    while done == False:
-        for i in range(len(ccIntersect1)):
-            if cc == ccIntersect1[i]:
-                dd = ccIntersect2[i]
-                returningPath.append(dd)
-                cc = returningPath[-1]
-                break
-        else:
-            done = True
+    # Build returningPath
+    # assert len(returningPath) > 0, "No solution exists!"
+    if len(returningPath) == 0:
+        print("No solution exists!")
+        nFrontier = 9999 # Big number so PSO algorithm regards this as failure
+    else:
+        # ------------ Print output -------------
+        #print("Building returningPath")
+        done = False     # Done if there is no intersection
+        cc = returningPath[-1]    
+        while done == False:
+            for i in range(len(ccIntersect1)):
+                if cc == ccIntersect1[i]:
+                    dd = ccIntersect2[i]
+                    returningPath.append(dd)
+                    cc = returningPath[-1]
+                    break
+            else:
+                done = True
                 
-    # Print returningPath:
-    print("Returning Path:")
-    for cc in returningPath:
-        print(f"Guard/Comp: {gComps[cc].parentID}, {cc}")
+        # Print returningPath:
+        print("---------- Returning Path ----------------")
+        for cc in returningPath:
+            print(f"Guard/Comp: {gComps[cc].parentID}, {cc}")
 
-    if verbose:
-        print("Frontier Details:")
-        for i in range(nFrontier):
-            print(f"Frontier: {i}")
-            for j in range(nCCPerFrontier[i]):
-                comp = gComps[frontier[i][j]]
-                print(f"Component: {comp.id}, Guards: {comp.parentID}")
+        if verbose:
+            print("Frontier Details:")
+            for i in range(nFrontier):
+                print(f"Frontier: {i}")
+                for j in range(nCCPerFrontier[i]):
+                    comp = gComps[frontier[i][j]]
+                    print(f"Component: {comp.id}, Guards: {comp.parentID}")
 
     return nFrontier
 
@@ -142,6 +145,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
    
     f = open(args.INPUT, 'r')
+    verbose = args.verbose
 
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 

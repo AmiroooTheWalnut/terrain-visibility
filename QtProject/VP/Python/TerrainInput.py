@@ -9,8 +9,9 @@
 #
 from PIL import Image, ImageDraw
 import numpy as np
+import gc
 
-gGuards = []   # Contains the comps
+gGuards = []   # Contains the guards and the comps ID only
 gComps = []    # Contains the comps
 gNorths = []   # Contains IDs only
 gSouths = []   # Contains IDs only
@@ -41,7 +42,11 @@ class classComp:
         self.minZ = minZ
         self.maxZ = maxZ
         self.bitmap = bitmap.copy()
-        
+
+    def clear(self):
+        del self.intersects
+        self.bitmap = None
+        gc.collect()
 
 # -----------------------------
 # Guard
@@ -49,16 +54,19 @@ class classComp:
 class classGuard:
     def __init__(self, id):
         self.id = id
-        self.comps = []
+        self.compIDs = []
 
     def addComp(self, comp):
-        self.comps.append(comp)
+        self.compIDs.append(comp.id)
 
     def setLocation(self, x, y, h, r):
         self.x = x
         self.y = y
         self.h = h
         self.r = r
+
+    def clear(self):
+        del self.compIDs
 
 # -----------------------------
 # Read a text file input to define the guards and 
@@ -96,16 +104,18 @@ def readInput(f, verbose):
         print("There is no north-crossing or no south-crossing connected components!")
         return
 
-    printAll(verbose)
-
     return gGuards, gComps, gNorths, gSouths
 
 # -----------------------------
 # Clear all the data
 # -----------------------------
 def clearAll():
-    gGuards.clear()
+    for comp in gComps:
+        comp.clear()
     gComps.clear()
+    for guard in gGuards:
+        guard.clear()
+    gGuards.clear()
     gNorths.clear()
     gSouths.clear()    
 
@@ -237,21 +247,30 @@ def flood_fill(start):
 
 # -----------------------------
 # Print Guard information
+# A section will be the same format as the input file for the algorithms
 # -----------------------------
 def printGuards(verbose):
-    if verbose:
-        print("----------Guard/Region Info----------")
-        for i in range(len(gGuards)):
-            guard = gGuards[i]
+    if verbose:        
+        print("----------Guard/Component Locations----------")
+        for guard in gGuards:
             print(f"Guard {guard.id} at ({guard.x}, {guard.y})")
-            for j in range(len(guard.comps)):
-                comp = guard.comps[j]
-                print(f"Component {comp.id}: {comp.minX}, {comp.maxX}, {comp.minZ}, {comp.maxZ}")
-                print(f"Intersections: {comp.intersects}")
-        print("gNorths:")
-        print(gNorths)
-        print("gSouths:")
-        print(gSouths)
+            for id in guard.compIDs:
+                comp = gComps[id]
+                print(f"Component {id}: {comp.minX}, {comp.maxX}, {comp.minZ}, {comp.maxZ}")
+
+        print("-----------Input File Format----------")
+        for guard in gGuards:
+            print(f"Guard {guard.id}")
+            for id in guard.compIDs:
+                print(f"ConnectedComponent {id}")
+                comp = gComps[id]
+                for k in comp.intersects:
+                    print(f"Intersecting {k}")
+        for id in gNorths:
+            print(f"CrossNorth {id}")
+        for id in gSouths:
+            print(f"CrossSouth {id}")
+        
 # -----------------------------
 # Print gCompMask
 # -----------------------------

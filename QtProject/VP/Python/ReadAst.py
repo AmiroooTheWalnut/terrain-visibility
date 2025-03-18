@@ -102,8 +102,9 @@ def run(file_path, verbose):
     # -------------Guards and Components below:-------------
     for guard in gGuards:
         print(f"Guard {guard.id}")
-        for comp in guard.comps:
-            print(f"ConnectedComponent {comp.id}")
+        for id in guard.compIDs:
+            comp = gComps[id]
+            print(f"ConnectedComponent {id}")
             for id in comp.intersects:
                 print(f"Intersecting {id}")
 

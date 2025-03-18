@@ -1,3 +1,4 @@
+
 import numpy as np
 import argparse
 from mpl_toolkits.mplot3d import Axes3D
@@ -23,22 +24,17 @@ def fibonacci_lattice(n_points, nrows, ncols):
         y = float(count+1) / (n_points+1)
         points.append((int(x*nrows), int(y*ncols)))
     
-    return points
+    return np.array(points)
 
 #---------------------------------------
 # Set up G(V, E)
 # Visibility, guard/connected component information
 #---------------------------------------
 def setup(guard_positions):    
-    global verbose
+    global verbose, elev, radius
 
     nrows, ncols = bitmap.shape
-
-    elev = 10     # Default = 10
-    radius = 30  # Default = 123
-
-    lattice_points = fibonacci_lattice(numGuards, nrows, ncols)
-    x_coords, y_coords = zip(*lattice_points)
+    x_coords, y_coords = zip(*guard_positions)
 
     if verbose:
         start_time = time.time()
@@ -58,24 +54,23 @@ def setup(guard_positions):
 
     # Determine the intersections of the Connected Components
     findIntersections(verbose)
-    printGuards(verbose)
+    printGuards(True)
 
     if verbose:
         end_time = time.time()
-        elapsed_time = end_time - start_time
-        print(f"Time to set up guard/connected components = {elapsed_time:.2g} seconds")
+        print(f"Time to set up guard/connected components = {end_time - start_time:.2g} seconds")
 
 #---------------------------------------
 # Particle Swarm Optimization
 #---------------------------------------
 def bsfScore(guard_positions):
-    global numGuards, bitmap, last_pos
+    global numGuards
 
     score = 0
     guard_positions = np.round(guard_positions).reshape((numGuards, 2))
     setup(guard_positions)
     nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
-    print(f"nFrontier = {nFrontier}")
+    #print(f"nFrontier = {nFrontier}")
     #print(guard_positions)
 
     return nFrontier  # Lower cost the better
@@ -91,31 +86,29 @@ if __name__ == "__main__":
     start_time = time.time()   
 
     # Read bitmap, set up initial guard positions
+    elev = 10     # Default = 10
+    radius = 30  # Default = 123
     numGuards = 100
     bitmap = read_png(input, verbose)
-
     nrows, ncols = bitmap.shape
+
+    # Initial guard positions determined by fibonacci lattice
     guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
-    setup(guard_positions)
-    nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
-
-    last_pos = guard_positions
-
-    # Define bounds for the guards - Don't move too far from original locations
-    dimensions = 2 * numGuards
-    lb = np.array([0] * dimensions)
-    ub = np.tile([nrows, ncols], numGuards)
+    # Define bounds for the guards to not exceed the bitmap
+    num_dimensions = 2
+    lb = np.array([0, 0])
+    ub = np.array([nrows-1, ncols-1])
    
     # Two options:
-    # Option 1: n_particles = numGuards, dimensions = 2     - Optimize individual position    
-    # Option 2: n_particles = 1, dimensions = numGuards * 2 - Optimize entire set
-    optimizer = ps.single.GlobalBestPSO(n_particles=1, dimensions=dimensions,
-                                        options={'c1': 0.8, 'c2': 0.3, 'w': 0.7},
-                                        bounds=(lb, ub))
+    # Option 1: n_particles = numGuards, num_dimensions = 2     - Optimize individual position    
+    # Option 2: n_particles = 1, num_dimensions = numGuards * 2 - Optimize entire set
+    optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
+                                        options={'c1': 0.5, 'c2': 0.5, 'w': 0.7},
+                                        bounds=(lb, ub), init_pos=guard_positions.astype(float))
     
     cost, pos = optimizer.optimize(bsfScore, iters=10)
-    best_positions = pos.reshape((numGuards, 2))
+    #best_positions = pos.reshape((numGuards, 2))
 
     end_time = time.time()
     print(f"Total running time = {end_time - start_time:.2g} seconds")    
