@@ -1,4 +1,3 @@
-
 import numpy as np
 import argparse
 from mpl_toolkits.mplot3d import Axes3D
@@ -7,7 +6,8 @@ from Visibility import calc_vis
 from ReadElevImg import read_png, show_terrain
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards, clearAll
 from TerrainInput import gGuards, gComps, gNorths, gSouths
-from ilpAlgGenBSF import runBSF
+#from ilpAlgGenBSF import runBSF
+from ilpAlgGen import runILP
 import pyswarms as ps
 import time
 
@@ -24,6 +24,27 @@ def fibonacci_lattice(n_points, nrows, ncols):
         y = float(count+1) / (n_points+1)
         points.append((int(x*nrows), int(y*ncols)))
     
+    return np.array(points)
+
+#---------------------------------------
+# Function to generate guard positions in square uniform
+#---------------------------------------
+def square_uniform(n_points, nrows, ncols):
+    global numGuards
+    
+    nGRows = max(1.0, np.sqrt(float(n_points)*float(nrows)/float(ncols)))
+    nGCols = max(1.0, np.sqrt(float(n_points)*float(ncols)/float(nrows)))
+    nRowGuardPixels = np.floor(max(1.0, float(ncols)/(nGCols+1.0)))
+    nColGuardPixels = np.floor(max(1.0, float(nrows)/(nGRows+1.0)))
+
+    points = []
+    for i in range(int(nGRows)):
+        for j in range(int(nGCols)):
+            points.append(((i+1)*int(nRowGuardPixels), (j+1)*int(nColGuardPixels)))
+
+    # Update numGuards based on how many points it ends up
+    numGuards = len(points)
+
     return np.array(points)
 
 #---------------------------------------
@@ -69,7 +90,8 @@ def bsfScore(guard_positions):
     score = 0
     guard_positions = np.round(guard_positions).reshape((numGuards, 2))
     setup(guard_positions)
-    nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
+    nFrontier = runILP(gGuards, gComps, gNorths, gSouths)
+    #nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
     #print(f"nFrontier = {nFrontier}")
     #print(guard_positions)
 
@@ -87,13 +109,18 @@ if __name__ == "__main__":
 
     # Read bitmap, set up initial guard positions
     elev = 10     # Default = 10
-    radius = 30  # Default = 123
-    numGuards = 100
+    radius = 60  # Default = 120
+    numGuards = 50
     bitmap = read_png(input, verbose)
     nrows, ncols = bitmap.shape
 
     # Initial guard positions determined by fibonacci lattice
     guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
+    #guard_positions = square_uniform(numGuards, nrows, ncols)
+
+    # Get a baseline
+    nFrontier = bsfScore(guard_positions)
+    print(f"Baseline score = {nFrontier}")    
 
     # Define bounds for the guards to not exceed the bitmap
     num_dimensions = 2
@@ -103,11 +130,14 @@ if __name__ == "__main__":
     # Two options:
     # Option 1: n_particles = numGuards, num_dimensions = 2     - Optimize individual position    
     # Option 2: n_particles = 1, num_dimensions = numGuards * 2 - Optimize entire set
+    # c1 = Cognitive parameter (high: more based on individual memory)
+    # c2 = Social parameter (high: converge quickly)
+    # w = Inertia weight (high: explore more wider space)
     optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
-                                        options={'c1': 0.5, 'c2': 0.5, 'w': 0.7},
+                                        options={'c1': 0.8, 'c2': 0.3, 'w': 0.5},
                                         bounds=(lb, ub), init_pos=guard_positions.astype(float))
     
-    cost, pos = optimizer.optimize(bsfScore, iters=10)
+    cost, pos = optimizer.optimize(bsfScore, iters=100)
     #best_positions = pos.reshape((numGuards, 2))
 
     end_time = time.time()

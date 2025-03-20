@@ -36,8 +36,11 @@ Directed Edges:
 
 '''
 
-def runILP(f, verbose=False):    
-    gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
+def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
+    # No solution if North or South borders do not overlap with any CC
+    if len(gNorths) == 0 or len(gSouths) == 0:
+        print("No North/South intersection!")
+        return 9999
 
     if verbose:
         start_time = time.time()
@@ -164,6 +167,7 @@ def runILP(f, verbose=False):
             print(f"Path {var.name}: {var.varValue}")
     
     print(f"Total Cost: {prob.objective.value()}")
+    return int(prob.objective.value())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ILP')
@@ -172,5 +176,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
    
     f = open(args.INPUT, 'r')
+    verbose = args.verbose
 
-    runILP(f, args.verbose)
+    gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
+
+    num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
+    print(f"Number of Guards needed = {num}")
