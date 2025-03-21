@@ -92,7 +92,8 @@ def bsfScore(guard_positions):
     num = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
     if num < nFrontiers:
         nFrontiers = num
-        show_frontiers(nrows, ncols, bitmap, gComps)
+        if enableShow:
+            show_frontiers(nrows, ncols, bitmap, gComps)
 
     #num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
     #print(f"Number of Frontier = {num}")
@@ -104,9 +105,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('INPUT', type=str, help="test.png")
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
+    parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
     args = parser.parse_args()
     input = args.INPUT
     verbose = args.verbose
+    enableShow = args.show
 
     start_time = time.time()   
 
@@ -114,7 +117,7 @@ if __name__ == "__main__":
     elev = 10     # Default = 10
     radius = 60  # Default = 120
     numGuards = 50
-    bitmap = read_png(input, verbose)
+    bitmap = read_png(input, verbose, enableShow)
     nrows, ncols = bitmap.shape
 
     # Initial guard positions determined by fibonacci lattice

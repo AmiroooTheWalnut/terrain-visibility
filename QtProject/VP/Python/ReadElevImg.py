@@ -37,7 +37,7 @@ def show_terrain(width, height, array):
 # ---------------------------------
 # Read a png file that contains elevation in the red channel
 # ---------------------------------
-def read_png(filename, verbose=False):
+def read_png(filename, verbose=False, enableShow=False):
     image = Image.open(filename)
     array = np.array(image)
 
@@ -45,7 +45,7 @@ def read_png(filename, verbose=False):
 
     red_channel = array[:, :, 0]  # Red channel is the elevation
 
-    if verbose:
+    if enableShow:
        show_terrain(nrows, ncols, red_channel)
 
     return red_channel
