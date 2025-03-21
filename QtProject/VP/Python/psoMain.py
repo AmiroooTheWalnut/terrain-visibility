@@ -1,15 +1,14 @@
 import numpy as np
 import argparse
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
 from Visibility import calc_vis
 from ReadElevImg import read_png, show_terrain
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards, clearAll
 from TerrainInput import gGuards, gComps, gNorths, gSouths
-#from ilpAlgGenBSF import runBSF
-from ilpAlgGen import runILP
+from ilpAlgGenBSF import runBSF, show_frontiers
 import pyswarms as ps
 import time
+
+nFrontiers = 9999
 
 #---------------------------------------
 # Function to generate Fibonacci lattice
@@ -75,7 +74,7 @@ def setup(guard_positions):
 
     # Determine the intersections of the Connected Components
     findIntersections(verbose)
-    printGuards(True)
+    printGuards(verbose)
 
     if verbose:
         end_time = time.time()
@@ -85,17 +84,21 @@ def setup(guard_positions):
 # Particle Swarm Optimization
 #---------------------------------------
 def bsfScore(guard_positions):
-    global numGuards
+    global numGuards, nFrontiers
 
     score = 0
     guard_positions = np.round(guard_positions).reshape((numGuards, 2))
     setup(guard_positions)
-    nFrontier = runILP(gGuards, gComps, gNorths, gSouths)
-    #nFrontier = runBSF(gGuards, gComps, gNorths, gSouths)
-    #print(f"nFrontier = {nFrontier}")
+    num = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
+    if num < nFrontiers:
+        nFrontiers = num
+        show_frontiers(nrows, ncols, bitmap, gComps)
+
+    #num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
+    #print(f"Number of Frontier = {num}")
     #print(guard_positions)
 
-    return nFrontier  # Lower cost the better
+    return nFrontiers  # Lower cost the better
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate Visibility')
@@ -119,8 +122,7 @@ if __name__ == "__main__":
     #guard_positions = square_uniform(numGuards, nrows, ncols)
 
     # Get a baseline
-    nFrontier = bsfScore(guard_positions)
-    print(f"Baseline score = {nFrontier}")    
+    bsfScore(guard_positions)
 
     # Define bounds for the guards to not exceed the bitmap
     num_dimensions = 2

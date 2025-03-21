@@ -112,6 +112,7 @@ def calc_vis(guard, elev, verbose):
     #debugPrintViewShed(viewshed)
 
     if verbose:
+        end_time = time.time()
         print(f"Time to execute Visibility algorithm = {end_time - start_time:.2g} seconds")
 	
     return viewshed

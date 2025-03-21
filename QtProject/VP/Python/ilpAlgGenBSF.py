@@ -2,15 +2,33 @@ import argparse
 import numpy as np
 import time
 from TerrainInput import classComp, classGuard, readInput
-from PIL import Image
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
+NO_SOLUTION = 9999
+MAX_FRONTIERS = 30
+MAX_CC_PER_FRONTIER = 500
+
+nFrontier = 0
+nCCPerFrontier = [0] * MAX_FRONTIERS  # Number of CC in each Frontier
+frontier = np.zeros((MAX_FRONTIERS, MAX_CC_PER_FRONTIER), dtype=int) # CC indices in each Frontier
+
+
 # ---------------------------------
-# Show terrain in 3D
-# Elevation is in the 2D array (value range 0-255)
+# Show frontiers
 # ---------------------------------
-def show_frontier(width, height, array):
+def show_frontiers(width, height, array, gComps):
+    colors = np.zeros((width, height, 3))
+    
+    for i in range(nFrontier): 
+        col = np.random.rand(3,)
+        for n in range(nCCPerFrontier[i]):
+            id = frontier[i][n]
+            comp = gComps[id]
+            for x in range(comp.minX, comp.maxX):
+                for y in range(comp.minY, comp.maxY):
+                    if comp.bitmap[x-comp.minX][y-comp.minY]:
+                        colors[x][y] = col
         
     x = np.linspace(0, width-1, width)
     y = np.linspace(0, height-1, height)
@@ -21,15 +39,16 @@ def show_frontier(width, height, array):
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot the array as the Z axis
-    ax.plot_surface(x, y, array)
+    ax.plot_surface(x, y, array, facecolors=colors)
     ax.set_zlim(0, 500)
     ax.view_init(elev=30, azim=225)  # Rotate view to focus on (0,0,0)
 
-
     # Set labels for the axes
-    ax.set_xlabel('X (Width)')
-    ax.set_ylabel('Y (Height)')
-    ax.set_zlabel('Elevation')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    ax.text(x=400, y=400, z=400, s=f"Number of frontiers = {nFrontier}", color='black', fontsize=12)
 
     # Show the plot
     plt.show()
@@ -38,23 +57,24 @@ def show_frontier(width, height, array):
 # BSF - Same as in appVP
 # ---------------------------------
 def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
+    global frontier, nCCPerFrontier, nFrontier
+
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
         print("No North/South intersection!")
-        return 9999
+        return NO_SOLUTION
 
     if verbose:
         start_time = time.time()
 
-    MAX_FRONTIERS = 30
-    MAX_CC_PER_FRONTIER = 500
-
-    nFrontiers = 0
-    nCCPerFrontier = [0] * MAX_FRONTIERS  # Number of CC in each Frontier
-    frontier = np.zeros((MAX_FRONTIERS, MAX_CC_PER_FRONTIER), dtype=int) # CC indices in each Frontier
     ccUsedForFrontier = [0] * len(gComps) # Flag set if cc is picked already
     ccIntersect1 = [] # Intersecting CC in the Frontier
     ccIntersect2 = [] # Intersecting CC in the Frontier
+
+    # Reset global variables
+    nFrontier = 0
+    nCCPerFrontier = [0] * MAX_FRONTIERS 
+    frontier.fill(0)
 
     # F0
     count = 0
@@ -137,7 +157,7 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
     # assert len(returningPath) > 0, "No solution exists!"
     if len(returningPath) == 0:
         print("No solution exists!")
-        nFrontier = 9999 # Big number so PSO algorithm regards this as failure
+        nFrontier = NO_SOLUTION 
     else:
         # ------------ Print output -------------
         #print("Building returningPath")
@@ -178,6 +198,5 @@ if __name__ == "__main__":
     verbose = args.verbose
 
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
-
     nFrontier = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
     print(f"Number of Connected Components needed = {nFrontier}")

@@ -29,6 +29,8 @@ def show_terrain(width, height, array):
     ax.set_ylabel('Y (Height)')
     ax.set_zlabel('Elevation')
 
+    ax.text(x=400, y=400, z=400, s="Original Terrain", color='black', fontsize=12)
+
     # Show the plot
     plt.show()
 

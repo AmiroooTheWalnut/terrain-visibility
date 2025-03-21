@@ -7,7 +7,6 @@
 #     CrossNorth A            <at least one line>
 #     CrossSouth B            <at least one line>
 #
-from PIL import Image, ImageDraw
 import numpy as np
 import gc
 
@@ -36,11 +35,12 @@ class classComp:
         self.radius = radius
 
     # Store bitmap of the Connected Component
-    def setBitmap(self, minX, maxX, minZ, maxZ, bitmap):
+    # Y is Z in the appVP
+    def setBitmap(self, minX, maxX, minY, maxY, bitmap):
         self.minX = minX
         self.maxX = maxX
-        self.minZ = minZ
-        self.maxZ = maxZ
+        self.minY = minY
+        self.maxY = maxY
         self.bitmap = bitmap.copy()
 
     def clear(self):
@@ -118,6 +118,7 @@ def clearAll():
     gGuards.clear()
     gNorths.clear()
     gSouths.clear()    
+    gCompMask = None
 
 # -----------------------------
 # Find intersecting components
@@ -135,13 +136,13 @@ def findIntersections(verbose):
 def intersect(comp1, comp2):
     minX = max(comp1.minX, comp2.minX)  
     maxX = min(comp1.maxX, comp2.maxX)
-    minZ = max(comp1.minZ, comp2.minZ)
-    maxZ = min(comp1.maxZ, comp2.maxZ)
+    minY = max(comp1.minY, comp2.minY)
+    maxY = min(comp1.maxY, comp2.maxY)
 
     for i in range(minX, maxX+1):
-        for j in range(minZ, maxZ+1):
-            if comp1.bitmap[i-comp1.minX][j-comp1.minZ] and \
-                comp2.bitmap[i-comp2.minX][j-comp2.minZ]:
+        for j in range(minY, maxY+1):
+            if comp1.bitmap[i-comp1.minX][j-comp1.minY] and \
+                comp2.bitmap[i-comp2.minX][j-comp2.minY]:
                 return True
 
     return False
@@ -189,8 +190,8 @@ def setConnectedComponent(guard, verbose):
 
     maxX=-100000
     minX=100000
-    maxZ=-100000
-    minZ=100000
+    maxY=-100000
+    minY=100000
 
     bitmap = np.zeros((nrows, ncols), dtype=np.uint32)
 
@@ -199,16 +200,16 @@ def setConnectedComponent(guard, verbose):
             if gCompMask[i][j] == 2:
                 minX = min(i, minX)
                 maxX = max(i, maxX)
-                minZ = min(j, minZ)
-                maxZ = max(j, maxZ)
+                minY = min(j, minY)
+                maxY = max(j, maxY)
                 gCompMask[i][j] = 0  # Clear pixel after processing so we are done with this component, leave other pixels alone
                 bitmap[i][j] = 1
 
     #if verbose:
-    #    print(f"Component boundary = {compnum}: {minX}, {maxX}, {minZ}, {maxZ}")
+    #    print(f"Component boundary = {compnum}: {minX}, {maxX}, {minY}, {maxY}")
 
-    bitmap = bitmap[minX:maxX+1, minZ:maxZ+1]
-    comp.setBitmap(minX, maxX, minZ, maxZ, bitmap)
+    bitmap = bitmap[minX:maxX+1, minY:maxY+1]
+    comp.setBitmap(minX, maxX, minY, maxY, bitmap)
 
     # Potentially add to gNorth or gSouth
     # In the appVP, this is done during construction of first frontier
@@ -256,7 +257,7 @@ def printGuards(verbose):
             print(f"Guard {guard.id} at ({guard.x}, {guard.y})")
             for id in guard.compIDs:
                 comp = gComps[id]
-                print(f"Component {id}: {comp.minX}, {comp.maxX}, {comp.minZ}, {comp.maxZ}")
+                print(f"Component {id}: {comp.minX}, {comp.maxX}, {comp.minY}, {comp.maxY}")
 
         print("-----------Input File Format----------")
         for guard in gGuards:
