@@ -173,12 +173,13 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
             else:
                 done = True
                 
-        # Print returningPath:
-        print("---------- Returning Path ----------------")
-        for cc in returningPath:
-            print(f"Guard/Comp: {gComps[cc].parentID}, {cc}")
 
         if verbose:
+            # Print returningPath:
+            print("---------- Returning Path ----------------")
+            for cc in returningPath:
+                print(f"Guard/Comp: {gComps[cc].parentID}, {cc}")
+
             print("Frontier Details:")
             for i in range(nFrontier):
                 print(f"Frontier: {i}")

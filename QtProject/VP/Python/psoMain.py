@@ -84,12 +84,13 @@ def setup(guard_positions):
 # Particle Swarm Optimization
 #---------------------------------------
 def bsfScore(guard_positions):
-    global numGuards, nFrontiers
+    global numGuards, nFrontiers, iteration
 
     score = 0
     guard_positions = np.round(guard_positions).reshape((numGuards, 2))
     setup(guard_positions)
     num = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
+    print(f"Iteration: {iteration}, Cost = {num}", flush=True)
     if num < nFrontiers:
         nFrontiers = num
         if enableShow:
@@ -98,6 +99,7 @@ def bsfScore(guard_positions):
     #num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
     #print(f"Number of Frontier = {num}")
     #print(guard_positions)
+    iteration += 1
 
     return nFrontiers  # Lower cost the better
 
@@ -125,6 +127,7 @@ if __name__ == "__main__":
     #guard_positions = square_uniform(numGuards, nrows, ncols)
 
     # Get a baseline
+    iteration = 0
     bsfScore(guard_positions)
 
     # Define bounds for the guards to not exceed the bitmap
