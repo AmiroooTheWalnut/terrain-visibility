@@ -7,8 +7,11 @@ from TerrainInput import gGuards, gComps, gNorths, gSouths
 from ilpAlgGenBSF import runBSF, show_frontiers
 import pyswarms as ps
 import time
+import copy
 
 nFrontiers = 9999
+lastComps = []
+lastGuards = []
 
 #---------------------------------------
 # Function to generate Fibonacci lattice
@@ -84,10 +87,18 @@ def setup(guard_positions):
 # Particle Swarm Optimization
 #---------------------------------------
 def bsfScore(guard_positions):
-    global numGuards, nFrontiers, iteration
+    global numGuards, nFrontiers, iteration, lastComps, lastGuards
 
     score = 0
     guard_positions = np.round(guard_positions).reshape((numGuards, 2))
+
+    # Keep the positions of those guards touching North or South last time
+    if iteration > 0:
+        for comp in lastComps:
+            if comp.minX == 0 or comp.maxX == nrows-1:
+                id = comp.parentID
+                guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+
     setup(guard_positions)
     num = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
     print(f"Iteration: {iteration}, Cost = {num}", flush=True)
@@ -99,7 +110,13 @@ def bsfScore(guard_positions):
     #num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
     #print(f"Number of Frontier = {num}")
     #print(guard_positions)
+
     iteration += 1
+
+    lastComps.clear()
+    lastComps = gComps.copy()
+    lastGuards.clear()
+    lastGuards = gGuards.copy()
 
     return nFrontiers  # Lower cost the better
 
