@@ -92,11 +92,19 @@ def bsfScore(guard_positions):
     score = 0
     guard_positions = np.round(guard_positions).reshape((numGuards, 2))
 
-    # Don't move the guards touching North or South 
+    # Don't move the guards that were touching North or South 
     if keepNS:
         if iteration > 0:
             for comp in lastComps:
                 if comp.minX == 0 or comp.maxX == nrows-1:
+                    id = comp.parentID
+                    guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+
+    # Don't move the guards that had at least N (threshold) intersecting components
+    if threshold != None:
+        if iteration > 0:
+            for comp in lastComps:
+                if len(comp.intersects) >= threshold:
                     id = comp.parentID
                     guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
@@ -124,19 +132,22 @@ def bsfScore(guard_positions):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('--name', type=str, help="test.png")
-    parser.add_argument('--radius', type=int, help="120")
     parser.add_argument('--numGuards', type=int, help="50")
+    parser.add_argument('--radius', type=int, help="120")
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
     parser.add_argument('--keepNS', action='store_true', help="Keep NS guard pos")
+    parser.add_argument('--threshold', type=int, help="Connectivity threshold to keep guard pos")
 
     args = parser.parse_args()
-    filename = args.name
-    radius = args.radius
-    numGuards = args.numGuards
-    verbose = args.verbose
-    enableShow = args.show
-    keepNS = args.keepNS
+    filename = args.name        # None if not provided
+    radius = args.radius        # None if not provided
+    numGuards = args.numGuards  # None if not provided
+    verbose = args.verbose      # False if not provided
+    enableShow = args.show      # False if not provided
+    keepNS = args.keepNS        # None if not provided
+    threshold = args.threshold   # None if not provided
+
     elev = 10     # Default = 10
 
     start_time = time.time()   
