@@ -92,12 +92,13 @@ def bsfScore(guard_positions):
     score = 0
     guard_positions = np.round(guard_positions).reshape((numGuards, 2))
 
-    # Keep the positions of those guards touching North or South last time
-    if iteration > 0:
-        for comp in lastComps:
-            if comp.minX == 0 or comp.maxX == nrows-1:
-                id = comp.parentID
-                guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+    # Don't move the guards touching North or South 
+    if keepNS:
+        if iteration > 0:
+            for comp in lastComps:
+                if comp.minX == 0 or comp.maxX == nrows-1:
+                    id = comp.parentID
+                    guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
     setup(guard_positions)
     num = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
@@ -122,21 +123,26 @@ def bsfScore(guard_positions):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate Visibility')
-    parser.add_argument('INPUT', type=str, help="test.png")
+    parser.add_argument('--name', type=str, help="test.png")
+    parser.add_argument('--radius', type=int, help="120")
+    parser.add_argument('--numGuards', type=int, help="50")
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
+    parser.add_argument('--keepNS', action='store_true', help="Keep NS guard pos")
+
     args = parser.parse_args()
-    input = args.INPUT
+    filename = args.name
+    radius = args.radius
+    numGuards = args.numGuards
     verbose = args.verbose
     enableShow = args.show
+    keepNS = args.keepNS
+    elev = 10     # Default = 10
 
     start_time = time.time()   
 
-    # Read bitmap, set up initial guard positions
-    elev = 10     # Default = 10
-    radius = 60  # Default = 120
-    numGuards = 50
-    bitmap = read_png(input, verbose, enableShow)
+    # Read bitmap
+    bitmap = read_png(filename, verbose, enableShow)
     nrows, ncols = bitmap.shape
 
     # Initial guard positions determined by fibonacci lattice
@@ -155,11 +161,11 @@ if __name__ == "__main__":
     # Two options:
     # Option 1: n_particles = numGuards, num_dimensions = 2     - Optimize individual position    
     # Option 2: n_particles = 1, num_dimensions = numGuards * 2 - Optimize entire set
-    # c1 = Cognitive parameter (high: more based on individual memory)
-    # c2 = Social parameter (high: converge quickly)
-    # w = Inertia weight (high: explore more wider space)
+    # c1 [0.5 to 2.5] = Cognitive parameter (high: more based on individual memory) 
+    # c2 [0.5 to 2.5] = Social parameter (high: converge quickly)
+    # w [0.4 to 1.2] = Inertia weight (high: explore more wider space)
     optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
-                                        options={'c1': 0.8, 'c2': 0.3, 'w': 0.5},
+                                        options={'c1': 1.2, 'c2': 0.3, 'w': 1.0},
                                         bounds=(lb, ub), init_pos=guard_positions.astype(float))
     
     cost, pos = optimizer.optimize(bsfScore, iters=100)
