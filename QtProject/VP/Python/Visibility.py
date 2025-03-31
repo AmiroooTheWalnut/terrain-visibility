@@ -7,7 +7,7 @@ import time
 # Output is a viewshed
 # See Franklin's viewshed algorithm
 # ---------------------------------
-def calc_vis(guard, elev, verbose):
+def calc_vis(guard, elev, verbose=False):
     if verbose:
         start_time = time.time()
 

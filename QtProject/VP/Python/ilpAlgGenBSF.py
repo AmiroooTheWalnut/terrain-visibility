@@ -17,7 +17,7 @@ frontier = np.zeros((MAX_FRONTIERS, MAX_CC_PER_FRONTIER), dtype=int) # CC indice
 # ---------------------------------
 # Show frontiers
 # ---------------------------------
-def show_frontiers(width, height, array, gComps):
+def show_frontiers(width, height, array, gGuards, gComps):
     colors = np.zeros((width, height, 3))
     
     for i in range(nFrontier): 
@@ -29,6 +29,13 @@ def show_frontiers(width, height, array, gComps):
                 for y in range(comp.minY, comp.maxY):
                     if comp.bitmap[x-comp.minX][y-comp.minY]:
                         colors[x][y] = col
+
+    # Show guard positions
+    col = np.array([255,255,255]) / 255.0 # White
+    for guard in gGuards:
+        for x in range(-5,5):
+            for y in range(-5,5):
+                colors[guard.x+x][guard.y+y] = col
         
     x = np.linspace(0, width-1, width)
     y = np.linspace(0, height-1, height)

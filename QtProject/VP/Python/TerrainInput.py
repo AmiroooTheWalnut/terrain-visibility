@@ -35,6 +35,7 @@ class classComp:
         self.radius = radius
 
     # Store bitmap of the Connected Component
+    # bitmap is a numpy array ((nrows, ncols), dtype=np.uint32)
     # Y is Z in the appVP
     def setBitmap(self, minX, maxX, minY, maxY, bitmap):
         self.minX = minX
@@ -72,7 +73,7 @@ class classGuard:
 # Read a text file input to define the guards and 
 # connected components and their relationships
 # -----------------------------
-def readInput(f, verbose):
+def readInput(f, verbose=False):
 
     guardnum = -1
     compnum = -1
@@ -123,7 +124,7 @@ def clearAll():
 # -----------------------------
 # Find intersecting components
 # -----------------------------
-def findIntersections(verbose):
+def findIntersections(verbose=False):
     for i in range(len(gComps)):
         for j in range(i+1, len(gComps)):
             if intersect(gComps[i], gComps[j]):
@@ -150,7 +151,7 @@ def intersect(comp1, comp2):
 # -----------------------------
 # Find the connected components of a single guard based on the viewshed
 # -----------------------------
-def findConnected(guard, viewshed, verbose):
+def findConnected(guard, viewshed, verbose=False):
     global gCompMask
 
     width, height = viewshed.shape
@@ -178,7 +179,7 @@ def findConnected(guard, viewshed, verbose):
 # gCompMask contains the mask for the connected component (visible = 2 after flood fill)
 # Other pixels (if visible by the same guard) = 1
 # -----------------------------
-def setConnectedComponent(guard, verbose):
+def setConnectedComponent(guard, verbose=False):
     global gCompMask
 
     nrows, ncols = gCompMask.shape
@@ -250,7 +251,7 @@ def flood_fill(start):
 # Print Guard information
 # A section will be the same format as the input file for the algorithms
 # -----------------------------
-def printGuards(verbose):
+def printGuards(verbose=False):
     if verbose:        
         print("----------Guard/Component Locations----------")
         for guard in gGuards:
