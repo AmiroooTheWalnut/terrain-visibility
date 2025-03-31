@@ -6,6 +6,7 @@ from mlCommon import GuardEnv, fibonacci_lattice, square_uniform, setupGraph
 
 # Alternative to use DQN instead of PPO
 from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 # ----------------------------------------------
 # Evaluate model
@@ -48,34 +49,44 @@ if __name__ == "__main__":
     
     # Check environment before training
     env = GuardEnv(numGuards, elev, radius, bitmap, squareUniform=False, verbose=verbose)
+    DummyVecEnv([lambda: env])  # Make the environment single-threaded
 
     # Define PPO policy and model
     model = PPO(
         "MlpPolicy",
         env,
-        learning_rate=3e-4,
-        gamma=0.99,
-        n_steps=2048,
-        batch_size=64,
+#        learning_rate=3e-4,
+#        gamma=0.99,
+#        n_steps=2048,
+#        batch_size=64,
         verbose=1,
-        tensorboard_log="./guard_rl_logs/"
+        tensorboard_log=None            # "./guard_rl_logs/"
     )
   
-    # Train PPO agent for 100,000 timesteps
-    model.learn(total_timesteps=100000)
+    # Train PPO agent
+    model.learn(total_timesteps=2)
 
     # Save the trained model
     model.save("guard_ppo_model")
 
+    print("Model training complete!")
+    exit()
+
     # Test the trained model
+    loaded_model = PPO.load("guard_ppo_model")
     obs = env.reset()
     for i in range(100):
-        action, _ = model.predict(obs)
-        obs, reward, done, _ = env.step(action)
+        print(f"Test Iteration {i}")
+        action, _states = loaded_model.predict(obs)
+        obs, reward, done, truncated, _ = env.step(action)
         env.render()  # Optional visualization
 
     # Evaluate the trained model
     evaluate_model(env, model)
+
+    # Use tensorboard to see log
+    # bash
+    # tensorboard --logdir=./guard_rl_logs/
 
     end_time = time.time()
     print(f"Total running time = {end_time - start_time:.2g} seconds")    

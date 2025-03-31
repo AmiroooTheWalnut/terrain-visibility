@@ -3,12 +3,13 @@
 
 """
 import numpy as np
+import time
 import gymnasium as gym
 from gymnasium import spaces
 from scipy.spatial import distance
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards, clearAll
 from TerrainInput import gGuards, gComps, gNorths, gSouths
-from ilpAlgGenBSF import runBSF
+from ilpAlgGenBSF import runBSF, show_frontiers
 from Visibility import calc_vis
 
 # Environment setup for multi-level RL
@@ -26,6 +27,7 @@ class GuardEnv(gym.Env):
         self.bitmap = bitmap.copy()
         self.squareUniform = squareUniform
         self.verbose = verbose
+        self.nFrontiers = 9999
 
         # Define action and observation space
         self.action_space = spaces.MultiDiscrete([4] * self.num_guards)
@@ -44,7 +46,7 @@ class GuardEnv(gym.Env):
             self.guard_positions = fibonacci_lattice(self.num_guards, self.grid_size[0], self.grid_size[1])
         if self.verbose:
             print(self.guard_positions)
-        return self._get_state(), {}
+        return self._get_obs(), {}
 
     def step(self, action):
         """Take actions and update environment."""
@@ -62,9 +64,10 @@ class GuardEnv(gym.Env):
         setupGraph(self.guard_positions, self.elev, self.radius, self.bitmap, self.verbose)
 
         reward, done = self._compute_reward()
-        return self._get_state(), reward, done, {}
+        truncated = False
+        return self._get_obs(), reward, done, truncated, {}
 
-    def _get_state(self):
+    def _get_obs(self):
         """Return current state as flattened positions."""
         return self.guard_positions.flatten()
 
@@ -73,6 +76,11 @@ class GuardEnv(gym.Env):
         visibility_reward = self._visibility_score()
         connectivity_reward = self._connectivity_score()
         coverage_reward = self._coverage_score()
+
+        if self.verbose:
+            print(f"Visibility reward = {visibility_reward:.4g}")
+            print(f"Connectivity reward = {connectivity_reward:.4g}")
+            print(f"Coverage reward = {coverage_reward:.4g}")
 
         # Weighted sum of the three levels
         total_reward = 0.5 * visibility_reward + 0.3 * connectivity_reward + 0.2 * coverage_reward
@@ -100,7 +108,11 @@ class GuardEnv(gym.Env):
     def _coverage_score(self):
         """Compute coverage reward."""
         # Score = - number of guards/frontiers
-        return runBSF(gGuards, gComps, gNorths, gSouths, self.verbose)
+        self.nFrontiers = runBSF(gGuards, gComps, gNorths, gSouths, self.verbose)
+        return (-self.nFrontiers)
+
+    def render(self):
+        show_frontiers(self.grid_size[0], self.grid_size[1], self.bitmap, gGuards, gComps)
 
 # ========================================
 # Find the diameter of a visibility region
