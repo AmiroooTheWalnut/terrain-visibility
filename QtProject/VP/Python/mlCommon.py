@@ -20,20 +20,22 @@ class GuardEnv(gym.Env):
         self.num_guards = num_guards
         nrows, ncols = bitmap.shape
         self.grid_size = (nrows, ncols)
-        self.state_dim = self.num_guards * 2  # x, y positions for each guard
-        self.action_dim = self.num_guards * 4  # 4 actions: up, down, left, right
-        self.elev = elev
-        self.radius = radius
-        self.bitmap = bitmap.copy()
         self.squareUniform = squareUniform
         self.verbose = verbose
         self.nFrontiers = 9999
 
+        self.reset()  # Can change num_guards
+
+        self.state_dim = self.num_guards * 2  # x, y positions for each guard
+        self.action_dim = self.num_guards * 8  # 8 actions: Up, Down, Left, Right, UL, UR, DL, DR
+        self.elev = elev
+        self.radius = radius
+        self.bitmap = bitmap.copy()
+
         # Define action and observation space
-        self.action_space = spaces.MultiDiscrete([4] * self.num_guards)
+        self.action_space = spaces.MultiDiscrete([8] * self.num_guards)
         self.observation_space = spaces.Box(low=0, high=max(self.grid_size), shape=(self.state_dim,), dtype=np.int32)
    
-        self.reset()
 
     def reset(self, seed=None, **kwargs):   
         """Reset environment to initial state."""
@@ -42,23 +44,42 @@ class GuardEnv(gym.Env):
         # Initialize guard positions
         if self.squareUniform:
             self.guard_positions = square_uniform(self.num_guards, self.grid_size[0], self.grid_size[1])
+            self.num_guards = self.guard_positions.shape[0] # num_guards must be perfect square
         else:
             self.guard_positions = fibonacci_lattice(self.num_guards, self.grid_size[0], self.grid_size[1])
         if self.verbose:
             print(self.guard_positions)
+        self.iteration = 0
         return self._get_obs(), {}
 
     def step(self, action):
         """Take actions and update environment."""
         for i, act in enumerate(action):
+            # Up, Down, Left, Right, UL, DL, UR, DR
+            x = self.guard_positions[i][0]
+            y = self.guard_positions[i][1]
+            xmax = self.grid_size[0]
+            ymax = self.grid_size[1]
             if act == 0:  # Up
-                self.guard_positions[i][1] = max(0, self.guard_positions[i][1] - 1)
+                self.guard_positions[i][1] = max(0, y - 1)
             elif act == 1:  # Down
-                self.guard_positions[i][1] = min(self.grid_size[1] - 1, self.guard_positions[i][1] + 1)
+                self.guard_positions[i][1] = min(ymax - 1, y + 1)
             elif act == 2:  # Left
-                self.guard_positions[i][0] = max(0, self.guard_positions[i][0] - 1)
+                self.guard_positions[i][0] = max(0, x - 1)
             elif act == 3:  # Right
-                self.guard_positions[i][0] = min(self.grid_size[0] - 1, self.guard_positions[i][0] + 1)
+                self.guard_positions[i][0] = min(xmax - 1, x + 1)
+            elif act == 0:  # UL
+                self.guard_positions[i][1] = max(0, y - 1)
+                self.guard_positions[i][0] = max(0, x - 1)
+            elif act == 1:  # DL
+                self.guard_positions[i][1] = min(ymax - 1, y + 1)
+                self.guard_positions[i][0] = max(0, x - 1)
+            elif act == 2:  # UR
+                self.guard_positions[i][1] = max(0, y - 1)
+                self.guard_positions[i][0] = min(xmax - 1, x + 1)
+            elif act == 3:  # DR
+                self.guard_positions[i][1] = min(ymax - 1, y + 1)
+                self.guard_positions[i][0] = min(xmax - 1, x + 1)
         
         # Set up G(V, E)
         setupGraph(self.guard_positions, self.elev, self.radius, self.bitmap, self.verbose)
@@ -109,6 +130,8 @@ class GuardEnv(gym.Env):
         """Compute coverage reward."""
         # Score = - number of guards/frontiers
         self.nFrontiers = runBSF(gGuards, gComps, gNorths, gSouths, self.verbose)
+        print(f"Iteration: {self.iteration}, Cost = {self.nFrontiers}", flush=True)
+        self.iteration += 1
         return (-self.nFrontiers)
 
     def render(self):
@@ -131,9 +154,10 @@ def calc_diameter(npArray):
 #---------------------------------------
 def fibonacci_lattice(n_points, nrows, ncols):
     gR = (1.0 + np.sqrt(5.0)) / 2.0
-
+    
     points = []
     for count in range(n_points):
+            
         x = float(count+1) / gR
         x -= int(x)
         y = float(count+1) / (n_points+1)
@@ -143,10 +167,14 @@ def fibonacci_lattice(n_points, nrows, ncols):
 
 #---------------------------------------
 # Function to generate guard positions in square uniform
+# randomize=set the guard positions randomly inside their cell
 #---------------------------------------
-def square_uniform(n_points, nrows, ncols):
-    global numGuards
+def square_uniform(n_points, nrows, ncols, randomize=True):
     
+    #np.random.seed(42) # Set the seed so we can repeat the results
+    xoff = 1.0
+    yoff = 1.0
+
     nGRows = max(1.0, np.sqrt(float(n_points)*float(nrows)/float(ncols)))
     nGCols = max(1.0, np.sqrt(float(n_points)*float(ncols)/float(nrows)))
     nRowGuardPixels = np.floor(max(1.0, float(ncols)/(nGCols+1.0)))
@@ -155,10 +183,12 @@ def square_uniform(n_points, nrows, ncols):
     points = []
     for i in range(int(nGRows)):
         for j in range(int(nGCols)):
-            points.append(((i+1)*int(nRowGuardPixels), (j+1)*int(nColGuardPixels)))
-
-    # Update numGuards based on how many points it ends up
-    numGuards = len(points)
+            if randomize:
+                xoff = np.random.rand()
+                yoff = np.random.rand()
+            x = min(max(int((float(i)+xoff)*nRowGuardPixels), 0), nrows-1) # Make sure in range
+            y = min(max(int((float(j)+yoff)*nColGuardPixels), 0), ncols-1) # Make sure in range
+            points.append((x,y))
 
     return np.array(points)
 

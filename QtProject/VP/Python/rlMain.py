@@ -4,8 +4,17 @@ from ReadElevImg import read_png
 import time
 from mlCommon import GuardEnv, fibonacci_lattice, square_uniform, setupGraph
 
-# Alternative to use DQN instead of PPO
+# PPO - A policy-based method that directly learns a policy P(a|s), which
+# maps states to probability distributions over actions.  PPO optimizes 
+# the policy using gradient ascent.
 from stable_baselines3 import PPO
+
+# DQN - A value-based method that learns an action-value function Q(s, a) 
+# to estimates the expected future reward for taking action a in state s.
+# It uses neural network to approximate the function and select actions
+# based on the highest Q-value.  
+#from stable_baselines3 import DQN
+
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 # ----------------------------------------------
@@ -40,7 +49,11 @@ if __name__ == "__main__":
     verbose = args.verbose      # False if not provided
     enableShow = args.show      # False if not provided
 
+    # -------------------------
+    # Other configurables
+    # -------------------------
     elev = 10     # Default = 10
+    squareUniform = True
 
     start_time = time.time()   
 
@@ -48,10 +61,10 @@ if __name__ == "__main__":
     bitmap = read_png(filename, verbose, enableShow)
     
     # Check environment before training
-    env = GuardEnv(numGuards, elev, radius, bitmap, squareUniform=False, verbose=verbose)
+    env = GuardEnv(numGuards, elev, radius, bitmap, squareUniform=squareUniform, verbose=verbose)
     DummyVecEnv([lambda: env])  # Make the environment single-threaded
 
-    # Define PPO policy and model
+    # Define PPO/DQN policy and model
     model = PPO(
         "MlpPolicy",
         env,
@@ -63,21 +76,14 @@ if __name__ == "__main__":
         tensorboard_log=None            # "./guard_rl_logs/"
     )
   
-    # Train PPO agent
-    model.learn(total_timesteps=2)
+    # Train model
+    model.learn(total_timesteps=100)
 
-    # Save the trained model
-    model.save("guard_ppo_model")
-
-    print("Model training complete!")
-    exit()
-
-    # Test the trained model
-    loaded_model = PPO.load("guard_ppo_model")
+    # Test model
     obs = env.reset()
     for i in range(100):
         print(f"Test Iteration {i}")
-        action, _states = loaded_model.predict(obs)
+        action, _states = model.predict(obs)
         obs, reward, done, truncated, _ = env.step(action)
         env.render()  # Optional visualization
 

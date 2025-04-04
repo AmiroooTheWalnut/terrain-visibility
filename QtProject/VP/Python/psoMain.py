@@ -15,19 +15,20 @@ lastGuards = []
 
 #---------------------------------------
 # Particle Swarm Optimization
+# guard_positions is being passed as 1-D array
 #---------------------------------------
 def bsfScore(guard_positions):
     global numGuards, nFrontiers, iteration, lastComps, lastGuards
 
     score = 0
 
-    # Don't move the guards that were touching North or South 
+    # Don't move the guards in NS direction that were touching North or South 
     if keepNS:
         if iteration > 0:
             for comp in lastComps:
                 if comp.minX == 0 or comp.maxX == nrows-1:
                     id = comp.parentID
-                    guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+                    guard_positions[id] = (lastGuards[id].x, guard_positions[id][1])
 
     # Don't move the guards that had at least N (threshold) intersecting components
     if threshold != None:
@@ -78,7 +79,11 @@ if __name__ == "__main__":
     keepNS = args.keepNS        # None if not provided
     threshold = args.threshold   # None if not provided
 
+    # Other options
+    # ----------------
     elev = 10     # Default = 10
+    squareUniform = False
+    # ----------------
 
     start_time = time.time()   
 
@@ -87,8 +92,11 @@ if __name__ == "__main__":
     nrows, ncols = bitmap.shape
 
     # Initial guard positions determined by fibonacci lattice
-    guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
-    #guard_positions = square_uniform(numGuards, nrows, ncols)
+    if squareUniform:
+        guard_positions = square_uniform(numGuards, nrows, ncols, randomize=True)
+        numGuards = guard_positions.shape[0] # numGuards must be perfect square
+    else:
+        guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     # Get a baseline
     iteration = 0
@@ -110,14 +118,14 @@ if __name__ == "__main__":
     # Only for GeneralOptimizerPSO:
     my_topology = Star()
     
-    #optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
-    #                                    options={'c1': 1.2, 'c2': 0.3, 'w': 1.0},
-    #                                    bounds=(lb, ub), init_pos=guard_positions.astype(float))
-
-    optimizer = ps.single.GeneralOptimizerPSO(n_particles=numGuards, dimensions=num_dimensions,
+    optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
                                         options={'c1': 1.2, 'c2': 0.3, 'w': 1.0},
-                                        bounds=(lb, ub), init_pos=guard_positions.astype(float),
-                                        topology=my_topology)    
+                                        bounds=(lb, ub), init_pos=guard_positions.astype(float))
+
+    #optimizer = ps.single.GeneralOptimizerPSO(n_particles=numGuards, dimensions=num_dimensions,
+    #                                    options={'c1': 1.2, 'c2': 0.3, 'w': 1.0},
+    #                                    bounds=(lb, ub), init_pos=guard_positions.astype(float),
+    #                                    topology=my_topology)    
 
     cost, pos = optimizer.optimize(bsfScore, iters=100)
     #best_positions = pos.reshape((numGuards, 2))
