@@ -6,11 +6,10 @@ import numpy as np
 import time
 import gymnasium as gym
 from gymnasium import spaces
-from scipy.spatial import distance
-from TerrainInput import classComp, classGuard, findIntersections, findConnected, printGuards, clearAll
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 from ilpAlgGenBSF import runBSF, show_frontiers
 from Visibility import calc_vis
+from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph
 
 # Environment setup for multi-level RL
 class GuardEnv(gym.Env):
@@ -104,7 +103,7 @@ class GuardEnv(gym.Env):
             print(f"Coverage reward = {coverage_reward:.4g}")
 
         # Weighted sum of the three levels
-        total_reward = 0.5 * visibility_reward + 0.3 * connectivity_reward + 0.2 * coverage_reward
+        total_reward = 0.4 * visibility_reward + 0.3 * connectivity_reward + 0.3 * coverage_reward
         done = False  # Continue until maximum steps
         return total_reward, done
 
@@ -137,81 +136,4 @@ class GuardEnv(gym.Env):
     def render(self):
         show_frontiers(self.grid_size[0], self.grid_size[1], self.bitmap, gGuards, gComps)
 
-# ========================================
-# Find the diameter of a visibility region
-# ========================================
-def calc_diameter(npArray):
-    y, x = np.where(npArray == 1)
-    coords = np.column_stack((x, y))
-    diameter = 0
-    if len(coords) > 1:
-        dist_matrix = distance.cdist(coords, coords, metric='euclidean')
-        diameter = np.max(dist_matrix)
-    return diameter
 
-#---------------------------------------
-# Function to generate Fibonacci lattice
-#---------------------------------------
-def fibonacci_lattice(n_points, nrows, ncols):
-    gR = (1.0 + np.sqrt(5.0)) / 2.0
-    
-    points = []
-    for count in range(n_points):
-            
-        x = float(count+1) / gR
-        x -= int(x)
-        y = float(count+1) / (n_points+1)
-        points.append((int(x*nrows), int(y*ncols)))
-    
-    return np.array(points)
-
-#---------------------------------------
-# Function to generate guard positions in square uniform
-# randomize=set the guard positions randomly inside their cell
-#---------------------------------------
-def square_uniform(n_points, nrows, ncols, randomize=True):
-    
-    #np.random.seed(42) # Set the seed so we can repeat the results
-    xoff = 1.0
-    yoff = 1.0
-
-    nGRows = max(1.0, np.sqrt(float(n_points)*float(nrows)/float(ncols)))
-    nGCols = max(1.0, np.sqrt(float(n_points)*float(ncols)/float(nrows)))
-    nRowGuardPixels = np.floor(max(1.0, float(ncols)/(nGCols+1.0)))
-    nColGuardPixels = np.floor(max(1.0, float(nrows)/(nGRows+1.0)))
-
-    points = []
-    for i in range(int(nGRows)):
-        for j in range(int(nGCols)):
-            if randomize:
-                xoff = np.random.rand()
-                yoff = np.random.rand()
-            x = min(max(int((float(i)+xoff)*nRowGuardPixels), 0), nrows-1) # Make sure in range
-            y = min(max(int((float(j)+yoff)*nColGuardPixels), 0), ncols-1) # Make sure in range
-            points.append((x,y))
-
-    return np.array(points)
-
-#---------------------------------------
-# Set up G(V, E)
-# Visibility, guard/connected component information
-#---------------------------------------
-def setupGraph(guard_positions, elev, radius, bitmap, verbose=False):
-    
-    if verbose:
-        start_time = time.time()
-
-    clearAll()
-    for guardnum in range(len(guard_positions)):
-        guard = classGuard(guardnum)
-        gGuards.append(guard)
-        guard.setLocation(guard_positions[guardnum][0], guard_positions[guardnum][1], elev, radius)
-        viewshed = calc_vis(guard, bitmap, verbose)
-        findConnected(guard, viewshed, verbose)
-
-    findIntersections(verbose)
-    printGuards(verbose)
-
-    if verbose:
-        end_time = time.time()
-        print(f"Time to set up guard/connected components = {end_time - start_time:.2g} seconds")

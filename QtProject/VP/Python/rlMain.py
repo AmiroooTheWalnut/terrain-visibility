@@ -2,7 +2,8 @@ import numpy as np
 import argparse
 from ReadElevImg import read_png
 import time
-from mlCommon import GuardEnv, fibonacci_lattice, square_uniform, setupGraph
+from mlCommon import GuardEnv
+from common import fibonacci_lattice, square_uniform, setupGraph
 
 # PPO - A policy-based method that directly learns a policy P(a|s), which
 # maps states to probability distributions over actions.  PPO optimizes 

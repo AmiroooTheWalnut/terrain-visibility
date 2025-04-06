@@ -2,7 +2,8 @@ import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
 from ilpAlgGenBSF import runBSF, show_frontiers
-from mlCommon import GuardEnv, fibonacci_lattice, square_uniform, setupGraph
+from mlCommon import GuardEnv
+from common import fibonacci_lattice, square_uniform, setupGraph
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 import pyswarms as ps
 from pyswarms.backend.topology import Star, Ring, Random, VonNeumann, Pyramid
@@ -18,17 +19,17 @@ lastGuards = []
 # guard_positions is being passed as 1-D array
 #---------------------------------------
 def bsfScore(guard_positions):
-    global numGuards, nFrontiers, iteration, lastComps, lastGuards
+    global nFrontiers, iteration, lastComps, lastGuards
 
-    score = 0
-
-    # Don't move the guards in NS direction that were touching North or South 
+    # Don't move the guards that were seeing North or South
+    # We don't know if the guard will still see N/S even if the guard moves E/W, 
+    # So we need to keep the guard at its last position (both x and y)
     if keepNS:
         if iteration > 0:
             for comp in lastComps:
                 if comp.minX == 0 or comp.maxX == nrows-1:
                     id = comp.parentID
-                    guard_positions[id] = (lastGuards[id].x, guard_positions[id][1])
+                    guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
     # Don't move the guards that had at least N (threshold) intersecting components
     if threshold != None:
@@ -83,6 +84,7 @@ if __name__ == "__main__":
     # ----------------
     elev = 10     # Default = 10
     squareUniform = False
+    randomize = True
     # ----------------
 
     start_time = time.time()   
@@ -93,7 +95,7 @@ if __name__ == "__main__":
 
     # Initial guard positions determined by fibonacci lattice
     if squareUniform:
-        guard_positions = square_uniform(numGuards, nrows, ncols, randomize=True)
+        guard_positions = square_uniform(numGuards, nrows, ncols, randomize)
         numGuards = guard_positions.shape[0] # numGuards must be perfect square
     else:
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)

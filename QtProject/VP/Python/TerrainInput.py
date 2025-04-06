@@ -10,11 +10,11 @@
 import numpy as np
 import gc
 
-gGuards = []   # Contains the guards and the comps ID only
+gGuards = []   # Contains the guards and the comp IDs only
 gComps = []    # Contains the comps
-gNorths = []   # Contains IDs only
-gSouths = []   # Contains IDs only
-gCompMask = None
+gNorths = []   # Contains comp IDs only
+gSouths = []   # Contains comp IDs only
+gCompMask = None  # Used only when looking for connected components from viewshed
 
 # -----------------------------
 # Connected Component
@@ -35,7 +35,7 @@ class classComp:
         self.radius = radius
 
     # Store bitmap of the Connected Component
-    # bitmap is a numpy array ((nrows, ncols), dtype=np.uint32)
+    # bitmap is a numpy array ((nrows, ncols), dtype=np.uint32), cutout of the original bitmap
     # Y is Z in the appVP
     def setBitmap(self, minX, maxX, minY, maxY, bitmap):
         self.minX = minX
@@ -56,6 +56,7 @@ class classGuard:
     def __init__(self, id):
         self.id = id
         self.compIDs = []
+        self.paired = False
 
     def addComp(self, comp):
         self.compIDs.append(comp.id)
@@ -68,6 +69,7 @@ class classGuard:
 
     def clear(self):
         del self.compIDs
+        self.paired = False
 
 # -----------------------------
 # Read a text file input to define the guards and 
@@ -209,6 +211,7 @@ def setConnectedComponent(guard, verbose=False):
     #if verbose:
     #    print(f"Component boundary = {compnum}: {minX}, {maxX}, {minY}, {maxY}")
 
+    # bitmap is a cutout of the original bitmap
     bitmap = bitmap[minX:maxX+1, minY:maxY+1]
     comp.setBitmap(minX, maxX, minY, maxY, bitmap)
 
@@ -285,3 +288,6 @@ def debugPrintMask():
         for j in range(height):
             s = s + "," + str(gCompMask[i][j])
         print(s)
+
+
+    
