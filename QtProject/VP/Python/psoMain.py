@@ -39,7 +39,7 @@ def bsfScore(guard_positions):
                     id = comp.parentID
                     guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
-    setupGraph(guard_positions, elev, radius, bitmap, verbose)
+    setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
     num = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
     #num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
 
@@ -80,11 +80,12 @@ if __name__ == "__main__":
     keepNS = args.keepNS        # None if not provided
     threshold = args.threshold   # None if not provided
 
+    # ----------------
     # Other options
     # ----------------
-    elev = 10     # Default = 10
-    squareUniform = False
-    randomize = True
+    guardHt = 10     # Guard height above terrain
+    squareUniform = True # False = Fibonacci Lattice guard initial positions
+    randomize = True  # Randomize square uniform guard initial positions
     # ----------------
 
     start_time = time.time()   

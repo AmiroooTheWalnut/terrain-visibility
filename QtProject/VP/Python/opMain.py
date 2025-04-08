@@ -8,14 +8,13 @@ from ilpAlgGenBSF import runBSF, show_frontiers
 from common import fibonacci_lattice, square_uniform, setupGraph, pairGuards
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 import time
-import copy
 
 #---------------------------------------
 # guard_positions is being passed as 1-D array
 #---------------------------------------
 def bsfScore(guard_positions, pairGuardFlag=False, verbose=False):
 
-    setupGraph(guard_positions, elev, radius, bitmap, verbose)
+    setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
     
     if pairGuardFlag:
         pairGuards(nrows, ncols, verbose)
@@ -47,7 +46,7 @@ if __name__ == "__main__":
 
     # Other options
     # ----------------
-    elev = 10     # Default = 10
+    guardHt = 10     # Guard height above terrain
     squareUniform = True
     randomize = False
     pairGuardFlag = True

@@ -9,25 +9,26 @@ from gymnasium import spaces
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 from ilpAlgGenBSF import runBSF, show_frontiers
 from Visibility import calc_vis
-from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph
+from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, stepMove
 
 # Environment setup for multi-level RL
 class GuardEnv(gym.Env):
-    def __init__(self, num_guards, elev, radius, bitmap, squareUniform=False, verbose=False):
+    def __init__(self, num_guards, guardHt, radius, bitmap, squareUniform=False, randomize=False, verbose=False):
         super(GuardEnv, self).__init__()
 
         self.num_guards = num_guards
         nrows, ncols = bitmap.shape
         self.grid_size = (nrows, ncols)
         self.squareUniform = squareUniform
+        self.randomize = randomize
         self.verbose = verbose
         self.nFrontiers = 9999
 
         self.reset()  # Can change num_guards
 
         self.state_dim = self.num_guards * 2  # x, y positions for each guard
-        self.action_dim = self.num_guards * 8  # 8 actions: Up, Down, Left, Right, UL, UR, DL, DR
-        self.elev = elev
+        self.action_dim = self.num_guards * 8  # 8 actions: N, NE, E, SE, S, SW, W, NW
+        self.guardHt = guardHt
         self.radius = radius
         self.bitmap = bitmap.copy()
 
@@ -42,7 +43,7 @@ class GuardEnv(gym.Env):
 
         # Initialize guard positions
         if self.squareUniform:
-            self.guard_positions = square_uniform(self.num_guards, self.grid_size[0], self.grid_size[1])
+            self.guard_positions = square_uniform(self.num_guards, self.grid_size[0], self.grid_size[1], self.randomize)
             self.num_guards = self.guard_positions.shape[0] # num_guards must be perfect square
         else:
             self.guard_positions = fibonacci_lattice(self.num_guards, self.grid_size[0], self.grid_size[1])
@@ -55,33 +56,13 @@ class GuardEnv(gym.Env):
         """Take actions and update environment."""
         for i, act in enumerate(action):
             # Up, Down, Left, Right, UL, DL, UR, DR
-            x = self.guard_positions[i][0]
-            y = self.guard_positions[i][1]
-            xmax = self.grid_size[0]
-            ymax = self.grid_size[1]
-            if act == 0:  # Up
-                self.guard_positions[i][1] = max(0, y - 1)
-            elif act == 1:  # Down
-                self.guard_positions[i][1] = min(ymax - 1, y + 1)
-            elif act == 2:  # Left
-                self.guard_positions[i][0] = max(0, x - 1)
-            elif act == 3:  # Right
-                self.guard_positions[i][0] = min(xmax - 1, x + 1)
-            elif act == 0:  # UL
-                self.guard_positions[i][1] = max(0, y - 1)
-                self.guard_positions[i][0] = max(0, x - 1)
-            elif act == 1:  # DL
-                self.guard_positions[i][1] = min(ymax - 1, y + 1)
-                self.guard_positions[i][0] = max(0, x - 1)
-            elif act == 2:  # UR
-                self.guard_positions[i][1] = max(0, y - 1)
-                self.guard_positions[i][0] = min(xmax - 1, x + 1)
-            elif act == 3:  # DR
-                self.guard_positions[i][1] = min(ymax - 1, y + 1)
-                self.guard_positions[i][0] = min(xmax - 1, x + 1)
+            
+            pt = (self.guard_positions[i][0], self.guard_positions[i][1])
+            bound = (self.grid_size[0], self.grid_size[1])
+            self.guard_positions[i] = stepMove(pt, bound, act)
         
         # Set up G(V, E)
-        setupGraph(self.guard_positions, self.elev, self.radius, self.bitmap, self.verbose)
+        setupGraph(self.guard_positions, self.guardHt, self.radius, self.bitmap, self.verbose)
 
         reward, done = self._compute_reward()
         truncated = False

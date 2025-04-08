@@ -51,10 +51,12 @@ if __name__ == "__main__":
     enableShow = args.show      # False if not provided
 
     # -------------------------
-    # Other configurables
+    # Other options
     # -------------------------
-    elev = 10     # Default = 10
-    squareUniform = True
+    guardHt = 10     # Guard height above terrain
+    squareUniform = True # False = Fibonacci Lattice guard initial positions
+    randomize = True  # Randomize square uniform guard initial positions
+    # -------------------------
 
     start_time = time.time()   
 
@@ -62,7 +64,7 @@ if __name__ == "__main__":
     bitmap = read_png(filename, verbose, enableShow)
     
     # Check environment before training
-    env = GuardEnv(numGuards, elev, radius, bitmap, squareUniform=squareUniform, verbose=verbose)
+    env = GuardEnv(numGuards, guardHt, radius, bitmap, squareUniform=squareUniform, randomize=randomize, verbose=verbose)
     DummyVecEnv([lambda: env])  # Make the environment single-threaded
 
     # Define PPO/DQN policy and model

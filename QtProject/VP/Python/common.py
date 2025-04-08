@@ -10,6 +10,49 @@ from TerrainInput import gGuards, gComps, gNorths, gSouths
 from Visibility import calc_vis
 
 #---------------------------------------
+# Step to neighbor
+# pt = (x, y)
+# bound = (xmax, ymax)
+#---------------------------------------
+def stepMove(pt, bound, direction):
+    assert(direction >= 0 and direction < 8), "Direction out of range"
+
+    if direction == 0:  # North
+        newpt = (pt[0], 
+                 max(0           , pt[1] - 1))
+
+    elif direction == 1:  # NorthEast
+        newpt = (min(bound[0] - 1, pt[0] + 1), 
+                 max(0           , pt[1] - 1))
+
+    elif direction == 2:  # East
+        newpt = (min(bound[0] - 1, pt[0] + 1),
+                 pt[1])
+
+    elif direction == 3:  # SouthEast
+        newpt = (min(bound[0] - 1, pt[0] + 1),
+                 min(bound[1] - 1, pt[1] + 1))
+
+    elif direction == 4:  # South
+        newpt = (pt[0], 
+                 min(bound[1] - 1, pt[1] + 1))
+
+    elif direction == 5:  # SouthWest
+        newpt = (max(0           , pt[0] - 1),
+                 min(bound[1] - 1, pt[1] + 1))
+
+    elif direction == 6:  # West
+        newpt = (max(0           , pt[0] - 1),
+                 pt[1])
+
+    elif direction == 7:  # NorthWest
+        newpt = (max(0           , pt[0] - 1),
+                 max(0           , pt[1] - 1))
+
+
+    return newpt
+
+#---------------------------------------
 # Find the diameter of a visibility region
 #---------------------------------------
 def calc_diameter(npArray):
@@ -68,7 +111,7 @@ def square_uniform(n_points, nrows, ncols, randomize=False):
 # Set up G(V, E)
 # Visibility, guard/connected component information
 #---------------------------------------
-def setupGraph(guard_positions, elev, radius, bitmap, verbose=False):
+def setupGraph(guard_positions, guardHt, radius, bitmap, verbose=False):
     
     if verbose:
         start_time = time.time()
@@ -77,7 +120,7 @@ def setupGraph(guard_positions, elev, radius, bitmap, verbose=False):
     for guardnum in range(len(guard_positions)):
         guard = classGuard(guardnum)
         gGuards.append(guard)
-        guard.setLocation(guard_positions[guardnum][0], guard_positions[guardnum][1], elev, radius)
+        guard.setLocation(guard_positions[guardnum][0], guard_positions[guardnum][1], guardHt, radius)
         viewshed = calc_vis(guard, bitmap, verbose)
         findConnected(guard, viewshed, verbose)
 
