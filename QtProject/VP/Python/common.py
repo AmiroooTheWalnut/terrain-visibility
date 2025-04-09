@@ -49,7 +49,6 @@ def stepMove(pt, bound, direction):
         newpt = (max(0           , pt[0] - 1),
                  max(0           , pt[1] - 1))
 
-
     return newpt
 
 #---------------------------------------
