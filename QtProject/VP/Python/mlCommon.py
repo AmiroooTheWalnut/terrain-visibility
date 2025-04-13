@@ -7,7 +7,7 @@ import time
 import gymnasium as gym
 from gymnasium import spaces
 from TerrainInput import gGuards, gComps, gNorths, gSouths
-from ilpAlgGenBSF import runBSF, show_frontiers
+from algBSF import runBSF, show_frontiers
 from Visibility import calc_vis
 from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, stepMove
 

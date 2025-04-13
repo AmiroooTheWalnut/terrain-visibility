@@ -41,6 +41,7 @@ def calc_vis(guard, elev, verbose=False):
     tgt = np.zeros(2, dtype=int)
     for ip in range(perimeter):
         #define cells on square perimeter
+
         if ip < ywidth:
             tgt[0] = xmax
             tgt[1] = ymax - ip
@@ -132,16 +133,15 @@ def debugPrintViewShed(viewshed):
 # ---------------------------------
 # Calculate reverse visibility from a point obs(x,y)
 # on the terrain to the sky at constant height ht above sea level
-# radius = reach of potential guard in the sky
-# Visibility in the sky is bounded by same rectangle 
-# as on the ground
+# radius = reach radius of guard in the sky
+# Visibility in the sky is bounded by same rectangle as on the ground
 # Elevation is terrain array elev
 # Output is a viewshed 
 # This is modified from calc_vis()
 # ---------------------------------
-def rev_vis(obs, elev, obsAltitude, radius, verbose=False):
-    if verbose:
-        start_time = time.time()
+def rev_vis(obs, elev, ht, radius, verbose=False):
+#    if verbose:
+#        start_time = time.time()
 
     nrows, ncols = elev.shape
     viewshed = np.zeros((nrows, ncols), dtype=int)
@@ -181,11 +181,13 @@ def rev_vis(obs, elev, obsAltitude, radius, verbose=False):
             tgt[0] = xmin + (ip - 2 * ywidth - xwidth)
             tgt[1] = ymax
 
-        # This occurs only when observer is on the edge of the region
+         # This occurs only when observer is on the edge of the region
         if obs[0] == tgt[0] and obs[1] == tgt[1]:
             continue
 
         # Run a line of sight out from obs to target
+        # Note that target is the guard.  
+        # Height is tgt height on the terrain + ht.
         delta = np.array((tgt[0] - obs[0], tgt[1] - obs[1]), dtype=int)
         inciny = int(abs(delta[0]) < abs(delta[1]))
 
@@ -215,21 +217,22 @@ def rev_vis(obs, elev, obsAltitude, radius, verbose=False):
             valX = abs(p[0] - obs[0])
             valY = abs(p[1] - obs[1])
             if valX + valY > radius:
-                # but sometimes we still need to use them...
+                # but sometimes we stilcvl need to use them...
                 if valX * valX + valY * valY > radius * radius:
                     break
 
             pelev = float(elev[p[0]][p[1]])
+            oelev = float(elev[obs[0]][obs[1]])
 
             # Slope from the observer, incl the observer_ht, to this point, at ground
             # level.  The slope is projected into the plane XZ or YZ, depending on
             # whether X or Y is varying faster, and thus being iterated thru.
-            s = (pelev - obsAltitude) / float(abs((p[inciny] - obs[inciny])))
+            s = (pelev - oelev) / float(abs((p[inciny] - obs[inciny])))
 
             if horizon_slope < s:
                 horizon_slope = s
 
-            horizon_alt = float(obsAltitude) + horizon_slope * abs(p[inciny] - obs[inciny])
+            horizon_alt = oelev + horizon_slope * abs(p[inciny] - tgt[inciny])
 
             if pelev >= horizon_alt:
                 viewshed[p[0]][p[1]] = 1
@@ -238,8 +241,8 @@ def rev_vis(obs, elev, obsAltitude, radius, verbose=False):
 
     #debugPrintViewShed(viewshed)
 
-    if verbose:
-        end_time = time.time()
-        print(f"Time to execute Visibility algorithm = {end_time - start_time:.2g} seconds")
+#    if verbose:
+#        end_time = time.time()
+#        print(f"Time to execute Visibility algorithm = {end_time - start_time:.2g} seconds")
 	
     return viewshed

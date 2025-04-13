@@ -1,10 +1,9 @@
 # ---------------------------------------
 # Algorithm optimization without Machine Learning
 # ---------------------------------------
-import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
-from ilpAlgGenBSF import runBSF, show_frontiers
+from algBSF import runBSF, show_frontiers
 from common import fibonacci_lattice, square_uniform, setupGraph, pairGuards
 from TerrainInput import gGuards, gComps, gNorths, gSouths
 import time

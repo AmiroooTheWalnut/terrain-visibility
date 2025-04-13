@@ -1,7 +1,7 @@
 import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
-from ilpAlgGenBSF import runBSF, show_frontiers
+from algBSF import runBSF, show_frontiers
 from mlCommon import GuardEnv
 from common import fibonacci_lattice, square_uniform, setupGraph
 from TerrainInput import gGuards, gComps, gNorths, gSouths
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     # w [0.4 to 1.2] = Inertia weight (high: explore more wider space)
     
     # Only for GeneralOptimizerPSO:
-    my_topology = Star()
+    # my_topology = Star()
     
     optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
                                         options={'c1': 1.2, 'c2': 0.3, 'w': 1.0},
