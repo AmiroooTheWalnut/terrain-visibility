@@ -118,7 +118,7 @@ class GuardEnv(gym.Env):
         return (-self.nFrontiers)
 
     def render(self):
-        print("Not showing on GPU")
-        #show_frontiers(self.grid_size[0], self.grid_size[1], self.bitmap, self.gGuards, self.gComps)
+        # Should only show frontiers when running single-threaded
+        show_frontiers(self.grid_size[0], self.grid_size[1], self.bitmap, self.gGuards, self.gComps)
 
 

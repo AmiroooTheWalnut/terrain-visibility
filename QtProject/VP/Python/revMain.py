@@ -7,7 +7,6 @@ from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF, show_frontiers
 from common import setupGraph, stepMove
 from Visibility import rev_vis
-from TerrainInput import gGuards, gComps, gNorths, gSouths
 import time
 
 #---------------------------------------
@@ -106,7 +105,7 @@ if __name__ == "__main__":
     bitmap = read_png(filename, verbose, enableShow)
     nrows, ncols = bitmap.shape
 
-    #debugVis()
+    debugVis()
 
     # First find two points on the terrain.  
     # p1 is a point on the North rim. 
@@ -143,7 +142,7 @@ if __name__ == "__main__":
         p1 = p2 # Move to next position
 
     arr = np.array(guard_positions)
-    setupGraph(arr, guardHt, radius, bitmap, verbose)
+    gGuards, gComps, gNorths, gSouths = setupGraph(arr, guardHt, radius, bitmap, verbose)
     score = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
 
     if enableShow:

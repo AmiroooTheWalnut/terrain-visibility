@@ -20,9 +20,9 @@ def bsfScore(guard_positions, pairGuardFlag=False, verbose=False):
     score = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
     #score = runILP(gGuards, gComps, gNorths, gSouths, verbose)
 
-    # No show on GPU
-    #if enableShow:
-    #    show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
+    # Should only show frontiers when running single-threaded
+    if enableShow:
+        show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
 
     print(f"Number of Frontier = {score}")
 

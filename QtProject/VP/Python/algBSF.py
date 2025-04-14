@@ -9,10 +9,13 @@ NO_SOLUTION = 9999
 MAX_FRONTIERS = 30
 MAX_CC_PER_FRONTIER = 500
 
+
+# For display of frontiers
+# Using global memory to show frontiers -- Won't work when running multi-threaded
+# But we shouldn't be showing frontiers in multi-threaded executions anyway.
 nFrontier = 0
 nCCPerFrontier = [0] * MAX_FRONTIERS  # Number of CC in each Frontier
 frontier = np.zeros((MAX_FRONTIERS, MAX_CC_PER_FRONTIER), dtype=int) # CC indices in each Frontier
-
 
 # ---------------------------------
 # Show frontiers

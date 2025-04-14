@@ -40,8 +40,8 @@ def bsfScore(guard_positions):
     #nFrontiers = runILP(gGuards, gComps, gNorths, gSouths, verbose)
 
     print(f"Cost = {nFrontiers}", flush=True)
-    #if enableShow:  # No show on GPU
-    #    show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
+    if enableShow:  # No show on GPU
+        show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
 
     #print(guard_positions, flush=True)
 

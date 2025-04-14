@@ -111,7 +111,7 @@ def square_uniform(n_points, nrows, ncols, randomize=False):
 #---------------------------------------
 def setupGraph(guard_positions, guardHt, radius, bitmap, verbose=False):
 
-    gGuards = []
+    gGuards = [classGuard(guardnum) for guardnum in range(len(guard_positions))]
     gComps = []
     gNorths = []
     gSouths = []
@@ -119,15 +119,13 @@ def setupGraph(guard_positions, guardHt, radius, bitmap, verbose=False):
     if verbose:
         start_time = time.time()
 
-    for guardnum in range(len(guard_positions)):
-        guard = classGuard(guardnum)
-        gGuards.append(guard)
-        guard.setLocation(guard_positions[guardnum][0], guard_positions[guardnum][1], guardHt, radius)
+    for guard in gGuards:
+        guard.setLocation(guard_positions[guard.id][0], guard_positions[guard.id][1], guardHt, radius)
         viewshed = calc_vis(guard, bitmap, verbose)
         findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose)
 
     findIntersections(gComps, verbose)
-    printGuards(gGuards, gComps, gNorths, gSouths, verbose)
+    #printGuards(gGuards, gComps, gNorths, gSouths, verbose)
 
     if verbose:
         end_time = time.time()

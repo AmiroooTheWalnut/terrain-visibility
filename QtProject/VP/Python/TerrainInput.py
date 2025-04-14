@@ -141,7 +141,7 @@ def intersect(comp1, comp2):
 def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
 
     width, height = viewshed.shape
-    gCompMask = viewshed.copy()
+    gCompMask = viewshed.copy()  # Perform deep copy
 
     done = False
     while done == False:
@@ -152,7 +152,7 @@ def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
                 if gCompMask[i][j] == 1:  # Either one or zero
                     #if verbose:
                     #    print(f"Find component start point at {i},{j}")
-                    flood_fill((i, j), gCompMask)
+                    flood_fill((i, j), gCompMask) # Fill all the connected points and set the pixels to 2
                     #debugPrintMask(gCompMask)
                     setConnectedComponent(guard, gCompMask, gComps, gNorths, gSouths, verbose)
                     found = True
