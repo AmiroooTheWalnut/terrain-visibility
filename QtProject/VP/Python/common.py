@@ -5,8 +5,7 @@
 import numpy as np
 import time
 from scipy.spatial import distance
-from TerrainInput import classComp, classGuard, findIntersections, findConnected, intersect, printGuards, clearAll
-from TerrainInput import gGuards, gComps, gNorths, gSouths
+from TerrainInput import classComp, classGuard, findIntersections, findConnected, intersect, printGuards
 from Visibility import calc_vis
 
 #---------------------------------------
@@ -111,31 +110,36 @@ def square_uniform(n_points, nrows, ncols, randomize=False):
 # Visibility, guard/connected component information
 #---------------------------------------
 def setupGraph(guard_positions, guardHt, radius, bitmap, verbose=False):
-    
+
+    gGuards = []
+    gComps = []
+    gNorths = []
+    gSouths = []
+
     if verbose:
         start_time = time.time()
 
-    clearAll()
     for guardnum in range(len(guard_positions)):
         guard = classGuard(guardnum)
         gGuards.append(guard)
         guard.setLocation(guard_positions[guardnum][0], guard_positions[guardnum][1], guardHt, radius)
         viewshed = calc_vis(guard, bitmap, verbose)
-        findConnected(guard, viewshed, verbose)
+        findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose)
 
-    findIntersections(verbose)
-    printGuards(verbose)
+    findIntersections(gComps, verbose)
+    printGuards(gGuards, gComps, gNorths, gSouths, verbose)
 
     if verbose:
         end_time = time.time()
         print(f"Time to set up guard/connected components = {end_time - start_time:.2g} seconds")
 
+    return gGuards, gComps, gNorths, gSouths
 # -----------------------------
 # Combine two guards if their CCs intersect the most
 # Find the top 2 such guards and keep going down the list the guards
 # Will modify gGuards, gComps, gNorths, gSouths
 # -----------------------------
-def pairGuards(nrows, ncols, verbose=False):
+def pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose=False):
     done = False
     while done==False:
         maxIntsPair = 0
@@ -158,7 +162,7 @@ def pairGuards(nrows, ncols, verbose=False):
             print(f"Merging guards {g1} and {g2} with {maxIntsPair} intersecting CC!")
             gGuards[g1].paired = True
             gGuards[g2].paired = True
-            merge2Guards(g1, g2, nrows, ncols, verbose)
+            merge2Guards(g1, g2, gGuards, gComps, gNorths, gSouths, nrows, ncols, verbose)
         else:
             done = True
 
@@ -168,7 +172,7 @@ def pairGuards(nrows, ncols, verbose=False):
 # In order to merge the CCs correctly, 
 # each CC is unwrapped into the same bitmap 
 # -----------------------------
-def merge2Guards(g1, g2, nrows, ncols, verbose=False):
+def merge2Guards(g1, g2, gGuards, gComps, gNorths, gSouths, nrows, ncols, verbose=False):
 
     bitmap = np.zeros((nrows, ncols), dtype=np.uint32)
 
@@ -186,7 +190,7 @@ def merge2Guards(g1, g2, nrows, ncols, verbose=False):
     gGuards.append(guard)
     guard.paired = True  # Won't merge after once
     guard.setLocation(gGuards[g1].x, gGuards[g1].y, gGuards[g1].h, gGuards[g1].r)
-    findConnected(guard, bitmap, verbose)
+    findConnected(guard, bitmap, gComps, gNorths, gSouths, verbose)
 
     # Check for intersection ONLY between the existing components and the 
     # new components to avoid duplication
@@ -196,23 +200,22 @@ def merge2Guards(g1, g2, nrows, ncols, verbose=False):
                 gComps[i].addIntersect(j)
                 gComps[j].addIntersect(i)
 
-    removeGuard(g1)
-    removeGuard(g2)
+    removeGuard(g1, gGuards, gComps, gNorths, gSouths)
+    removeGuard(g2, gGuards, gComps, gNorths, gSouths)
 
 # -----------------------------
 # Remove a Guard from gGuards and all its links
 # Update all the ids and their references
 # Note: id is also the position in gGuards array
 # -----------------------------
-def removeGuard(id):
-    global gGuards, gComps
+def removeGuard(id, gGuards, gComps, gNorths, gSouths):
 
     for g in gGuards:
         if g.id > id:
             g.id -= 1
 
     for i in gGuards[id].compIDs:
-        removeComp(i) # This will take are of all parentID links
+        removeComp(i, gComps, gNorths, gSouths) # This will take are of all parentID links
 
     gGuards[id].clear()
     gGuards.pop(id)
@@ -223,8 +226,7 @@ def removeGuard(id):
 # Update all the ids and their references
 # Note: id is also the position in gComps array
 # -----------------------------
-def removeComp(id):
-    global gGuards, gComps, gNorths, gSouths
+def removeComp(id, gComps, gNorths, gSouths):
 
     # Must remove occurrence before reducing the values
     gComps[id].clear()

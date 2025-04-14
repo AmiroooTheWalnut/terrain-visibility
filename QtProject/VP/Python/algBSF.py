@@ -67,7 +67,6 @@ def show_frontiers(width, height, array, gGuards, gComps):
 # BSF - Same as in appVP
 # ---------------------------------
 def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
-    global frontier, nCCPerFrontier, nFrontier
 
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
@@ -83,8 +82,8 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
 
     # Reset global variables
     nFrontier = 0
-    nCCPerFrontier = [0] * MAX_FRONTIERS 
-    frontier.fill(0)
+    nCCPerFrontier = [0] * MAX_FRONTIERS  # Number of CC in each Frontier
+    frontier = np.zeros((MAX_FRONTIERS, MAX_CC_PER_FRONTIER), dtype=int) # CC indices in each Frontier
 
     # F0
     count = 0
@@ -197,6 +196,7 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
                     comp = gComps[frontier[i][j]]
                     print(f"Component: {comp.id}, Guards: {comp.parentID}")
 
+    
     return nFrontier
 
 if __name__ == "__main__":

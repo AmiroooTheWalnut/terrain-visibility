@@ -6,7 +6,6 @@ import numpy as np
 import time
 import gymnasium as gym
 from gymnasium import spaces
-from TerrainInput import gGuards, gComps, gNorths, gSouths
 from algBSF import runBSF, show_frontiers
 from Visibility import calc_vis
 from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, stepMove
@@ -23,6 +22,10 @@ class GuardEnv(gym.Env):
         self.randomize = randomize
         self.verbose = verbose
         self.nFrontiers = 9999
+        self.gGuards = None
+        self.gComps = None
+        self.gNorths = None
+        self.gSouths = None
 
         self.reset()  # Can change num_guards
 
@@ -62,7 +65,7 @@ class GuardEnv(gym.Env):
             self.guard_positions[i] = stepMove(pt, bound, act)
         
         # Set up G(V, E)
-        setupGraph(self.guard_positions, self.guardHt, self.radius, self.bitmap, self.verbose)
+        self.gGuards, self.gComps, self.gNorths, self.gSouths = setupGraph(self.guard_positions, self.guardHt, self.radius, self.bitmap, self.verbose)
 
         reward, done = self._compute_reward()
         truncated = False
@@ -92,7 +95,7 @@ class GuardEnv(gym.Env):
         """Compute visibility reward."""
         # Score = sum of diameters of the connected components
         sum = 0
-        for comp in gComps:
+        for comp in self.gComps:
             sum += calc_diameter(comp.bitmap)
         return sum
 
@@ -102,19 +105,20 @@ class GuardEnv(gym.Env):
         # Score = total number of edges in G(V, E)
         #       = sum of comp.intersects / 2 (since each edge is owned by both comp)
         sum = 0
-        for comp in gComps:
+        for comp in self.gComps:
             sum += len(comp.intersects)
         return sum
 
     def _coverage_score(self):
         """Compute coverage reward."""
         # Score = - number of guards/frontiers
-        self.nFrontiers = runBSF(gGuards, gComps, gNorths, gSouths, self.verbose)
+        self.nFrontiers = runBSF(self.gGuards, self.gComps, self.gNorths, self.gSouths, self.verbose)
         print(f"Iteration: {self.iteration}, Cost = {self.nFrontiers}", flush=True)
         self.iteration += 1
         return (-self.nFrontiers)
 
     def render(self):
-        show_frontiers(self.grid_size[0], self.grid_size[1], self.bitmap, gGuards, gComps)
+        print("Not showing on GPU")
+        #show_frontiers(self.grid_size[0], self.grid_size[1], self.bitmap, self.gGuards, self.gComps)
 
 

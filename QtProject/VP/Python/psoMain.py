@@ -4,13 +4,11 @@ from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF, show_frontiers
 from mlCommon import GuardEnv
 from common import fibonacci_lattice, square_uniform, setupGraph
-from TerrainInput import gGuards, gComps, gNorths, gSouths
 import pyswarms as ps
 from pyswarms.backend.topology import Star, Ring, Random, VonNeumann, Pyramid
 import time
 import copy
 
-nFrontiers = 9999
 lastComps = []
 lastGuards = []
 
@@ -19,40 +17,33 @@ lastGuards = []
 # guard_positions is being passed as 1-D array
 #---------------------------------------
 def bsfScore(guard_positions):
-    global nFrontiers, iteration, lastComps, lastGuards
+    global lastComps, lastGuards
 
     # Don't move the guards that were seeing North or South
     # We don't know if the guard will still see N/S even if the guard moves E/W, 
     # So we need to keep the guard at its last position (both x and y)
     if keepNS:
-        if iteration > 0:
-            for comp in lastComps:
-                if comp.minX == 0 or comp.maxX == nrows-1:
-                    id = comp.parentID
-                    guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+        for comp in lastComps:
+            if comp.minX == 0 or comp.maxX == nrows-1:
+                id = comp.parentID
+                guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
     # Don't move the guards that had at least N (threshold) intersecting components
     if threshold != None:
-        if iteration > 0:
-            for comp in lastComps:
-                if len(comp.intersects) >= threshold:
-                    id = comp.parentID
-                    guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+        for comp in lastComps:
+            if len(comp.intersects) >= threshold:
+                id = comp.parentID
+                guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
-    setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
-    num = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
-    #num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
+    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
+    nFrontiers = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
+    #nFrontiers = runILP(gGuards, gComps, gNorths, gSouths, verbose)
 
-    print(f"Iteration: {iteration}, Cost = {num}", flush=True)
-    if num < nFrontiers:
-        nFrontiers = num
-        if enableShow:
-            show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
+    print(f"Cost = {nFrontiers}", flush=True)
+    #if enableShow:  # No show on GPU
+    #    show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
 
-    #print(f"Number of Frontier = {num}")
-    #print(guard_positions)
-
-    iteration += 1
+    #print(guard_positions, flush=True)
 
     lastComps.clear()
     lastComps = gComps.copy()
@@ -102,8 +93,7 @@ if __name__ == "__main__":
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     # Get a baseline
-    iteration = 0
-    bsfScore(guard_positions)
+    nFrontiers = bsfScore(guard_positions)
 
     # Define bounds for the guards to not exceed the bitmap
     num_dimensions = 2

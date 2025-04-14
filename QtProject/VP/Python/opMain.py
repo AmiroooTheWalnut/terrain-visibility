@@ -5,7 +5,6 @@ import argparse
 from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF, show_frontiers
 from common import fibonacci_lattice, square_uniform, setupGraph, pairGuards
-from TerrainInput import gGuards, gComps, gNorths, gSouths
 import time
 
 #---------------------------------------
@@ -13,16 +12,17 @@ import time
 #---------------------------------------
 def bsfScore(guard_positions, pairGuardFlag=False, verbose=False):
 
-    setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
+    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
     
     if pairGuardFlag:
-        pairGuards(nrows, ncols, verbose)
+        pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
 
     score = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
     #score = runILP(gGuards, gComps, gNorths, gSouths, verbose)
 
-    if enableShow:
-        show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
+    # No show on GPU
+    #if enableShow:
+    #    show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
 
     print(f"Number of Frontier = {score}")
 

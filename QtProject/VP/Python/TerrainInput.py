@@ -10,12 +10,6 @@
 import numpy as np
 import gc
 
-gGuards = []   # Contains the guards and the comp IDs only
-gComps = []    # Contains the comps
-gNorths = []   # Contains comp IDs only
-gSouths = []   # Contains comp IDs only
-gCompMask = None  # Used only when looking for connected components from viewshed
-
 # -----------------------------
 # Connected Component
 # -----------------------------
@@ -79,6 +73,11 @@ def readInput(f, verbose=False):
 
     guardnum = -1
     compnum = -1
+
+    gGuards = []
+    gComps = []
+    gNorths = []
+    gSouths = []
  
     # Read input file and build the connectedness map
     for l in f.readlines():
@@ -110,23 +109,9 @@ def readInput(f, verbose=False):
     return gGuards, gComps, gNorths, gSouths
 
 # -----------------------------
-# Clear all the data
-# -----------------------------
-def clearAll():
-    for comp in gComps:
-        comp.clear()
-    gComps.clear()
-    for guard in gGuards:
-        guard.clear()
-    gGuards.clear()
-    gNorths.clear()
-    gSouths.clear()    
-    gCompMask = None
-
-# -----------------------------
 # Find intersecting components
 # -----------------------------
-def findIntersections(verbose=False):
+def findIntersections(gComps, verbose=False):
     for i in range(len(gComps)):
         for j in range(i+1, len(gComps)):
             if intersect(gComps[i], gComps[j]):
@@ -153,8 +138,7 @@ def intersect(comp1, comp2):
 # -----------------------------
 # Find the connected components of a single guard based on the viewshed
 # -----------------------------
-def findConnected(guard, viewshed, verbose=False):
-    global gCompMask
+def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
 
     width, height = viewshed.shape
     gCompMask = viewshed.copy()
@@ -168,9 +152,9 @@ def findConnected(guard, viewshed, verbose=False):
                 if gCompMask[i][j] == 1:  # Either one or zero
                     #if verbose:
                     #    print(f"Find component start point at {i},{j}")
-                    flood_fill((i, j))
-                    #debugPrintMask()
-                    setConnectedComponent(guard, verbose)
+                    flood_fill((i, j), gCompMask)
+                    #debugPrintMask(gCompMask)
+                    setConnectedComponent(guard, gCompMask, gComps, gNorths, gSouths, verbose)
                     found = True
         if found == False:
             done = True
@@ -181,8 +165,7 @@ def findConnected(guard, viewshed, verbose=False):
 # gCompMask contains the mask for the connected component (visible = 2 after flood fill)
 # Other pixels (if visible by the same guard) = 1
 # -----------------------------
-def setConnectedComponent(guard, verbose=False):
-    global gCompMask
+def setConnectedComponent(guard, gCompMask, gComps, gNorths, gSouths, verbose=False):
 
     nrows, ncols = gCompMask.shape
 
@@ -226,8 +209,7 @@ def setConnectedComponent(guard, verbose=False):
 # -----------------------------
 # Flood fill a 2D array
 # -----------------------------
-def flood_fill(start):
-    global gCompMask
+def flood_fill(start, gCompMask):
 
     width, height = gCompMask.shape
 
@@ -249,12 +231,12 @@ def flood_fill(start):
         stack.append((x - 1, y))  # Left
         stack.append((x, y + 1))  # Down
         stack.append((x, y - 1))  # Up
-
+        
 # -----------------------------
 # Print Guard information
 # A section will be the same format as the input file for the algorithms
 # -----------------------------
-def printGuards(verbose=False):
+def printGuards(gGuards, gComps, gNorths, gSouths, verbose=False):
     if verbose:        
         print("----------Guard/Component Locations----------")
         for guard in gGuards:
@@ -279,8 +261,7 @@ def printGuards(verbose=False):
 # -----------------------------
 # Print gCompMask
 # -----------------------------
-def debugPrintMask():
-    global gCompMask
+def debugPrintMask(gCompMask):
 
     width, height = gCompMask.shape
     for i in range(width):
