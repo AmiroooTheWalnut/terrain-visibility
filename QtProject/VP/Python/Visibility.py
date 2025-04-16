@@ -206,33 +206,33 @@ def rev_vis(obs, elev, ht, radius, verbose=False):
         p = np.array((0, 0), dtype=int)
         i = sig
         while i != delta[inciny]:
-            p[inciny] = obs[inciny] + i
-            p[1 - inciny] = obs[1 - inciny] + int(i * slope)
+            p[inciny] = tgt[inciny] - i
+            p[1 - inciny] = tgt[1 - inciny] - int(i * slope)
 
             # Have we reached the edge of the area?
             if p[0] < 0 or p[0] >= nrows or p[1] < 0 or p[1] >= ncols:
                 break
 
             # A little optimization, so we don't need to use long long every time (int is faster)
-            valX = abs(p[0] - obs[0])
-            valY = abs(p[1] - obs[1])
+            valX = abs(p[0] - tgt[0])
+            valY = abs(p[1] - tgt[1])
             if valX + valY > radius:
                 # but sometimes we stilcvl need to use them...
                 if valX * valX + valY * valY > radius * radius:
                     break
 
             pelev = float(elev[p[0]][p[1]])
-            oelev = float(elev[obs[0]][obs[1]])
+            telev = float(elev[tgt[0]][tgt[1]])
 
             # Slope from the observer, incl the observer_ht, to this point, at ground
             # level.  The slope is projected into the plane XZ or YZ, depending on
             # whether X or Y is varying faster, and thus being iterated thru.
-            s = (pelev - oelev) / float(abs((p[inciny] - obs[inciny])))
+            s = (pelev - telev) / float(abs((p[inciny] - tgt[inciny])))
 
             if horizon_slope < s:
                 horizon_slope = s
 
-            horizon_alt = oelev + horizon_slope * abs(p[inciny] - tgt[inciny])
+            horizon_alt = telev + horizon_slope * abs(p[inciny] - tgt[inciny])
 
             if pelev >= horizon_alt:
                 viewshed[p[0]][p[1]] = 1

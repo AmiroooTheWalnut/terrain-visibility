@@ -10,20 +10,6 @@ from Visibility import rev_vis
 import time
 
 #---------------------------------------
-# Debug reverse visibility overlap
-#---------------------------------------
-def debugVis(verbose=False):
-
-    pos1 = np.array((510, 57))
-    pos2 = np.array((510, 60))
-
-    viewshed1 = rev_vis(pos1, bitmap, guardHt, radius, verbose)
-    viewshed2 = rev_vis(pos2, bitmap, guardHt, radius, verbose)
-    overlap = viewshed1 * viewshed2
-    sum = np.sum(overlap)
-    print(f"Overlap {sum} pixels")
-
-#---------------------------------------
 # startPos is of format (x, y).  It's a point on the terrain.
 # Find the guard position that will see both startPos and furthest endPos
 # We find the intersection between the visibility regions of startPos and the 
@@ -34,6 +20,8 @@ def findSharedGuardPos(startPos, verbose=False):
 
     # Find reverse visibility from startPos
     viewshed1 = rev_vis(startPos, bitmap, guardHt, radius, verbose)
+
+    print(f"Viewshed visibility at {startPos} = {np.sum(viewshed1)}")
 
     bound = (nrows, ncols)
     dist = np.zeros((5), dtype=int)
@@ -54,6 +42,8 @@ def findSharedGuardPos(startPos, verbose=False):
             newPos = stepMove(endPos[idx], bound, dir)
 
             viewshed2 = rev_vis(newPos, bitmap, guardHt, radius, verbose)
+            print(f"Viewshed visibility at {newPos} = {np.sum(viewshed2)}")
+
             overlap = viewshed1 * viewshed2
             sum = np.sum(overlap)
 
@@ -69,7 +59,7 @@ def findSharedGuardPos(startPos, verbose=False):
                     xs, ys = np.where(overlap)
                     guardPos[idx] = ([xs.max(), ys.max()])  # Pick a point in the intersection
                     if verbose:
-                        print(f"Potential guard position = {guardPos[idx]}, {startPos} to {newPos}, distance = {dist[idx]}", flush=True)
+                        print(f"Move valid.  Potential guard position = {guardPos[idx]}, distance = {dist[idx]}", flush=True)
 
             if done == False:
                 endPos[idx] = (newPos[0], newPos[1])
@@ -104,8 +94,6 @@ if __name__ == "__main__":
     # Read bitmap
     bitmap = read_png(filename, verbose, enableShow)
     nrows, ncols = bitmap.shape
-
-    debugVis()
 
     # First find two points on the terrain.  
     # p1 is a point on the North rim. 
