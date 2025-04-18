@@ -1,7 +1,7 @@
 import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
-from algBSF import runBSF, show_frontiers
+from algBSF import runBSF
 from mlCommon import GuardEnv
 from common import fibonacci_lattice, square_uniform, setupGraph
 import pyswarms as ps
@@ -36,12 +36,10 @@ def bsfScore(guard_positions):
                 guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
     gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
-    nFrontiers = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
-    #nFrontiers = runILP(gGuards, gComps, gNorths, gSouths, verbose)
+    nFrontiers = runBSF(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    #nFrontiers = runILP(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
     print(f"Cost = {nFrontiers}", flush=True)
-    if enableShow:  # No show on GPU
-        show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
 
     #print(guard_positions, flush=True)
 

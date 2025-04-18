@@ -4,7 +4,7 @@
 import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
-from algBSF import runBSF, show_frontiers
+from algBSF import runBSF
 from common import setupGraph, stepMove
 from Visibility import rev_vis
 import time
@@ -131,10 +131,7 @@ if __name__ == "__main__":
 
     arr = np.array(guard_positions)
     gGuards, gComps, gNorths, gSouths = setupGraph(arr, guardHt, radius, bitmap, verbose)
-    score = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
-
-    if enableShow:
-        show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
+    score = runBSF(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
     print(f"Number of Frontier = {score}", flush=True)
 

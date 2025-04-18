@@ -6,7 +6,7 @@ import numpy as np
 import time
 import gymnasium as gym
 from gymnasium import spaces
-from algBSF import runBSF, show_frontiers
+from algBSF import runBSF
 from Visibility import calc_vis
 from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, stepMove
 
@@ -112,13 +112,14 @@ class GuardEnv(gym.Env):
     def _coverage_score(self):
         """Compute coverage reward."""
         # Score = - number of guards/frontiers
-        self.nFrontiers = runBSF(self.gGuards, self.gComps, self.gNorths, self.gSouths, self.verbose)
+        self.nFrontiers = runBSF(self.grid_size[1], self.grid_size[0], self.bitmap, self.gGuards, self.gComps, \
+            self.gNorths, self.gSouths, self.verbose, False)
         print(f"Iteration: {self.iteration}, Cost = {self.nFrontiers}", flush=True)
         self.iteration += 1
         return (-self.nFrontiers)
 
     def render(self):
         # Should only show frontiers when running single-threaded
-        show_frontiers(self.grid_size[0], self.grid_size[1], self.bitmap, self.gGuards, self.gComps)
+        return
 
 

@@ -3,28 +3,40 @@
 # ---------------------------------------
 import argparse
 from ReadElevImg import read_png, show_terrain
-from algBSF import runBSF, show_frontiers
+from algBSF import runBSF
+from ilpAlgGen import runILP
 from common import fibonacci_lattice, square_uniform, setupGraph, pairGuards
 import time
 
 #---------------------------------------
 # guard_positions is being passed as 1-D array
 #---------------------------------------
-def bsfScore(guard_positions, pairGuardFlag=False, verbose=False):
+def bsfScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=False):
 
     gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
     
     if pairGuardFlag:
         pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
 
-    score = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
-    #score = runILP(gGuards, gComps, gNorths, gSouths, verbose)
-
-    # Should only show frontiers when running single-threaded
-    if enableShow:
-        show_frontiers(nrows, ncols, bitmap, gGuards, gComps)
+    score = runBSF(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
     print(f"Number of Frontier = {score}")
+
+    return score # Lower cost the better
+
+#---------------------------------------
+# guard_positions is being passed as 1-D array
+#---------------------------------------
+def ilpScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=False):
+
+    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
+
+    if pairGuardFlag:
+        pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
+    
+    score = runILP(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+
+    print(f"Number of Guards = {score}")
 
     return score # Lower cost the better
 
@@ -33,6 +45,7 @@ if __name__ == "__main__":
     parser.add_argument('--name', type=str, help="test.png")
     parser.add_argument('--numGuards', type=int, help="50")
     parser.add_argument('--radius', type=int, help="120")
+    parser.add_argument('--ilp', action='store_true', help="Run ILP")
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
 
@@ -40,15 +53,16 @@ if __name__ == "__main__":
     filename = args.name        # None if not provided
     radius = args.radius        # None if not provided
     numGuards = args.numGuards  # None if not provided
+    ilp = args.ilp              # False if not provided
     verbose = args.verbose      # False if not provided
     enableShow = args.show      # False if not provided
 
     # Other options
     # ----------------
     guardHt = 10     # Guard height above terrain
-    squareUniform = True
-    randomize = False
-    pairGuardFlag = True
+    squareUniform = False
+    randomize = True
+    pairGuardFlag = False
     # ----------------
 
     start_time = time.time()   
@@ -64,7 +78,10 @@ if __name__ == "__main__":
     else:
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
-    bsfScore(guard_positions, pairGuardFlag, verbose)
+    if ilp:
+        ilpScore(guard_positions, pairGuardFlag, verbose, enableShow)
+    else:     
+        bsfScore(guard_positions, pairGuardFlag, verbose, enableShow)
 
     end_time = time.time()
     print(f"Total running time = {end_time - start_time:.2g} seconds")    

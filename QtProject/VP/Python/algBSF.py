@@ -9,19 +9,13 @@ NO_SOLUTION = 9999
 MAX_FRONTIERS = 30
 MAX_CC_PER_FRONTIER = 500
 
-
-# For display of frontiers
-# Using global memory to show frontiers -- Won't work when running multi-threaded
-# But we shouldn't be showing frontiers in multi-threaded executions anyway.
-nFrontier = 0
-nCCPerFrontier = [0] * MAX_FRONTIERS  # Number of CC in each Frontier
-frontier = np.zeros((MAX_FRONTIERS, MAX_CC_PER_FRONTIER), dtype=int) # CC indices in each Frontier
-
 # ---------------------------------
 # Show frontiers
 # ---------------------------------
-def show_frontiers(width, height, array, gGuards, gComps):
-    colors = np.zeros((width, height, 3))
+def show_frontiers(width, height, bitmap, gGuards, gComps, nFrontier, nCCPerFrontier, frontier):
+
+    light_gray = np.array([200 / 255.0] * 3, dtype=np.float32)
+    colors = np.full((height, width, 3), light_gray)
     
     for i in range(nFrontier): 
         col = np.random.rand(3,)
@@ -51,8 +45,8 @@ def show_frontiers(width, height, array, gGuards, gComps):
     fig = plt.figure(figsize=(11, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    # Plot the array as the Z axis
-    ax.plot_surface(x, y, array, facecolors=colors)
+    # Plot the bitmap as the Z axis
+    ax.plot_surface(x, y, bitmap, facecolors=colors)
     ax.set_zlim(0, 500)
     ax.view_init(elev=30, azim=225)  # Rotate view to focus on (0,0,0)
 
@@ -69,7 +63,7 @@ def show_frontiers(width, height, array, gGuards, gComps):
 # ---------------------------------
 # BSF - Same as in appVP
 # ---------------------------------
-def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
+def runBSF(width, height, bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=False):
 
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
@@ -199,6 +193,8 @@ def runBSF(gGuards, gComps, gNorths, gSouths, verbose=False):
                     comp = gComps[frontier[i][j]]
                     print(f"Component: {comp.id}, Guards: {comp.parentID}")
 
+    if enableShow:
+        show_frontiers(width, height, bitmap, gGuards, gComps, nFrontier, nCCPerFrontier, frontier)
     
     return nFrontier
 

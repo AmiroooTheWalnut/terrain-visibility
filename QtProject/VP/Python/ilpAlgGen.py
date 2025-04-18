@@ -1,7 +1,11 @@
 import argparse
 import time
+import numpy as np
+import re
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 from TerrainInput import classComp, classGuard, readInput
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 '''
 g0, ..., gn-1 are integers, 0 = not selected, 1 = selected
@@ -35,8 +39,64 @@ Directed Edges:
     Ci-Cj if Ci overlaps j and i < j
 
 '''
+# ---------------------------------
+# Show ilp solution
+# ---------------------------------
+def show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, nGuards):
 
-def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
+    light_gray = np.array([200 / 255.0] * 3, dtype=np.float32)
+    colors = np.full((height, width, 3), light_gray)
+    
+    # This will plot one component an extra time if we don't keep track
+    plotted = []
+    for var in lpFlowArray:
+        if var.varValue != 0.0:
+            ids = re.findall(r'\d+', var.name)
+            for id in ids:
+                n = int(id)
+                if (n in plotted) == False:
+                    col = np.random.rand(3,)
+                    comp = gComps[n]
+                    for x in range(comp.minX, comp.maxX):
+                        for y in range(comp.minY, comp.maxY):
+                            if comp.bitmap[x-comp.minX][y-comp.minY]:
+                                colors[x][y] = col
+                    plotted.append(n)
+
+    # Show guard positions
+    col = np.array([255,255,255]) / 255.0 # White
+    for guard in gGuards:
+        for x in range(-5,5):
+            for y in range(-5,5):
+                a = guard.x+x
+                b = guard.y+y
+                if a >= 0 and a < width and b >= 0 and b < height:
+                    colors[a][b] = col
+        
+    x = np.linspace(0, width-1, width)
+    y = np.linspace(0, height-1, height)
+    x, y = np.meshgrid(x, y)
+
+    # Create a 3D plot
+    fig = plt.figure(figsize=(11, 8))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot the bitmap as the Z axis
+    ax.plot_surface(x, y, bitmap, facecolors=colors, shade=False)
+    ax.set_zlim(0, 500)
+    ax.view_init(elev=30, azim=225)  # Rotate view to focus on (0,0,0)
+
+    # Set labels for the axes
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    ax.text(x=400, y=400, z=400, s=f"Number of guards = {nGuards}, Number of components = {len(plotted)}", color='black', fontsize=12)
+
+    # Show the plot
+    plt.show()
+
+def runILP(width, height, bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=False):
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
         print("No North/South intersection!")
@@ -167,7 +227,12 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
             print(f"Path {var.name}: {var.varValue}")
     
     print(f"Total Cost: {prob.objective.value()}")
+
+    if enableShow:
+        show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, int(prob.objective.value()))
+
     return int(prob.objective.value())
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ILP')

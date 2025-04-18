@@ -46,7 +46,7 @@ def read_png(filename, verbose=False, enableShow=False):
     red_channel = array[:, :, 0]  # Red channel is the elevation
 
     if enableShow:
-       show_terrain(nrows, ncols, red_channel)
+       show_terrain(ncols, nrows, red_channel)
 
     return red_channel
 
