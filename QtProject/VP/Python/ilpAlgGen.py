@@ -82,7 +82,7 @@ def show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, nGuards):
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot the bitmap as the Z axis
-    ax.plot_surface(x, y, bitmap, facecolors=colors, shade=False)
+    ax.plot_surface(x, y, bitmap, facecolors=colors, shade=False, rstride=1, cstride=1, antialiased=True)
     ax.set_zlim(0, 500)
     ax.view_init(elev=30, azim=225)  # Rotate view to focus on (0,0,0)
 
@@ -91,7 +91,7 @@ def show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, nGuards):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
 
-    ax.text(x=400, y=400, z=400, s=f"Number of guards = {nGuards}, Number of components = {len(plotted)}", color='black', fontsize=12)
+    ax.text(x=200, y=200, z=400, s=f"ILP Result: {nGuards} guards, {len(plotted)} components", color='black', fontsize=12)
 
     # Show the plot
     plt.show()

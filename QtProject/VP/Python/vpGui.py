@@ -39,7 +39,7 @@ def on_run():
 
 # Create main window
 root = tk.Tk()
-root.title("Drone Input Dialog")
+root.title("Input Dialog")
 root.geometry("920x250")
 
 # Name label and entry

@@ -56,10 +56,10 @@ class classGuard:
         self.compIDs.append(comp.id)
 
     def setLocation(self, x, y, h, r):
-        self.x = x
-        self.y = y
-        self.h = h
-        self.r = r
+        self.x = int(x)
+        self.y = int(y)
+        self.h = int(h)
+        self.r = int(r)
 
     def clear(self):
         del self.compIDs
