@@ -45,8 +45,8 @@ def show_frontiers(width, height, bitmap, gGuards, gComps, nFrontier, nCCPerFron
     fig = plt.figure(figsize=(11, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    # Plot the bitmap as the Z axis
-    ax.plot_surface(x, y, bitmap, facecolors=colors, rstride=1, cstride=1, antialiased=True)
+    # Plot the bitmap as the Z axis, set strides to larger number for speed
+    ax.plot_surface(x, y, bitmap, facecolors=colors, shade=False, rstride=3, cstride=3, antialiased=True)
     ax.set_zlim(0, 500)
     ax.view_init(elev=30, azim=225)  # Rotate view to focus on (0,0,0)
 
