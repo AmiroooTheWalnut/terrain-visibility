@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument('--square', action='store_true', help="Square uniform")
     parser.add_argument('--randomize', action='store_true', help="Randomize Square Pos")
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
-    parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
+    parser.add_argument('--show', action='store_true', help="Enable showing terrain")
 
     args = parser.parse_args()
 

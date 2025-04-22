@@ -1,5 +1,6 @@
 import argparse
 import numpy as np
+import os
 from PIL import Image
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -50,10 +51,36 @@ def read_png(filename, verbose=False, enableShow=False):
 
     return red_channel
 
+# ---------------------------------
+# Read a hgt file
+# ---------------------------------
+def read_hgt(filename, verbose=False, enableShow=False):
+
+    ncols = 1201
+    nrows = 1201
+
+    elev = np.fromfile(filename, np.dtype('>i2'), ncols*nrows).reshape((ncols, nrows))
+
+    if enableShow:
+        show_terrain(ncols, nrows, elev)
+
+    return elev
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Read Elevation Image')
     parser.add_argument('INPUT', type=str, help="test.png")    
     parser.add_argument('--verbose', action='store_true', help="verbose")
+    parser.add_argument('--show', action='store_true', help="Enable showing terrain")
     args = parser.parse_args()
-   
-    read_png(args.INPUT, args.verbose)
+
+    filename = args.INPUT
+    verbose = args.verbose      # False if not provided
+    enableShow = args.show      # False if not provided
+
+    ext = os.path.splitext(filename)[1]
+    if ext == ".png":
+        read_png(filename, verbose, enableShow)
+    elif ext == ".hgt":
+        read_hgt(filename, verbose, enableShow)
+    else:
+        print(f"Unrecognized extension: {ext}")
