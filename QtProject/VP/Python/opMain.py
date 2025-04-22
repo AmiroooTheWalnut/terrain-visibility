@@ -87,9 +87,11 @@ if __name__ == "__main__":
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     if ilp:
-        ilpScore(guard_positions, pairGuardFlag, verbose, enableShow)
+        score = ilpScore(guard_positions, pairGuardFlag, verbose, enableShow)
+        print(f"ILP yielded number of guards = {score}")
     else:     
-        bsfScore(guard_positions, pairGuardFlag, verbose, enableShow)
+        score = bsfScore(guard_positions, pairGuardFlag, verbose, enableShow)
+        print(f"BSF yielded number of frontiers = {score}")
 
     end_time = time.time()
     print(f"Total running time = {end_time - start_time:.2g} seconds")    
