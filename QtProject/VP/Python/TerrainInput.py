@@ -103,7 +103,7 @@ def readInput(f, verbose=False):
             raise Exception("Uncognized type!")
 
     if len(gNorths) == 0 or len(gSouths) == 0:
-        print("There is no north-crossing or no south-crossing connected components!")
+        print("There is no north-crossing or no south-crossing connected components!", flush=True)
         return
 
     return gGuards, gComps, gNorths, gSouths

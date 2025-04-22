@@ -53,7 +53,7 @@ def bsfScore(guard_positions):
 
 if __name__ == "__main__":
     sys.stdout = open('psoMainLog.txt', 'a')
-    print("=============psoMain.py Run Start===============")
+    print("=============psoMain.py Run Start===============", flush=True)
 
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('--name', type=str, help="test.png")
@@ -133,11 +133,11 @@ if __name__ == "__main__":
             no_improvement_count += 1
      
         if no_improvement_count >= no_improvement_limit:
-            print(f"Early stopping at iteration {i}")
+            print(f"Early stopping at iteration {i}", flush=True)
             break
 
     end_time = time.time()
-    print(f"Total running time = {end_time - start_time:.2g} seconds")    
+    print(f"Total running time = {end_time - start_time:.2g} seconds", flush=True)    
 
 
     

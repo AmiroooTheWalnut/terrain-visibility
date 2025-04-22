@@ -67,7 +67,7 @@ def runBSF(width, height, bitmap, gGuards, gComps, gNorths, gSouths, verbose=Fal
 
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
-        print("No North/South intersection!")
+        print("No North/South intersection!", flush=True)
         return NO_SOLUTION
 
     if verbose:
@@ -162,7 +162,7 @@ def runBSF(width, height, bitmap, gGuards, gComps, gNorths, gSouths, verbose=Fal
     # Build returningPath
     # assert len(returningPath) > 0, "No solution exists!"
     if len(returningPath) == 0:
-        print("No solution exists!")
+        print("No solution exists!", flush=True)
         nFrontier = NO_SOLUTION 
     else:
         # ------------ Print output -------------
@@ -209,4 +209,4 @@ if __name__ == "__main__":
 
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
     nFrontier = runBSF(gGuards, gComps, gNorths, gSouths, verbose)
-    print(f"Number of Connected Components needed = {nFrontier}")
+    print(f"Number of Connected Components needed = {nFrontier}", flush=True)

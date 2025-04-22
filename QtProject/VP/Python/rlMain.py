@@ -32,7 +32,7 @@ def evaluate_model(env, model, num_episodes=10):
             total_reward += reward
         rewards.append(total_reward)
     avg_reward = np.mean(rewards)
-    print(f"Average Reward over {num_episodes} episodes: {avg_reward}")
+    print(f"Average Reward over {num_episodes} episodes: {avg_reward}", flush=True)
 
 
 if __name__ == "__main__":
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # Test model
     obs = env.reset()
     for i in range(100):
-        print(f"Test Iteration {i}")
+        print(f"Test Iteration {i}", flush=True)
         action, _states = model.predict(obs)
         obs, reward, done, truncated, _ = env.step(action)
         env.render()  # Optional visualization
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     # tensorboard --logdir=./guard_rl_logs/
 
     end_time = time.time()
-    print(f"Total running time = {end_time - start_time:.2g} seconds")    
+    print(f"Total running time = {end_time - start_time:.2g} seconds", flush=True)    
 
 
     

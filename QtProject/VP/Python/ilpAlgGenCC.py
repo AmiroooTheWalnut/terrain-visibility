@@ -42,7 +42,7 @@ Directed Edges:
 def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
-        print("No North/South intersection!")
+        print("No North/South intersection!", flush=True)
         return 9999
 
     if verbose:
@@ -150,25 +150,25 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
 
 
     # ------------ Print output -------------
-    print(f"Status: {prob.status}")    
-    print("Non-zero flow values below:")    
+    print(f"Status: {prob.status}", flush=True)    
+    print("Non-zero flow values below:", flush=True)    
     for var in lpCCArray:
         if var.varValue != 0.0:
-            print(f"Path {var.name}: {var.varValue}")
+            print(f"Path {var.name}: {var.varValue}", flush=True)
 
     for var in lpFlowfromN:
         if var.varValue != 0.0:
-            print(f"Path {var.name}: {var.varValue}")
+            print(f"Path {var.name}: {var.varValue}", flush=True)
 
     for var in lpFlowtoS:
         if var.varValue != 0.0:
-            print(f"Path {var.name}: {var.varValue}")
+            print(f"Path {var.name}: {var.varValue}", flush=True)
 
     for var in lpFlowArray:
         if var.varValue != 0.0:
-            print(f"Path {var.name}: {var.varValue}")
+            print(f"Path {var.name}: {var.varValue}", flush=True)
     
-    print(f"Total Cost: {prob.objective.value()}")
+    print(f"Total Cost: {prob.objective.value()}", flush=True)
     return prob.objective.value()
 
 if __name__ == "__main__":
@@ -183,5 +183,5 @@ if __name__ == "__main__":
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 
     num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
-    print(f"Number of Connected Components needed = {num}")
+    print(f"Number of Connected Components needed = {num}", flush=True)
 

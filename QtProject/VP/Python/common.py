@@ -157,7 +157,8 @@ def pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose=False):
                             g1 = guard1.id
                             g2 = guard2.id
         if maxIntsPair >= 2:
-            print(f"Merging guards {g1} and {g2} with {maxIntsPair} intersecting CC!")
+            if verbose:
+                print(f"Merging guards {g1} and {g2} with {maxIntsPair} intersecting CC!")
             gGuards[g1].paired = True
             gGuards[g2].paired = True
             merge2Guards(g1, g2, gGuards, gComps, gNorths, gSouths, nrows, ncols, verbose)

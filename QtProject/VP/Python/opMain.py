@@ -14,12 +14,18 @@ import sys
 #---------------------------------------
 def bsfScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=False):
 
+    start_time = time.time()   
     gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
+    end_time = time.time()
+    print(f"Time to set up graph = {end_time - start_time:.2g} seconds", flush=True)    
     
     if pairGuardFlag:
         pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
 
+    start_time = time.time()   
     score = runBSF(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    end_time = time.time()
+    print(f"Time to run BSF = {end_time - start_time:.2g} seconds", flush=True)    
 
     print(f"Number of Frontier = {score}")
 
@@ -30,12 +36,18 @@ def bsfScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=Fal
 #---------------------------------------
 def ilpScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=False):
 
+    start_time = time.time()   
     gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
+    end_time = time.time()
+    print(f"Time to set up graph = {end_time - start_time:.2g} seconds", flush=True)    
 
     if pairGuardFlag:
         pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
     
+    start_time = time.time()   
     score = runILP(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    end_time = time.time()
+    print(f"Time to run ILP = {end_time - start_time:.2g} seconds", flush=True)    
 
     print(f"Number of Guards = {score}")
 
@@ -87,14 +99,12 @@ if __name__ == "__main__":
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     if ilp:
-        score = ilpScore(guard_positions, pairGuardFlag, verbose, enableShow)
-        print(f"ILP yielded number of guards = {score}")
+        ilpScore(guard_positions, pairGuardFlag, verbose, enableShow)
     else:     
-        score = bsfScore(guard_positions, pairGuardFlag, verbose, enableShow)
-        print(f"BSF yielded number of frontiers = {score}")
+        bsfScore(guard_positions, pairGuardFlag, verbose, enableShow)
 
     end_time = time.time()
-    print(f"Total running time = {end_time - start_time:.2g} seconds")    
+    print(f"Total running time = {end_time - start_time:.2g} seconds", flush=True)    
 
 
     
