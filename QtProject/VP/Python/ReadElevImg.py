@@ -42,14 +42,20 @@ def read_png(filename, verbose=False, enableShow=False):
     image = Image.open(filename)
     array = np.array(image)
 
-    ncols, nrows, ncolors = array.shape
-
-    red_channel = array[:, :, 0]  # Red channel is the elevation
+    if len(array.shape) == 3:
+        ncols, nrows, ncolors = array.shape
+        array_8bit = array[:, :, 0]  # Red channel is the elevation
+    elif len(array.shape) == 2:
+        ncols, nrows = array.shape
+        if array.dtype == 'uint16':
+           array_8bit = (array / 256).astype(np.uint8)
+        else:
+           array_8bit = array
 
     if enableShow:
-       show_terrain(ncols, nrows, red_channel)
+       show_terrain(ncols, nrows, array_8bit)
 
-    return red_channel
+    return array_8bit
 
 # ---------------------------------
 # Read a hgt file
