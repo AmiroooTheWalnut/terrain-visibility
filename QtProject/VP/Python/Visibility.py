@@ -3,9 +3,10 @@ import time
 
 # ---------------------------------
 # Calculate visibility of a guard
-# Elevation is terrain array elev
-# Output is a viewshed
+# Elevation is terrain array elev (row/col)
+# Output is a viewshed (row/col)
 # See Franklin's viewshed algorithm
+# x is height-wise, y is width-wise
 # ---------------------------------
 def calc_vis(guard, elev, verbose=False):
     if verbose:
@@ -14,8 +15,8 @@ def calc_vis(guard, elev, verbose=False):
     nrows, ncols = elev.shape
     viewshed = np.zeros((nrows, ncols), dtype=int)
 
-    obs = np.array((guard.x, guard.y), dtype=int)
-    radius = guard.r
+    obs = np.array((guard.row, guard.col), dtype=int)
+    radius = guard.radius
     xmin = max(obs[0] - radius, -10)
     ymin = max(obs[1] - radius, -10)
     xmax = min(obs[0] + radius, nrows + 9)
@@ -27,7 +28,7 @@ def calc_vis(guard, elev, verbose=False):
     viewshed[obs[0]][obs[1]] = 1 # Observer is visible from itself
 
     # Observer distance about sea level, incl distance above ground.
-    obsAltitude = float(elev[obs[0]][obs[1]]) + float(guard.h)
+    obsAltitude = float(elev[obs[0]][obs[1]]) + float(guard.ht)
 
     # The target is in turn every point along the smaller of the border or a box
     # of side 2*radius around the observer.
@@ -105,7 +106,7 @@ def calc_vis(guard, elev, verbose=False):
 
             horizon_alt = obsAltitude + horizon_slope * abs(p[inciny] - obs[inciny])
 
-            if pelev + float(guard.h) >= horizon_alt:
+            if pelev + float(guard.ht) >= horizon_alt:
                 viewshed[p[0]][p[1]] = 1
 
             i += sig

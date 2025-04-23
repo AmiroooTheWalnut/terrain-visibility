@@ -36,9 +36,9 @@ def bsfScore(guard_positions):
 
     gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
     if ilp:
-        cost = runILP(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+        cost = runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
     else:
-        cost = runBSF(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+        cost = runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
     print(f"Cost = {cost}", flush=True)
 

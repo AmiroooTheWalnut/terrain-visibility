@@ -112,7 +112,7 @@ class GuardEnv(gym.Env):
     def _coverage_score(self):
         """Compute coverage reward."""
         # Score = - number of guards/frontiers
-        self.nFrontiers = runBSF(self.grid_size[1], self.grid_size[0], self.bitmap, self.gGuards, self.gComps, \
+        self.nFrontiers = runBSF(self.bitmap, self.gGuards, self.gComps, \
             self.gNorths, self.gSouths, self.verbose, False)
         print(f"Iteration: {self.iteration}, Cost = {self.nFrontiers}", flush=True)
         self.iteration += 1

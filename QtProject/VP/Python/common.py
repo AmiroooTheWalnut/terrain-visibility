@@ -74,7 +74,7 @@ def fibonacci_lattice(n_points, nrows, ncols):
         x = float(count+1) / gR
         x -= int(x)
         y = float(count+1) / (n_points+1)
-        points.append((int(x*nrows), int(y*ncols)))
+        points.append((int(x*nrows), int(y*ncols)))  # row/col
     
     return np.array(points)
 
@@ -101,9 +101,9 @@ def square_uniform(n_points, nrows, ncols, randomize=False):
                 yoff = np.random.rand()
             x = min(max(int((float(i)+xoff)*nRowGuardPixels), 0), nrows-1) # Make sure in range
             y = min(max(int((float(j)+yoff)*nColGuardPixels), 0), ncols-1) # Make sure in range
-            points.append((x,y))
+            points.append((x,y)) # row/col
 
-    return np.array(points)
+    return np.array(points) 
 
 #---------------------------------------
 # Set up G(V, E)
@@ -176,19 +176,19 @@ def merge2Guards(g1, g2, gGuards, gComps, gNorths, gSouths, nrows, ncols, verbos
     bitmap = np.zeros((nrows, ncols), dtype=np.uint32)
 
     for cc in gGuards[g1].compIDs:
-        bitmap[gComps[cc].minX:gComps[cc].maxX+1, gComps[cc].minY:gComps[cc].maxY+1] = \
-               np.maximum(gComps[cc].bitmap, \
-               bitmap[gComps[cc].minX:gComps[cc].maxX+1, gComps[cc].minY:gComps[cc].maxY+1])
+        comp = gComps[cc]
+        for cRow in comp.connectedRows:         
+            bitmap[cRow[0]][cRow[1]:cRow[2]+1] = 1
     for cc in gGuards[g2].compIDs:
-        bitmap[gComps[cc].minX:gComps[cc].maxX+1, gComps[cc].minY:gComps[cc].maxY+1] = \
-               np.maximum(gComps[cc].bitmap, \
-               bitmap[gComps[cc].minX:gComps[cc].maxX+1, gComps[cc].minY:gComps[cc].maxY+1])
+        comp = gComps[cc]
+        for cRow in comp.connectedRows:         
+            bitmap[cRow[0]][cRow[1]:cRow[2]+1] = 1
 
     nComp = len(gComps)
     guard = classGuard(len(gGuards))
     gGuards.append(guard)
     guard.paired = True  # Won't merge after once
-    guard.setLocation(gGuards[g1].x, gGuards[g1].y, gGuards[g1].h, gGuards[g1].r)
+    guard.setLocation(gGuards[g1].row, gGuards[g1].col, gGuards[g1].ht, gGuards[g1].radius)
     findConnected(guard, bitmap, gComps, gNorths, gSouths, verbose)
 
     # Check for intersection ONLY between the existing components and the 

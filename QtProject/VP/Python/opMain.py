@@ -23,7 +23,7 @@ def bsfScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=Fal
         pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
 
     start_time = time.time()   
-    score = runBSF(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    score = runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
     end_time = time.time()
     print(f"Time to run BSF = {end_time - start_time:.2g} seconds", flush=True)    
 
@@ -45,7 +45,7 @@ def ilpScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=Fal
         pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
     
     start_time = time.time()   
-    score = runILP(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    score = runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
     end_time = time.time()
     print(f"Time to run ILP = {end_time - start_time:.2g} seconds", flush=True)    
 

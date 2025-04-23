@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     arr = np.array(guard_positions)
     gGuards, gComps, gNorths, gSouths = setupGraph(arr, guardHt, radius, bitmap, verbose)
-    score = runBSF(ncols, nrows, bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    score = runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
     print(f"Number of Frontier = {score}", flush=True)
 

@@ -42,10 +42,11 @@ Directed Edges:
 # ---------------------------------
 # Show ilp solution
 # ---------------------------------
-def show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, nGuards):
+def show_ilp(bitmap, gGuards, gComps, lpFlowArray, nGuards):
 
+    nrows, ncols = bitmap.shape
     light_gray = np.array([200 / 255.0] * 3, dtype=np.float32)
-    colors = np.full((height, width, 3), light_gray)
+    colors = np.full((nrows, ncols, 3), light_gray)
     
     # This will plot one component an extra time if we don't keep track
     plotted = []
@@ -57,10 +58,8 @@ def show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, nGuards):
                 if (n in plotted) == False:
                     col = np.random.rand(3,)
                     comp = gComps[n]
-                    for x in range(comp.minX, comp.maxX):
-                        for y in range(comp.minY, comp.maxY):
-                            if comp.bitmap[x-comp.minX][y-comp.minY]:
-                                colors[x][y] = col
+                    for connectedRow in comp.connectedRows:
+                        colors[connectedRow[0]][connectedRow[1]:connectedRow[2]+1] = col
                     plotted.append(n)
 
     # Show guard positions
@@ -68,13 +67,13 @@ def show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, nGuards):
     for guard in gGuards:
         for x in range(-5,5):
             for y in range(-5,5):
-                a = guard.x+x
-                b = guard.y+y
-                if a >= 0 and a < width and b >= 0 and b < height:
-                    colors[a][b] = col
+                a = guard.col+x
+                b = guard.row+y
+                if a >= 0 and a < ncols and b >= 0 and b < nrows:
+                    colors[b][a] = col
         
-    x = np.linspace(0, width-1, width)
-    y = np.linspace(0, height-1, height)
+    x = np.arange(ncols)
+    y = np.arange(nrows)
     x, y = np.meshgrid(x, y)
 
     # Create a 3D plot
@@ -96,7 +95,7 @@ def show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, nGuards):
     # Show the plot
     plt.show()
 
-def runILP(width, height, bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=False):
+def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=False):
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
         print("No North/South intersection!", flush=True)
@@ -229,7 +228,7 @@ def runILP(width, height, bitmap, gGuards, gComps, gNorths, gSouths, verbose=Fal
     print(f"Total Cost: {prob.objective.value()}", flush=True)
 
     if enableShow:
-        show_ilp(width, height, bitmap, gGuards, gComps, lpFlowArray, int(prob.objective.value()))
+        show_ilp(bitmap, gGuards, gComps, lpFlowArray, int(prob.objective.value()))
 
     return int(prob.objective.value())
 
@@ -245,5 +244,5 @@ if __name__ == "__main__":
 
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 
-    num = runILP(gGuards, gComps, gNorths, gSouths, verbose)
+    num = runILP(None, gGuards, gComps, gNorths, gSouths, verbose) # No bitmap when input is text file
     print(f"Number of Guards needed = {num}", flush=True)

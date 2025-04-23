@@ -18,6 +18,8 @@ class classComp:
         self.id = id
         self.parentID = parentID
         self.intersects = []
+        self.nConnectedRows = 0
+        self.connectedRows = []
 
     def addIntersect(self, id):
         self.intersects.append(id)
@@ -28,19 +30,13 @@ class classComp:
         self.cy = cy
         self.radius = radius
 
-    # Store bitmap of the Connected Component
-    # bitmap is a numpy array ((nrows, ncols), dtype=np.uint32), cutout of the original bitmap
-    # Y is Z in the appVP
-    def setBitmap(self, minX, maxX, minY, maxY, bitmap):
-        self.minX = minX
-        self.maxX = maxX
-        self.minY = minY
-        self.maxY = maxY
-        self.bitmap = bitmap.copy()
+    # add Row
+    def addRow(self, row, yStart, yEnd):
+        self.connectedRows.append([row, yStart, yEnd])
 
     def clear(self):
         del self.intersects
-        self.bitmap = None
+        self.nConnectedRows = 0
         gc.collect()
 
 # -----------------------------
@@ -55,11 +51,11 @@ class classGuard:
     def addComp(self, comp):
         self.compIDs.append(comp.id)
 
-    def setLocation(self, x, y, h, r):
-        self.x = int(x)
-        self.y = int(y)
-        self.h = int(h)
-        self.r = int(r)
+    def setLocation(self, row, col, ht, radius):
+        self.row = int(row)
+        self.col = int(col)
+        self.ht = int(ht)
+        self.radius = int(radius)
 
     def clear(self):
         del self.compIDs
@@ -122,16 +118,11 @@ def findIntersections(gComps, verbose=False):
 # Determine if two Components intersect
 # -----------------------------
 def intersect(comp1, comp2):
-    minX = max(comp1.minX, comp2.minX)  
-    maxX = min(comp1.maxX, comp2.maxX)
-    minY = max(comp1.minY, comp2.minY)
-    maxY = min(comp1.maxY, comp2.maxY)
-
-    for i in range(minX, maxX+1):
-        for j in range(minY, maxY+1):
-            if comp1.bitmap[i-comp1.minX][j-comp1.minY] and \
-                comp2.bitmap[i-comp2.minX][j-comp2.minY]:
-                return True
+    for conRow1 in comp1.connectedRows:
+        for conRow2 in comp2.connectedRows:
+            if conRow1[0] == conRow2[0]:
+                if not (conRow1[2] < conRow2[1] or conRow2[2] < conRow1[1]):
+                    return True
 
     return False
 
@@ -140,21 +131,20 @@ def intersect(comp1, comp2):
 # -----------------------------
 def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
 
-    width, height = viewshed.shape
-    gCompMask = viewshed.copy()  # Perform deep copy
+    nrows, ncols = viewshed.shape
 
     done = False
     while done == False:
         # Find a non-zero pixel to start 
         found = False
-        for i in range(width):
-            for j in range(height):
-                if gCompMask[i][j] == 1:  # Either one or zero
+        for i in range(nrows):
+            for j in range(ncols):
+                if viewshed[i][j] == 1:  # Either one or zero
                     #if verbose:
                     #    print(f"Find component start point at {i},{j}")
-                    flood_fill((i, j), gCompMask) # Fill all the connected points and set the pixels to 2
-                    #debugPrintMask(gCompMask)
-                    setConnectedComponent(guard, gCompMask, gComps, gNorths, gSouths, verbose)
+                    flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
+                    #debugPrintMask(viewshed)
+                    setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose)
                     found = True
         if found == False:
             done = True
@@ -162,41 +152,42 @@ def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
 # -----------------------------
 # Define a single connected component
 # Crop the bitmap to the minimize size needed to store the info
-# gCompMask contains the mask for the connected component (visible = 2 after flood fill)
+# viewshed contains the mask for the connected component (visible = 2 after flood fill)
 # Other pixels (if visible by the same guard) = 1
 # -----------------------------
-def setConnectedComponent(guard, gCompMask, gComps, gNorths, gSouths, verbose=False):
+def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
 
-    nrows, ncols = gCompMask.shape
+    nrows, ncols = viewshed.shape
 
     compnum = len(gComps)
     comp = classComp(compnum, guard.id)
     guard.addComp(comp)
     gComps.append(comp)
 
-    maxX=-100000
-    minX=100000
-    maxY=-100000
-    minY=100000
-
-    bitmap = np.zeros((nrows, ncols), dtype=np.uint32)
+    maxX=-10000
+    minX=10000
 
     for i in range(nrows):
+        startY = -1
+        endY = -1
+        compRow = i
         for j in range(ncols):
-            if gCompMask[i][j] == 2:
-                minX = min(i, minX)
-                maxX = max(i, maxX)
-                minY = min(j, minY)
-                maxY = max(j, maxY)
-                gCompMask[i][j] = 0  # Clear pixel after processing so we are done with this component, leave other pixels alone
-                bitmap[i][j] = 1
-
-    #if verbose:
-    #    print(f"Component boundary = {compnum}: {minX}, {maxX}, {minY}, {maxY}")
-
-    # bitmap is a cutout of the original bitmap
-    bitmap = bitmap[minX:maxX+1, minY:maxY+1]
-    comp.setBitmap(minX, maxX, minY, maxY, bitmap)
+            value = viewshed[i][j]
+            if value == 2 and j < ncols-1:  # Force start <> end
+                if startY < 0: 
+                    startY = j
+            elif (j==ncols-1 and value==2) or value != 2:
+                if startY >= 0:
+                    if j==ncols-1 and value==2:
+                        endY = j
+                    else:
+                        endY = j-1
+                    comp.addRow(compRow, startY, endY)
+                    minX = min(i, minX)
+                    maxX = max(i, maxX)
+                    for k in range(startY, endY+1):
+                        viewshed[i][k] = 0  # Clear pixel after setting the ConnectedRow
+                    startY = -1 # To allow multiple strips per row
 
     # Potentially add to gNorth or gSouth
     # In the appVP, this is done during construction of first frontier
@@ -209,65 +200,64 @@ def setConnectedComponent(guard, gCompMask, gComps, gNorths, gSouths, verbose=Fa
 # -----------------------------
 # Flood fill a 2D array
 # -----------------------------
-def flood_fill(start, gCompMask):
+def flood_fill(start, viewshed):
 
-    width, height = gCompMask.shape
+    nrows, ncols = viewshed.shape
 
     stack = []
     stack.append((start))
         
     while len(stack) > 0:
-        x, y = stack.pop(0)
+        row, col = stack.pop(0)
         
         # Skip if out of bounds
-        if x < 0 or x >= width or y < 0 or y >= height or gCompMask[x][y] != 1:
+        if row < 0 or row >= nrows or col < 0 or col >= ncols or viewshed[row][col] != 1:
             continue
         
         # Fill the current pixel with the fill value
-        gCompMask[x][y] = 2
+        viewshed[row][col] = 2
         
         # Add the 4 neighboring cells to the stack (up, down, left, right)
-        stack.append((x + 1, y))  # Right
-        stack.append((x - 1, y))  # Left
-        stack.append((x, y + 1))  # Down
-        stack.append((x, y - 1))  # Up
+        stack.append((row + 1, col))  # Right
+        stack.append((row - 1, col))  # Left
+        stack.append((row, col + 1))  # Down
+        stack.append((row, col - 1))  # Up
         
 # -----------------------------
 # Print Guard information
 # A section will be the same format as the input file for the algorithms
 # -----------------------------
 def printGuards(gGuards, gComps, gNorths, gSouths, verbose=False):
-    if verbose:        
-        print("----------Guard/Component Locations----------")
-        for guard in gGuards:
-            print(f"Guard {guard.id} at ({guard.x}, {guard.y})")
-            for id in guard.compIDs:
-                comp = gComps[id]
-                print(f"Component {id}: {comp.minX}, {comp.maxX}, {comp.minY}, {comp.maxY}")
+    print("----------Guard/Component Locations----------")
+    for guard in gGuards:
+        print(f"Guard {guard.id} at ({guard.row}, {guard.col})")
+        for id in guard.compIDs:
+            comp = gComps[id]
+            print(f"Component {id}: {comp.connectedRows}")
 
-        print("-----------Input File Format----------")
-        for guard in gGuards:
-            print(f"Guard {guard.id}")
-            for id in guard.compIDs:
-                print(f"ConnectedComponent {id}")
-                comp = gComps[id]
-                for k in comp.intersects:
-                    print(f"Intersecting {k}")
-        for id in gNorths:
-            print(f"CrossNorth {id}")
-        for id in gSouths:
-            print(f"CrossSouth {id}")
+    print("-----------Input File Format----------")
+    for guard in gGuards:
+        print(f"Guard {guard.id}")
+        for id in guard.compIDs:
+            print(f"ConnectedComponent {id}")
+            comp = gComps[id]
+            for k in comp.intersects:
+                print(f"Intersecting {k}")
+    for id in gNorths:
+        print(f"CrossNorth {id}")
+    for id in gSouths:
+        print(f"CrossSouth {id}")
         
 # -----------------------------
-# Print gCompMask
+# Print viewshed
 # -----------------------------
-def debugPrintMask(gCompMask):
+def debugPrintMask(viewshed):
 
-    width, height = gCompMask.shape
-    for i in range(width):
+    nrows, ncols = viewshed.shape
+    for row in range(nrows):
         s = ""
-        for j in range(height):
-            s = s + "," + str(gCompMask[i][j])
+        for col in range(cols):
+            s = s + "," + str(viewshed[row][col])
         print(s)
 
 
