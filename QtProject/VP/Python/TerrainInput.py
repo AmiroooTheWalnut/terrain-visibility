@@ -7,7 +7,6 @@
 #     CrossNorth A            <at least one line>
 #     CrossSouth B            <at least one line>
 #
-import numpy as np
 import gc
 
 # -----------------------------

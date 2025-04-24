@@ -15,7 +15,7 @@ def calc_vis(guard, elev, verbose=False):
     nrows, ncols = elev.shape
     viewshed = np.zeros((nrows, ncols), dtype=int)
 
-    obs = np.array((guard.row, guard.col), dtype=int)
+    obs = [guard.row, guard.col]
     radius = guard.radius
     xmin = max(obs[0] - radius, -10)
     ymin = max(obs[1] - radius, -10)
@@ -39,7 +39,7 @@ def calc_vis(guard, elev, verbose=False):
     if xmin == xmax or ymin == ymax:
         return viewshed
 
-    tgt = np.zeros(2, dtype=int)
+    tgt = [0, 0]
     for ip in range(perimeter):
         #define cells on square perimeter
 
@@ -61,7 +61,7 @@ def calc_vis(guard, elev, verbose=False):
             continue
 
         # Run a line of sight out from obs to target
-        delta = np.array((tgt[0] - obs[0], tgt[1] - obs[1]), dtype=int)
+        delta = [tgt[0] - obs[0], tgt[1] - obs[1]]
         inciny = int(abs(delta[0]) < abs(delta[1]))
 
         # Step along the coord (X or Y) that varies the most from the observer to
@@ -76,7 +76,7 @@ def calc_vis(guard, elev, verbose=False):
         horizon_slope = -99999     # Slope (in vertical plane) to horizon so far.
 
 	# i=0 would be the observer, which is always visible
-        p = np.array((0, 0), dtype=int)
+        p = [0, 0]
         i = sig
         while i != delta[inciny]:
             p[inciny] = obs[inciny] + i
