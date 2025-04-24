@@ -6,7 +6,7 @@ import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF
-from common import setupGraph, stepMove
+from common import setupGraph, stepMove, vprint
 from Visibility import rev_vis
 import time
 
@@ -22,7 +22,7 @@ def findSharedGuardPos(startPos, verbose=False):
     # Find reverse visibility from startPos
     viewshed1 = rev_vis(startPos, bitmap, guardHt, radius, verbose)
 
-    print(f"Viewshed visibility at {startPos} = {np.sum(viewshed1)}")
+    #print(f"Viewshed visibility at {startPos} = {np.sum(viewshed1)}", flush=True)
 
     bound = (nrows, ncols)
     dist = np.zeros((5), dtype=int)
@@ -33,8 +33,7 @@ def findSharedGuardPos(startPos, verbose=False):
         idx = dir-3
 
         # Always move in the fixed direction
-        if verbose:
-            print(f"Checking direction {dir}", flush=True)
+        vprint(verbose, f"Checking direction {dir}", flush=True)
 
         done = False
         endPos[idx] = (startPos[0], startPos[1])
@@ -43,13 +42,12 @@ def findSharedGuardPos(startPos, verbose=False):
             newPos = stepMove(endPos[idx], bound, dir)
 
             viewshed2 = rev_vis(newPos, bitmap, guardHt, radius, verbose)
-            print(f"Viewshed visibility at {newPos} = {np.sum(viewshed2)}")
+            #print(f"Viewshed visibility at {newPos} = {np.sum(viewshed2)}", flush=True)
 
             overlap = viewshed1 * viewshed2
             sum = np.sum(overlap)
 
-            if verbose:
-                print(f"Trying to move from {startPos} to {newPos}, reverse visibility overlapping {sum} pixels", flush=True)                
+            vprint(verbose, f"Trying to move from {startPos} to {newPos}, reverse visibility overlapping {sum} pixels", flush=True)                
 
             if sum == 0:
                 done = True # Done when the two viewsheds no longer overlap 
@@ -59,8 +57,7 @@ def findSharedGuardPos(startPos, verbose=False):
                     dist[idx] = d
                     xs, ys = np.where(overlap)
                     guardPos[idx] = ([xs.max(), ys.max()])  # Pick a point in the intersection
-                    if verbose:
-                        print(f"Move valid.  Potential guard position = {guardPos[idx]}, distance = {dist[idx]}", flush=True)
+                    vprint(verbose, f"Move valid.  Potential guard position = {guardPos[idx]}, distance = {dist[idx]}", flush=True)
 
             if done == False:
                 endPos[idx] = (newPos[0], newPos[1])

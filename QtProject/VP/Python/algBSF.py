@@ -2,11 +2,12 @@ import argparse
 import numpy as np
 import time
 from TerrainInput import classComp, classGuard, readInput
+from common import vprint
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 NO_SOLUTION = 9999
-MAX_FRONTIERS = 30
+MAX_FRONTIERS = 100
 MAX_CC_PER_FRONTIER = 500
 
 # ---------------------------------
@@ -69,8 +70,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
         print("No North/South intersection!", flush=True)
         return NO_SOLUTION
 
-    if verbose:
-        start_time = time.time()
+    start_time = time.time()
 
     ccUsedForFrontier = [0] * len(gComps) # Flag set if cc is picked already
     ccIntersect1 = [] # Intersecting CC in the Frontier
@@ -90,9 +90,9 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
     nCCPerFrontier[0] = count
 
     if verbose:
-        print("F0:")
+        print("F0:", flush=True)
         for i in range(nCCPerFrontier[0]):
-            print(frontier[0][i])
+            print(frontier[0][i], flush=True)
 
     nFrontier = 1
     success = True
@@ -103,15 +103,13 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
     while done == False and success == True:
         assert nFrontier < MAX_FRONTIERS, "Too many frontiers"
         success = False
-        if verbose:
-            print(f"F{nFrontier}")
+        vprint(verbose, f"F{nFrontier}", flush=True)
 
         # Loop through all the CC, check all the unmarked CC
         for guard in gGuards:
             for cc in guard.compIDs:
                 comp = gComps[cc]
-                if verbose:
-                    print(f"Checking {cc} for new Frontier")
+                vprint(verbose, f"Checking {cc} for new Frontier", flush=True)
                 
                 if ccUsedForFrontier[cc] == 0:
 
@@ -123,11 +121,9 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
                     # from the last frontier
                     for i in range(nCCPerFrontier[nFrontier-1]): 
                         dd = frontier[nFrontier-1][i]
-                        if verbose:
-                            print(f"Checking {dd} from last Frontier")
+                        vprint(verbose, f"Checking {dd} from last Frontier", flush=True)
                         if dd in comp.intersects:
-                            if verbose:
-                                print(f"Component {cc} intersects Component {dd} from last Frontier")
+                            vprint(verbose, f"Component {cc} intersects Component {dd} from last Frontier", flush=True)
                             # remember the intersecting CC
                             ccIntersect1.append(cc)
                             ccIntersect2.append(dd)
@@ -138,8 +134,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
                             nCCPerFrontier[nFrontier] += 1
 
                             if cc in gSouths:
-                                if verbose:
-                                    print(f"Intersecting South")
+                                vprint(verbose, f"Intersecting South", flush=True)
                                 done = True
                                 returningPath.append(cc)
                             break
@@ -154,9 +149,8 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
         if success:                 
             nFrontier += 1
             
-    if verbose:
-        end_time = time.time()
-        print(f"Time to execute BSF algorithm = {end_time - start_time:.2g} seconds")
+    end_time = time.time()
+    vprint(verbose, f"Time to execute BSF algorithm = {end_time - start_time:.2g} seconds", flush=True)
 
     # Build returningPath
     # assert len(returningPath) > 0, "No solution exists!"
@@ -165,7 +159,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
         nFrontier = NO_SOLUTION 
     else:
         # ------------ Print output -------------
-        #print("Building returningPath")
+        #print("Building returningPath", flush=True)
         done = False     # Done if there is no intersection
         cc = returningPath[-1]    
         while done == False:
@@ -181,16 +175,16 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
 
         if verbose:
             # Print returningPath:
-            print("---------- Returning Path ----------------")
+            print("---------- Returning Path ----------------", flush=True)
             for cc in returningPath:
-                print(f"Guard/Comp: {gComps[cc].parentID}, {cc}")
+                print(f"Guard/Comp: {gComps[cc].parentID}, {cc}", flush=True)
 
-            print("Frontier Details:")
+            print("Frontier Details:", flush=True)
             for i in range(nFrontier):
-                print(f"Frontier: {i}")
+                print(f"Frontier: {i}", flush=True)
                 for j in range(nCCPerFrontier[i]):
                     comp = gComps[frontier[i][j]]
-                    print(f"Component: {comp.id}, Guards: {comp.parentID}")
+                    print(f"Component: {comp.id}, Guards: {comp.parentID}", flush=True)
 
         if enableShow:
             show_frontiers(bitmap, gGuards, gComps, nFrontier, nCCPerFrontier, frontier)

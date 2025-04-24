@@ -115,7 +115,7 @@ def calc_vis(guard, elev, verbose=False):
 
     if verbose:
         end_time = time.time()
-        print(f"Time to execute Visibility algorithm = {end_time - start_time:.2g} seconds")
+        print(f"Time to execute Visibility algorithm = {end_time - start_time:.2g} seconds", flush=True)
 	
     return viewshed
 
@@ -129,5 +129,5 @@ def debugPrintViewShed(viewshed):
         s = "Row " + str(i) + ": "
         for j in range(height):
             s = s + "," + str(viewshed[i][j])
-        print(s)
+        print(s, flush=True)
 

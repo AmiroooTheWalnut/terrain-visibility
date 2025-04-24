@@ -2,6 +2,7 @@ import argparse
 import time
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 from TerrainInput import classComp, classGuard, readInput
+from common import vprint
 
 '''
 -------------------------------------------------------------------------------------
@@ -45,8 +46,7 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
         print("No North/South intersection!", flush=True)
         return 9999
 
-    if verbose:
-        start_time = time.time()
+    start_time = time.time()
 
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
@@ -69,15 +69,15 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
 
     # Debug print
     if verbose:
-        print("----------LpVariables----------")
-        print("lpCCArray LpVariable:")
-        print(lpCCArray)
-        print("lpFlowfromN LpVariable:")
-        print(lpFlowfromN)
-        print("lpFlowtoS LpVariable:")
-        print(lpFlowtoS)
-        print("lpFlowArray LpVariable:")
-        print(lpFlowArray)
+        print("----------LpVariables----------", flush=True)
+        print("lpCCArray LpVariable:", flush=True)
+        print(lpCCArray, flush=True)
+        print("lpFlowfromN LpVariable:", flush=True)
+        print(lpFlowfromN, flush=True)
+        print("lpFlowtoS LpVariable:", flush=True)
+        print(lpFlowtoS, flush=True)
+        print("lpFlowArray LpVariable:", flush=True)
+        print(lpFlowArray, flush=True)
 
     # Define the objective function: Minimize the total cost
     prob += sum(lpCCArray)
@@ -106,8 +106,7 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
                 elif var.name == f'F{j}_{i}':
                     constraint_expr += var         
         prob += constraint_expr == 0, "ConstraintAt"+str(i)
-        if verbose:
-            print(constraint_expr)
+        vprint(verbose, constraint_expr, flush=True)
                 	
     # Guard must be selected for the flow to be selected
     # If Fij is selected, then parent guards of Ci/Cj must be selected
@@ -119,34 +118,33 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
             if var.name == f'FN_{i}':
                 prob += var <= lpCCArray[i], f'Constraint_N_{i}'
                 if verbose:
-                    print(f'{var} <= lpCCArray{i}')
-                    print(f'{var} >= -lpCCArray{i}')
+                    print(f'{var} <= lpCCArray{i}', flush=True)
+                    print(f'{var} >= -lpCCArray{i}', flush=True)
         for var in lpFlowtoS:
             if var.name == f'F{i}_S':
                 prob += var <= lpCCArray[i], f'Constraint_{i}_S'
                 if verbose:
-                    print(f'{var} <= lpCCArray{i}')
-                    print(f'{var} >= -lpCCArray{i}')
+                    print(f'{var} <= lpCCArray{i}', flush=True)
+                    print(f'{var} >= -lpCCArray{i}', flush=True)
         for j in range(i+1, len(gComps)):
             for var in lpFlowArray:
                 if var.name == f'F{i}_{j}':
                     prob += var <= lpCCArray[i], f'Constraint1_{i}_{j}_g{k}'
                     prob += var >= -lpCCArray[i], f'Constraint1_{i}_{j}_g{k}_'
                     if verbose:
-                        print(f'{var} <= lpCCArray{i}')
-                        print(f'{var} >= -lpCCArray{i}')
+                        print(f'{var} <= lpCCArray{i}', flush=True)
+                        print(f'{var} >= -lpCCArray{i}', flush=True)
                     prob += var <= lpCCArray[j], f'Constraint2_{i}_{j}_g{k}'
                     prob += var >= -lpCCArray[j], f'Constraint2_{i}_{j}_g{k}_'
                     if verbose:
-                        print(f'{var} <= lpCCArray{j}')
-                        print(f'{var} >= -lpCCArray{j}')
+                        print(f'{var} <= lpCCArray{j}', flush=True)
+                        print(f'{var} >= -lpCCArray{j}', flush=True)
               
     # Solve the problem
     prob.solve()
 
-    if verbose:
-        end_time = time.time()
-        print(f"Time to execute ILP algorithm = {end_time - start_time:.2g} seconds")
+    end_time = time.time()
+    vprint(verbose, f"Time to execute ILP algorithm = {end_time - start_time:.2g} seconds", flush=True)
 
 
     # ------------ Print output -------------

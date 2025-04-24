@@ -141,7 +141,7 @@ def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
             for j in range(ncols):
                 if viewshed[i][j] == 1:  # Either one or zero
                     #if verbose:
-                    #    print(f"Find component start point at {i},{j}")
+                    #    print(f"Find component start point at {i},{j}", flush=True)
                     flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
                     #debugPrintMask(viewshed)
                     setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose)
@@ -228,25 +228,25 @@ def flood_fill(start, viewshed):
 # A section will be the same format as the input file for the algorithms
 # -----------------------------
 def printGuards(gGuards, gComps, gNorths, gSouths, verbose=False):
-    print("----------Guard/Component Locations----------")
+    print("----------Guard/Component Locations----------", flush=True)
     for guard in gGuards:
-        print(f"Guard {guard.id} at ({guard.row}, {guard.col})")
+        print(f"Guard {guard.id} at ({guard.row}, {guard.col})", flush=True)
         for id in guard.compIDs:
             comp = gComps[id]
-            print(f"Component {id}: {comp.connectedRows}")
+            print(f"Component {id}: {comp.connectedRows}", flush=True)
 
-    print("-----------Input File Format----------")
+    print("-----------Input File Format----------", flush=True)
     for guard in gGuards:
-        print(f"Guard {guard.id}")
+        print(f"Guard {guard.id}", flush=True)
         for id in guard.compIDs:
-            print(f"ConnectedComponent {id}")
+            print(f"ConnectedComponent {id}", flush=True)
             comp = gComps[id]
             for k in comp.intersects:
-                print(f"Intersecting {k}")
+                print(f"Intersecting {k}", flush=True)
     for id in gNorths:
-        print(f"CrossNorth {id}")
+        print(f"CrossNorth {id}", flush=True)
     for id in gSouths:
-        print(f"CrossSouth {id}")
+        print(f"CrossSouth {id}", flush=True)
         
 # -----------------------------
 # Print viewshed
@@ -258,7 +258,7 @@ def debugPrintMask(viewshed):
         s = ""
         for col in range(cols):
             s = s + "," + str(viewshed[row][col])
-        print(s)
+        print(s, flush=True)
 
 
     

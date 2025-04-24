@@ -9,6 +9,13 @@ from TerrainInput import classComp, classGuard, findIntersections, findConnected
 from Visibility import calc_vis
 
 #---------------------------------------
+# Print if verbose only
+#---------------------------------------
+def vprint(verbose, *args, **kwargs):
+    if verbose:
+        print(*args, **kwargs)
+
+#---------------------------------------
 # Step to neighbor
 # pt = (x, y)
 # bound = (xmax, ymax)
@@ -116,8 +123,7 @@ def setupGraph(guard_positions, guardHt, radius, bitmap, verbose=False):
     gNorths = []
     gSouths = []
 
-    if verbose:
-        start_time = time.time()
+    start_time = time.time()
 
     for guard in gGuards:
         guard.setLocation(guard_positions[guard.id][0], guard_positions[guard.id][1], guardHt, radius)
@@ -127,9 +133,8 @@ def setupGraph(guard_positions, guardHt, radius, bitmap, verbose=False):
     findIntersections(gComps, verbose)
     #printGuards(gGuards, gComps, gNorths, gSouths, verbose)
 
-    if verbose:
-        end_time = time.time()
-        print(f"Time to set up guard/connected components = {end_time - start_time:.2g} seconds")
+    end_time = time.time()
+    vprint(verbose, f"Time to set up guard/connected components = {end_time - start_time:.2g} seconds", flush=True)
 
     return gGuards, gComps, gNorths, gSouths
 # -----------------------------
@@ -157,8 +162,7 @@ def pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose=False):
                             g1 = guard1.id
                             g2 = guard2.id
         if maxIntsPair >= 2:
-            if verbose:
-                print(f"Merging guards {g1} and {g2} with {maxIntsPair} intersecting CC!")
+            vprint(verbose, f"Merging guards {g1} and {g2} with {maxIntsPair} intersecting CC!", flush=True)
             gGuards[g1].paired = True
             gGuards[g2].paired = True
             merge2Guards(g1, g2, gGuards, gComps, gNorths, gSouths, nrows, ncols, verbose)

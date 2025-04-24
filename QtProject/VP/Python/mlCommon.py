@@ -50,8 +50,7 @@ class GuardEnv(gym.Env):
             self.num_guards = self.guard_positions.shape[0] # num_guards must be perfect square
         else:
             self.guard_positions = fibonacci_lattice(self.num_guards, self.grid_size[0], self.grid_size[1])
-        if self.verbose:
-            print(self.guard_positions)
+        vprint(self.guard_positions, flush=True)
         self.iteration = 0
         return self._get_obs(), {}
 
@@ -81,10 +80,9 @@ class GuardEnv(gym.Env):
         connectivity_reward = self._connectivity_score()
         coverage_reward = self._coverage_score()
 
-        if self.verbose:
-            print(f"Visibility reward = {visibility_reward:.4g}")
-            print(f"Connectivity reward = {connectivity_reward:.4g}")
-            print(f"Coverage reward = {coverage_reward:.4g}")
+        vprint(f"Visibility reward = {visibility_reward:.4g}", flush=True)
+        vprint(f"Connectivity reward = {connectivity_reward:.4g}", flush=True)
+        vprint(f"Coverage reward = {coverage_reward:.4g}", flush=True)
 
         # Weighted sum of the three levels
         total_reward = 0.4 * visibility_reward + 0.3 * connectivity_reward + 0.3 * coverage_reward
@@ -122,4 +120,6 @@ class GuardEnv(gym.Env):
         # Should only show frontiers when running single-threaded
         return
 
-
+    def vprint(self, *args, **kwargs):
+        if self.verbose:
+            print(*args, **kwargs)
