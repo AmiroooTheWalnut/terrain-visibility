@@ -4,9 +4,13 @@
 """
 import numpy as np
 import time
+import gc
 from scipy.spatial import distance
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, intersect, printGuards
 from Visibility import calc_vis
+
+lastNSpos = []
+lastNSids = []
 
 #---------------------------------------
 # Print if verbose only
@@ -14,6 +18,15 @@ from Visibility import calc_vis
 def vprint(verbose, *args, **kwargs):
     if verbose:
         print(*args, **kwargs)
+
+#---------------------------------------
+# Elapsed time
+#---------------------------------------
+def elapsed(verbose, start_time, str="", flushOp=True):
+    end_time = time.time()
+    if verbose:   
+        print(f"{str}: Elapsed time = {end_time - start_time:.2g} seconds", flush=flushOp)
+    return end_time
 
 #---------------------------------------
 # Step to neighbor
@@ -113,28 +126,59 @@ def square_uniform(n_points, nrows, ncols, randomize=False):
     return np.array(points) 
 
 #---------------------------------------
+# Only calculate visibility sum
+#---------------------------------------
+def visibilitySum(guard_positions, guardHt, radius, elev, keepNS, verbose=False):
+    global lastNSpos, lastNSids
+
+    visTotal = 0
+    guard = classGuard(0)
+    nrows, ncols = elev.shape
+    id = 0
+
+    if keepNS:
+        saveIDs = lastNSids.copy()
+        savePos = lastNSpos.copy()
+        lastNSids.clear()
+        lastNSpos.clear()
+
+    for position in guard_positions:
+        if keepNS and id in saveIDs:
+            posId = saveIDs.index(id)
+            position = savePos[posID]
+        guard.setLocation(position[0], position[1], guardHt, radius)
+        viewshed = calc_vis(guard, elev, verbose)
+        visTotal += np.sum(viewshed)
+        if keepNS and np.sum(viewshed[0]) > 0 or np.sum(viewshed[ncols-1]) > 0:
+            lastNSpos.append(position)
+            lastNSids.append(id)
+        id += 1
+
+    return visTotal
+
+#---------------------------------------
 # Set up G(V, E)
 # Visibility, guard/connected component information
 #---------------------------------------
-def setupGraph(guard_positions, guardHt, radius, bitmap, verbose=False):
+def setupGraph(guard_positions, guardHt, radius, elev, verbose=False):
 
     gGuards = [classGuard(guardnum) for guardnum in range(len(guard_positions))]
     gComps = []
     gNorths = []
     gSouths = []
 
-    start_time = time.time()
+    timestamp = time.time()
 
     for guard in gGuards:
         guard.setLocation(guard_positions[guard.id][0], guard_positions[guard.id][1], guardHt, radius)
-        viewshed = calc_vis(guard, bitmap, verbose)
+        viewshed = calc_vis(guard, elev, verbose)
         findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose)
 
     findIntersections(gComps, verbose)
+
     #printGuards(gGuards, gComps, gNorths, gSouths, verbose)
 
-    end_time = time.time()
-    vprint(verbose, f"Time to set up guard/connected components = {end_time - start_time:.2g} seconds", flush=True)
+    timestamp = elapsed(verbose, timestamp, "Set up graph")
 
     return gGuards, gComps, gNorths, gSouths
 # -----------------------------
@@ -177,7 +221,7 @@ def pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose=False):
 # -----------------------------
 def merge2Guards(g1, g2, gGuards, gComps, gNorths, gSouths, nrows, ncols, verbose=False):
 
-    bitmap = np.zeros((nrows, ncols), dtype=np.uint32)
+    bitmap = np.zeros((nrows, ncols), dtype=np.uint16)
 
     for cc in gGuards[g1].compIDs:
         comp = gComps[cc]
@@ -259,3 +303,16 @@ def removeComp(id, gComps, gNorths, gSouths):
     for i in range(len(gSouths)):
         if gSouths[i] > id:
             gSouths[i] -= 1
+
+# -----------------------------
+# Unwrap a component into cropped bitmap
+# -----------------------------
+def unwrapComp(comp):
+    minX = min(comp.connectedRows[:][0])
+    maxX = max(comp.connectedRows[:][0])
+    minY = min(comp.connectedRows[:][1])
+    maxY = max(comp.connectedRows[:][2])
+    bitmap = np.array((maxX-minX+1, maxY-minY+1), dtype=uint16)
+    for cRow in comp.connectedRows:
+        bitmap[cRow[0]-minX][cRow[1]-minY:cRow[2]-minY+1] = 1
+    return bitmap, minX, minY      

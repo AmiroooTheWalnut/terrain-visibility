@@ -4,7 +4,7 @@ import numpy as np
 import re
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 from TerrainInput import classComp, classGuard, readInput
-from common import vprint
+from common import vprint, elapsed
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
@@ -102,7 +102,7 @@ def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
         print("No North/South intersection!", flush=True)
         return 9999
 
-    start_time = time.time()
+    timestamp = time.time()
 
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
@@ -201,8 +201,7 @@ def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
     # Solve the problem
     prob.solve()
 
-    end_time = time.time()
-    vprint(verbose, f"Time to execute ILP algorithm = {end_time - start_time:.2g} seconds", flush=True)
+    timestamp = elapsed(verbose, timestamp, "Time to execute ILP algorithm")
 
     # ------------ Print output -------------
     print(f"Status: {prob.status}", flush=True)    

@@ -1,27 +1,39 @@
+#---------------------------------------
+# Particle Swarm Optimization
+#---------------------------------------
 import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF
 from mlCommon import GuardEnv
-from common import fibonacci_lattice, square_uniform, setupGraph
+from common import fibonacci_lattice, square_uniform, setupGraph, visibilitySum
 import pyswarms as ps
 import time
 import copy
 import sys
 
-lastComps = []
 lastGuards = []
+lastComps = []
 
 #---------------------------------------
-# Particle Swarm Optimization
+# Score visibility
+#---------------------------------------
+def visScore(guard_positions):
+
+    visTotal = visibilitySum(guard_positions, guardHt, radius, elev, keepNS, verbose)
+
+    return -visTotal  # Lower cost the better - Use visibility as the score
+
+#---------------------------------------
+# BSF - Option to use Frontier as score or not
 #---------------------------------------
 def bsfScore(guard_positions):
-    global lastComps, lastGuards
+    global lastGuards, lastComps
 
     # Don't move the guards that were seeing North or South
     # We don't know if the guard will still see N/S even if the guard moves E/W, 
     # So we need to keep the guard at its last position (both x and y)
-    if keepNS:
+    if scoreBSF and keepNS:
         for comp in lastComps:
             if comp.minX == 0 or comp.maxX == nrows-1:
                 id = comp.parentID
@@ -34,22 +46,20 @@ def bsfScore(guard_positions):
                 id = comp.parentID
                 guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
 
-    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
+    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, elev, verbose)
+
     if ilp:
-        cost = runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+        cost = runILP(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
     else:
-        cost = runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+        cost = runBSF(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
-    print(f"Cost = {cost}", flush=True)
+    if threshold or (scoreBSF and keepNS):
+        lastComps.clear()
+        lastComps = gComps.copy()
+        lastGuards.clear()
+        lastGuards = gGuards.copy()
 
-    #print(guard_positions, flush=True)
-
-    lastComps.clear()
-    lastComps = gComps.copy()
-    lastGuards.clear()
-    lastGuards = gGuards.copy()
-
-    return cost  # Lower cost the better
+    return cost  # Lower cost the better - Use visibility as the score
 
 if __name__ == "__main__":
     sys.stdout = open('psoMainLog.txt', 'a')
@@ -82,11 +92,16 @@ if __name__ == "__main__":
     keepNS = args.keepNS        # None if not provided
     threshold = args.threshold   # None if not provided
 
+    #-------------------
+    # Other options
+    scoreBSF = False
+    #-------------------
+
     start_time = time.time()   
 
-    # Read bitmap
-    bitmap = read_png(filename, verbose, enableShow)
-    nrows, ncols = bitmap.shape
+    # Read elevation
+    elev = read_png(filename, verbose, enableShow)
+    nrows, ncols = elev.shape
 
     # Initial guard positions determined by fibonacci lattice
     if squareUniform:
@@ -96,9 +111,9 @@ if __name__ == "__main__":
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     # Get a baseline
-    cost = bsfScore(guard_positions)
+    nFrontier = bsfScore(guard_positions)
 
-    # Define bounds for the guards to not exceed the bitmap
+    # Define bounds for the guards to not exceed the elev
     num_dimensions = 2
     lb = np.array([0, 0])
     ub = np.array([nrows-1, ncols-1])
@@ -115,19 +130,27 @@ if __name__ == "__main__":
                                         options={'c1': 1.2, 'c2': 0.3, 'w': 1.0},
                                         bounds=(lb, ub), init_pos=guard_positions.astype(float))
 
-    max_iters = 50
-    no_improvement_limit = 5
-    best_cost = cost
+    max_iters = 500
+    no_improvement_limit = 3
+    best_cost = nFrontier
     best_pos = guard_positions
     no_improvement_count = 0
 
+    print(guard_positions)
+
     for i in range(max_iters):
-        cost, pos = optimizer.optimize(bsfScore, iters=1)
+        if scoreBSF:
+            cost, pos = optimizer.optimize(bsfScore, iters=1)
+        else:
+            cost, pos = optimizer.optimize(visScore, iters=1)
+
+        print(f"Cost = {cost}", flush=True)
 
         if cost < best_cost:
             best_cost = cost
             positions = optimizer.swarm.position
             best_pos = np.array(positions).reshape(numGuards, num_dimensions)
+            print(best_pos)
             no_improvement_count = 0
         else:
             no_improvement_count += 1
@@ -135,6 +158,13 @@ if __name__ == "__main__":
         if no_improvement_count >= no_improvement_limit:
             print(f"Early stopping at iteration {i}", flush=True)
             break
+
+    if scoreBSF:
+        nFrontier = best_cost
+    else:
+        keepNS = False # No need to change guard position anymore
+        nFrontier = bsfScore(best_pos)
+    print(f"Best position nFrontier = {nFrontier}", flush=True)
 
     end_time = time.time()
     print(f"Total running time = {end_time - start_time:.2g} seconds", flush=True)    

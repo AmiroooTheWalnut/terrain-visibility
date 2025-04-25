@@ -2,7 +2,7 @@ import argparse
 import time
 from pulp import LpMinimize, LpProblem, LpVariable, LpBinary
 from TerrainInput import classComp, classGuard, readInput
-from common import vprint
+from common import vprint, elapsed
 
 '''
 -------------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
         print("No North/South intersection!", flush=True)
         return 9999
 
-    start_time = time.time()
+    timestamp = time.time()
 
     # Define the problem
     prob = LpProblem("Minimize_Guards", LpMinimize)
@@ -143,8 +143,7 @@ def runILP(gGuards, gComps, gNorths, gSouths, verbose=False):
     # Solve the problem
     prob.solve()
 
-    end_time = time.time()
-    vprint(verbose, f"Time to execute ILP algorithm = {end_time - start_time:.2g} seconds", flush=True)
+    timestamp = elapsed(verbose, timestamp, "Time to execute ILP algorithm")
 
 
     # ------------ Print output -------------

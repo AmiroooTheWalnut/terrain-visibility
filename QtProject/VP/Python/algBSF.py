@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import time
 from TerrainInput import classComp, classGuard, readInput
-from common import vprint
+from common import vprint, elapsed
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
@@ -70,7 +70,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
         print("No North/South intersection!", flush=True)
         return NO_SOLUTION
 
-    start_time = time.time()
+    timestamp = time.time()
 
     ccUsedForFrontier = [0] * len(gComps) # Flag set if cc is picked already
     ccIntersect1 = [] # Intersecting CC in the Frontier
@@ -149,8 +149,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
         if success:                 
             nFrontier += 1
             
-    end_time = time.time()
-    vprint(verbose, f"Time to execute BSF algorithm = {end_time - start_time:.2g} seconds", flush=True)
+    timestamp = elapsed(verbose, timestamp, "Time to execute BSF algorithm")
 
     # Build returningPath
     # assert len(returningPath) > 0, "No solution exists!"

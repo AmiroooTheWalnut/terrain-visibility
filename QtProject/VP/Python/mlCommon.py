@@ -8,7 +8,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from algBSF import runBSF
 from Visibility import calc_vis
-from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, stepMove
+from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, stepMove, unwrapComp, vprint
 
 # Environment setup for multi-level RL
 class GuardEnv(gym.Env):
@@ -50,7 +50,7 @@ class GuardEnv(gym.Env):
             self.num_guards = self.guard_positions.shape[0] # num_guards must be perfect square
         else:
             self.guard_positions = fibonacci_lattice(self.num_guards, self.grid_size[0], self.grid_size[1])
-        vprint(self.guard_positions, flush=True)
+        vprint(self.verbose, self.guard_positions, flush=True)
         self.iteration = 0
         return self._get_obs(), {}
 
@@ -80,9 +80,9 @@ class GuardEnv(gym.Env):
         connectivity_reward = self._connectivity_score()
         coverage_reward = self._coverage_score()
 
-        vprint(f"Visibility reward = {visibility_reward:.4g}", flush=True)
-        vprint(f"Connectivity reward = {connectivity_reward:.4g}", flush=True)
-        vprint(f"Coverage reward = {coverage_reward:.4g}", flush=True)
+        vprint(self.verbose, f"Visibility reward = {visibility_reward:.4g}", flush=True)
+        vprint(self.verbose, f"Connectivity reward = {connectivity_reward:.4g}", flush=True)
+        vprint(self.verbose, f"Coverage reward = {coverage_reward:.4g}", flush=True)
 
         # Weighted sum of the three levels
         total_reward = 0.4 * visibility_reward + 0.3 * connectivity_reward + 0.3 * coverage_reward
@@ -94,7 +94,8 @@ class GuardEnv(gym.Env):
         # Score = sum of diameters of the connected components
         sum = 0
         for comp in self.gComps:
-            sum += calc_diameter(comp.bitmap)
+            bitmap, minX, minY = unwrapComp(comp)
+            sum += calc_diameter(bitmap)
         return sum
 
     def _connectivity_score(self):
@@ -119,7 +120,3 @@ class GuardEnv(gym.Env):
     def render(self):
         # Should only show frontiers when running single-threaded
         return
-
-    def vprint(self, *args, **kwargs):
-        if self.verbose:
-            print(*args, **kwargs)

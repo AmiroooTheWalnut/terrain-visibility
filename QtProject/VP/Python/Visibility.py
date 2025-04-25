@@ -1,6 +1,15 @@
 import numpy as np
 import time
 
+#---------------------------------------
+# Elapsed time - Can't import from common to avoid circular import
+#---------------------------------------
+def elapsed(verbose, start_time, str=""):
+    end_time = time.time()
+    if verbose:   
+        print(f"{str}: Elapsed time = {end_time - start_time:.2g} seconds", flush=True)
+    return end_time
+
 # ---------------------------------
 # Calculate visibility of a guard
 # Elevation is terrain array elev (row/col)
@@ -9,8 +18,7 @@ import time
 # x is height-wise, y is width-wise
 # ---------------------------------
 def calc_vis(guard, elev, verbose=False):
-    if verbose:
-        start_time = time.time()
+    timestamp = time.time()
 
     nrows, ncols = elev.shape
     viewshed = np.zeros((nrows, ncols), dtype=int)
@@ -113,9 +121,7 @@ def calc_vis(guard, elev, verbose=False):
 
     #debugPrintViewShed(viewshed)
 
-    if verbose:
-        end_time = time.time()
-        print(f"Time to execute Visibility algorithm = {end_time - start_time:.2g} seconds", flush=True)
+    timestamp = elapsed(verbose, timestamp, "Time to execute Visibility algorithm")
 	
     return viewshed
 

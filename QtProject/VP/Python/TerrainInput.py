@@ -8,6 +8,17 @@
 #     CrossSouth B            <at least one line>
 #
 import gc
+import time
+import numpy as np
+
+#---------------------------------------
+# Elapsed time - Can't import from common to avoid circular import
+#---------------------------------------
+def elapsed(verbose, start_time, str=""):
+    end_time = time.time()
+    if verbose:   
+        print(f"{str}: Elapsed time = {end_time - start_time:.2g} seconds", flush=True)
+    return end_time
 
 # -----------------------------
 # Connected Component
@@ -109,9 +120,11 @@ def readInput(f, verbose=False):
 def findIntersections(gComps, verbose=False):
     for i in range(len(gComps)):
         for j in range(i+1, len(gComps)):
+            timestamp = time.time()
             if intersect(gComps[i], gComps[j]):
                 gComps[i].addIntersect(j)
                 gComps[j].addIntersect(i)
+            timestamp = elapsed(verbose, timestamp, "Process two component intersection")
 
 # -----------------------------
 # Determine if two Components intersect
@@ -139,18 +152,20 @@ def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
         for i in range(nrows):
             for j in range(ncols):
                 if viewshed[i][j] == 1:  # Either one or zero
-                    #if verbose:
-                    #    print(f"Find component start point at {i},{j}", flush=True)
+                    timestamp = time.time()
+
                     flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
-                    #debugPrintMask(viewshed)
+                    timestamp = elapsed(verbose, timestamp, "Flood fill")
+
                     setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose)
+                    timestamp = elapsed(verbose, timestamp, "Set connected component")
+
                     found = True
         if found == False:
             done = True
 
 # -----------------------------
 # Define a single connected component
-# Crop the bitmap to the minimize size needed to store the info
 # viewshed contains the mask for the connected component (visible = 2 after flood fill)
 # Other pixels (if visible by the same guard) = 1
 # -----------------------------
@@ -165,6 +180,27 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
 
     maxX=-10000
     minX=10000
+
+#    rows, cols = np.where(viewshed==2) # Skip over rows we don't care
+#    indices = list(zip(rows, cols))  
+#    lastindex = [-1, -1]
+#    startY = -1
+#    for index in indices:
+#        i = index[0]
+#        j = index[1]
+#        viewshed[i, j] = 0 # Clear pixel
+#        minX = min(i, minX)
+#        maxX = max(i, maxX)
+#        if startY >= 0:
+#            if lastindex[0] != i or lastindex[1] != j-1:  # Moved to next row or skip over a pixel
+#                comp.addRow(lastindex[0], startY, lastindex[1])
+#                startY = -1
+#        else:
+#            if j < ncols-1:  # Force start <> end
+#                startY = j
+#
+#    if startY >= 0:
+#        comp.addRow(lastindex[0], startY, lastindex[1])
 
     for i in range(nrows):
         startY = -1

@@ -1,5 +1,6 @@
 import numpy as np
 import argparse
+import sys
 from ReadElevImg import read_png
 import time
 from mlCommon import GuardEnv
@@ -36,6 +37,9 @@ def evaluate_model(env, model, num_episodes=10):
 
 
 if __name__ == "__main__":
+    sys.stdout = open('rlMainLog.txt', 'a')
+    print("=============rlMain.py Run Start===============")
+
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('--name', type=str, help="test.png")
     parser.add_argument('--numGuards', type=int, help="50")

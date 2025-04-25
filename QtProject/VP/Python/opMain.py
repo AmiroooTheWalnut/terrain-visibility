@@ -14,18 +14,12 @@ import sys
 #---------------------------------------
 def bsfScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=False):
 
-    start_time = time.time()   
-    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
-    end_time = time.time()
-    print(f"Time to set up graph = {end_time - start_time:.2g} seconds", flush=True)    
+    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, elev, verbose)
     
     if pairGuardFlag:
         pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
 
-    start_time = time.time()   
-    score = runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
-    end_time = time.time()
-    print(f"Time to run BSF = {end_time - start_time:.2g} seconds", flush=True)    
+    score = runBSF(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
     print(f"Number of Frontier = {score}")
 
@@ -36,18 +30,12 @@ def bsfScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=Fal
 #---------------------------------------
 def ilpScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=False):
 
-    start_time = time.time()   
-    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, bitmap, verbose)
-    end_time = time.time()
-    print(f"Time to set up graph = {end_time - start_time:.2g} seconds", flush=True)    
+    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, elev, verbose)
 
     if pairGuardFlag:
         pairGuards(nrows, ncols, gGuards, gComps, gNorths, gSouths, verbose)
     
-    start_time = time.time()   
-    score = runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
-    end_time = time.time()
-    print(f"Time to run ILP = {end_time - start_time:.2g} seconds", flush=True)    
+    score = runILP(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
     print(f"Number of Guards = {score}")
 
@@ -87,9 +75,9 @@ if __name__ == "__main__":
 
     start_time = time.time()   
 
-    # Read bitmap
-    bitmap = read_png(filename, verbose, enableShow)
-    nrows, ncols = bitmap.shape
+    # Read elevation
+    elev = read_png(filename, verbose, enableShow)
+    nrows, ncols = elev.shape
 
     # Initial guard positions determined by fibonacci lattice
     if squareUniform:
