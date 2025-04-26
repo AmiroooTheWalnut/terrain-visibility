@@ -137,6 +137,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
                                 vprint(verbose, f"Intersecting South", flush=True)
                                 done = True
                                 returningPath.append(cc)
+                                comp.selected = True
                             break
 
                     if done:
@@ -166,6 +167,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
                 if cc == ccIntersect1[i]:
                     dd = ccIntersect2[i]
                     returningPath.append(dd)
+                    gComps[dd].selected = True
                     cc = returningPath[-1]
                     break
             else:
@@ -177,7 +179,6 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
             print("---------- Returning Path ----------------", flush=True)
             for cc in returningPath:
                 print(f"Guard/Comp: {gComps[cc].parentID}, {cc}", flush=True)
-                gComps[cc].selected = True
 
             print("Frontier Details:", flush=True)
             for i in range(nFrontier):

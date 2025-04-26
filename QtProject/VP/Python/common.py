@@ -4,7 +4,6 @@
 """
 import numpy as np
 import time
-import gc
 from scipy.spatial import distance
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, intersect, printGuards
 from Visibility import calc_vis

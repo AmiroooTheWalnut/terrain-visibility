@@ -4,6 +4,7 @@
 """
 import numpy as np
 import time
+import gc
 import gymnasium as gym
 from gymnasium import spaces
 from algBSF import runBSF
@@ -174,20 +175,23 @@ def stepMove(pt, bound, direction):
 def best_move(guard_positions, ht, radius, elev, lastGuards, lastComps, verbose=False):
 
     nrows, ncols = elev.shape
+    restored = []
 
     # Keep position if moving will leave N/S
     for guard in lastGuards:
         if guard.xmin == 0 or guard.xmax == ncols-1:
             id = guard.id
-            print(f"Restoring guard {id}")
+            print(f"Restoring guard {id} that previously crossed N/S")
             guard_positions[id] = (guard.row, guard.col)
+            restored.append(id)
 
     # Keep guard position if the connected component was selected last time
     for comp in lastComps:
         if comp.selected:
             id = comp.parentID
-            print(f"Restoring guard {id}")
-            guard_positions[id] = (guard.row, guard.col)
+            if id not in restored:
+                print(f"Restoring guard {id} with previously selected components")
+                guard_positions[id] = (guard.row, guard.col)
     
     return guard_positions                              
                  

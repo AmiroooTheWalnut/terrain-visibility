@@ -45,10 +45,9 @@ def bsfScore(guard_positions, baseline=False):
     else:
         cost = runBSF(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
-    if baseline or (scoreBSF and keepNS):
-        lastComps.clear()
+    # Only need to store lastComp and lastGuards once to prevent increasing number of restored guards
+    if baseline:
         lastComps = gComps.copy()
-        lastGuards.clear()
         lastGuards = gGuards.copy()
    
     print(f"ILP/BSF score = {cost}")
@@ -70,7 +69,6 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
     parser.add_argument('--keepNS', action='store_true', help="Keep NS guard pos")
-    parser.add_argument('--keepCon', action='store_true', help="keep connectivity of selected components")
 
     args = parser.parse_args()
 
@@ -84,12 +82,10 @@ if __name__ == "__main__":
     verbose = args.verbose      # False if not provided
     enableShow = args.show      # False if not provided
     keepNS = args.keepNS        # False if not provided
-    keepCon = args.keepCon      # False if not provided
     
     #-------------------
     # Other options
     scoreBSF = True
-    keepCon = True
     #-------------------
 
     start_time = time.time()   
