@@ -177,6 +177,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
             print("---------- Returning Path ----------------", flush=True)
             for cc in returningPath:
                 print(f"Guard/Comp: {gComps[cc].parentID}, {cc}", flush=True)
+                gComps[cc].selected = True
 
             print("Frontier Details:", flush=True)
             for i in range(nFrontier):

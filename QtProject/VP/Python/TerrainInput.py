@@ -28,11 +28,12 @@ class classComp:
         self.id = id
         self.parentID = parentID
         self.intersects = []
-        self.nConnectedRows = 0
         self.connectedRows = []
+        self.selected = False
 
     def addIntersect(self, id):
-        self.intersects.append(id)
+        if (id in self.intersects) == False: 
+            self.intersects.append(id)
 
     # For Geogebra export
     def setLocation(self, cx, cy, radius):
@@ -46,7 +47,8 @@ class classComp:
 
     def clear(self):
         del self.intersects
-        self.nConnectedRows = 0
+        del self.connectedRows
+        self.selected = False
         gc.collect()
 
 # -----------------------------
@@ -57,6 +59,8 @@ class classGuard:
         self.id = id
         self.compIDs = []
         self.paired = False
+        self.xmin = 10000
+        self.xmax = -10000
 
     def addComp(self, comp):
         self.compIDs.append(comp.id)
@@ -67,9 +71,16 @@ class classGuard:
         self.ht = int(ht)
         self.radius = int(radius)
 
+    def setMinMax(self, xmin, xmax):
+        self.xmin = xmin
+        self.xmax = xmax
+
     def clear(self):
         del self.compIDs
         self.paired = False
+        self.xmin = 10000
+        self.xmax = -10000
+        gc.collect()
 
 # -----------------------------
 # Read a text file input to define the guards and 
@@ -116,14 +127,15 @@ def readInput(f, verbose=False):
 
 # -----------------------------
 # Find intersecting components
+# Assume this is called inside setupGraph
 # -----------------------------
 def findIntersections(gComps, verbose=False):
-    for i in range(len(gComps)):
-        for j in range(i+1, len(gComps)):
+    for c1 in gComps:
+        for c2 in gComps:
             timestamp = time.time()
-            if intersect(gComps[i], gComps[j]):
-                gComps[i].addIntersect(j)
-                gComps[j].addIntersect(i)
+            if intersect(c1, c2):
+                c1.addIntersect(c2.id)
+                c2.addIntersect(c1.id)
             timestamp = elapsed(verbose, timestamp, "Process two component intersection")
 
 # -----------------------------
@@ -181,27 +193,6 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
     maxX=-10000
     minX=10000
 
-#    rows, cols = np.where(viewshed==2) # Skip over rows we don't care
-#    indices = list(zip(rows, cols))  
-#    lastindex = [-1, -1]
-#    startY = -1
-#    for index in indices:
-#        i = index[0]
-#        j = index[1]
-#        viewshed[i, j] = 0 # Clear pixel
-#        minX = min(i, minX)
-#        maxX = max(i, maxX)
-#        if startY >= 0:
-#            if lastindex[0] != i or lastindex[1] != j-1:  # Moved to next row or skip over a pixel
-#                comp.addRow(lastindex[0], startY, lastindex[1])
-#                startY = -1
-#        else:
-#            if j < ncols-1:  # Force start <> end
-#                startY = j
-#
-#    if startY >= 0:
-#        comp.addRow(lastindex[0], startY, lastindex[1])
-
     for i in range(nrows):
         startY = -1
         endY = -1
@@ -211,6 +202,7 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
             if value == 2 and j < ncols-1:  # Force start <> end
                 if startY < 0: 
                     startY = j
+                    compRow = i
             elif (j==ncols-1 and value==2) or value != 2:
                 if startY >= 0:
                     if j==ncols-1 and value==2:
@@ -218,11 +210,10 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
                     else:
                         endY = j-1
                     comp.addRow(compRow, startY, endY)
+                    viewshed[i][startY:endY+1] = 0  # Clear pixel after setting the ConnectedRow
+                    startY = -1 # To allow multiple strips per row
                     minX = min(i, minX)
                     maxX = max(i, maxX)
-                    for k in range(startY, endY+1):
-                        viewshed[i][k] = 0  # Clear pixel after setting the ConnectedRow
-                    startY = -1 # To allow multiple strips per row
 
     # Potentially add to gNorth or gSouth
     # In the appVP, this is done during construction of first frontier
@@ -231,6 +222,8 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
         gNorths.append(compnum)
     if maxX == nrows-1:
         gSouths.append(compnum)
+
+    guard.setMinMax(minX, maxX)
 
 # -----------------------------
 # Flood fill a 2D array

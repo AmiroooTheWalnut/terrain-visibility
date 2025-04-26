@@ -87,9 +87,11 @@ if __name__ == "__main__":
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     if ilp:
-        ilpScore(guard_positions, pairGuardFlag, verbose, enableShow)
+        score = ilpScore(guard_positions, pairGuardFlag, verbose, enableShow)
     else:     
-        bsfScore(guard_positions, pairGuardFlag, verbose, enableShow)
+        score = bsfScore(guard_positions, pairGuardFlag, verbose, enableShow)
+
+    print(f"Best cost = {cost}", flush=True)
 
     end_time = time.time()
     print(f"Total running time = {end_time - start_time:.2g} seconds", flush=True)    

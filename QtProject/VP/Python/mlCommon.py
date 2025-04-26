@@ -8,7 +8,10 @@ import gymnasium as gym
 from gymnasium import spaces
 from algBSF import runBSF
 from Visibility import calc_vis
-from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, stepMove, unwrapComp, vprint
+from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, unwrapComp, vprint
+
+lastSavedPos = []
+lastSavedIds = []
 
 # Environment setup for multi-level RL
 class GuardEnv(gym.Env):
@@ -120,3 +123,111 @@ class GuardEnv(gym.Env):
     def render(self):
         # Should only show frontiers when running single-threaded
         return
+
+#---------------------------------------
+# Step to neighbor
+# pt = (x, y)
+# bound = (xmax, ymax)
+#---------------------------------------
+def stepMove(pt, bound, direction):
+    assert(direction >= 0 and direction < 8), "Direction out of range"
+
+    if direction == 0:  # North
+        newpt = (pt[0], 
+                 max(0           , pt[1] - 1))
+
+    elif direction == 1:  # NorthEast
+        newpt = (min(bound[0] - 1, pt[0] + 1), 
+                 max(0           , pt[1] - 1))
+
+    elif direction == 2:  # East
+        newpt = (min(bound[0] - 1, pt[0] + 1),
+                 pt[1])
+
+    elif direction == 3:  # SouthEast
+        newpt = (min(bound[0] - 1, pt[0] + 1),
+                 min(bound[1] - 1, pt[1] + 1))
+
+    elif direction == 4:  # South
+        newpt = (pt[0], 
+                 min(bound[1] - 1, pt[1] + 1))
+
+    elif direction == 5:  # SouthWest
+        newpt = (max(0           , pt[0] - 1),
+                 min(bound[1] - 1, pt[1] + 1))
+
+    elif direction == 6:  # West
+        newpt = (max(0           , pt[0] - 1),
+                 pt[1])
+
+    elif direction == 7:  # NorthWest
+        newpt = (max(0           , pt[0] - 1),
+                 max(0           , pt[1] - 1))
+
+    return newpt
+
+#---------------------------------------
+# Do not move guards that saw N/S but no longer
+# Do not move a guard that was has connected components previously selected and 
+# if moving it will break the "critical" connection.
+#---------------------------------------
+def best_move(guard_positions, ht, radius, elev, lastGuards, lastComps, verbose=False):
+
+    nrows, ncols = elev.shape
+
+    # Keep position if moving will leave N/S
+    for guard in lastGuards:
+        if guard.xmin == 0 or guard.xmax == ncols-1:
+            id = guard.id
+            print(f"Restoring guard {id}")
+            guard_positions[id] = (guard.row, guard.col)
+
+    # Keep guard position if the connected component was selected last time
+    for comp in lastComps:
+        if comp.selected:
+            id = comp.parentID
+            print(f"Restoring guard {id}")
+            guard_positions[id] = (guard.row, guard.col)
+    
+    return guard_positions                              
+                 
+
+#---------------------------------------
+# Calculate visibility sum
+# If keepNS, do not move the guards that reach N/S
+#---------------------------------------
+def visibilitySum(guard_positions, guardHt, radius, elev, keepNS, verbose=False):
+    global lastSavedPos, lastSavedIds
+
+    # To be sure positions are integral as they are passed by the optimizer
+    guard_positions=guard_positions.astype(int)
+
+    savePos = lastSavedPos.copy() # Copy of all of last guard positions
+    saveIds = lastSavedIds.copy() # List of IDs that reach N/S
+    del lastSavedPos
+    del lastSavedIds
+    gc.collect
+    lastSavedPos = []
+    lastSavedIds = []
+
+    visTotal = 0
+    nrows, ncols = elev.shape
+    id = 0
+
+    for position in guard_positions:
+        if id in saveIds: # Crossed N/S last time
+            viewshed = calc_vis(position[0], position[1], guardHt, radius, elev, verbose)
+            if np.sum(viewshed[0][:]) == 0 and np.sum(viewshed[ncols-1][:]) == 0: # Does not cross N/S this time
+                position = savePos[id] # Move back to the old position
+
+        viewshed = calc_vis(position[0], position[1], guardHt, radius, elev, verbose)
+        visTotal += np.sum(viewshed)
+
+        if np.sum(viewshed[0][:]) > 0 or np.sum(viewshed[ncols-1][:]) > 0:
+            lastSavedIds.append(id)
+
+        id += 1
+
+    lastSavedPos = guard_positions.copy()
+
+    return visTotal

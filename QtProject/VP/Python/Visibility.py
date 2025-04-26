@@ -17,14 +17,13 @@ def elapsed(verbose, start_time, str=""):
 # See Franklin's viewshed algorithm
 # x is height-wise, y is width-wise
 # ---------------------------------
-def calc_vis(guard, elev, verbose=False):
+def calc_vis(row, col, ht, radius, elev, verbose=False):
     timestamp = time.time()
 
     nrows, ncols = elev.shape
     viewshed = np.zeros((nrows, ncols), dtype=int)
 
-    obs = [guard.row, guard.col]
-    radius = guard.radius
+    obs = [row, col]
     xmin = max(obs[0] - radius, -10)
     ymin = max(obs[1] - radius, -10)
     xmax = min(obs[0] + radius, nrows + 9)
@@ -36,7 +35,7 @@ def calc_vis(guard, elev, verbose=False):
     viewshed[obs[0]][obs[1]] = 1 # Observer is visible from itself
 
     # Observer distance about sea level, incl distance above ground.
-    obsAltitude = float(elev[obs[0]][obs[1]]) + float(guard.ht)
+    obsAltitude = float(elev[obs[0]][obs[1]]) + float(ht)
 
     # The target is in turn every point along the smaller of the border or a box
     # of side 2*radius around the observer.
@@ -114,7 +113,7 @@ def calc_vis(guard, elev, verbose=False):
 
             horizon_alt = obsAltitude + horizon_slope * abs(p[inciny] - obs[inciny])
 
-            if pelev + float(guard.ht) >= horizon_alt:
+            if pelev + float(ht) >= horizon_alt:
                 viewshed[p[0]][p[1]] = 1
 
             i += sig

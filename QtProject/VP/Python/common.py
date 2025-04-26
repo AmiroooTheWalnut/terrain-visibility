@@ -9,9 +9,6 @@ from scipy.spatial import distance
 from TerrainInput import classComp, classGuard, findIntersections, findConnected, intersect, printGuards
 from Visibility import calc_vis
 
-lastNSpos = []
-lastNSids = []
-
 #---------------------------------------
 # Print if verbose only
 #---------------------------------------
@@ -27,48 +24,6 @@ def elapsed(verbose, start_time, str="", flushOp=True):
     if verbose:   
         print(f"{str}: Elapsed time = {end_time - start_time:.2g} seconds", flush=flushOp)
     return end_time
-
-#---------------------------------------
-# Step to neighbor
-# pt = (x, y)
-# bound = (xmax, ymax)
-#---------------------------------------
-def stepMove(pt, bound, direction):
-    assert(direction >= 0 and direction < 8), "Direction out of range"
-
-    if direction == 0:  # North
-        newpt = (pt[0], 
-                 max(0           , pt[1] - 1))
-
-    elif direction == 1:  # NorthEast
-        newpt = (min(bound[0] - 1, pt[0] + 1), 
-                 max(0           , pt[1] - 1))
-
-    elif direction == 2:  # East
-        newpt = (min(bound[0] - 1, pt[0] + 1),
-                 pt[1])
-
-    elif direction == 3:  # SouthEast
-        newpt = (min(bound[0] - 1, pt[0] + 1),
-                 min(bound[1] - 1, pt[1] + 1))
-
-    elif direction == 4:  # South
-        newpt = (pt[0], 
-                 min(bound[1] - 1, pt[1] + 1))
-
-    elif direction == 5:  # SouthWest
-        newpt = (max(0           , pt[0] - 1),
-                 min(bound[1] - 1, pt[1] + 1))
-
-    elif direction == 6:  # West
-        newpt = (max(0           , pt[0] - 1),
-                 pt[1])
-
-    elif direction == 7:  # NorthWest
-        newpt = (max(0           , pt[0] - 1),
-                 max(0           , pt[1] - 1))
-
-    return newpt
 
 #---------------------------------------
 # Find the diameter of a visibility region
@@ -126,37 +81,6 @@ def square_uniform(n_points, nrows, ncols, randomize=False):
     return np.array(points) 
 
 #---------------------------------------
-# Only calculate visibility sum
-#---------------------------------------
-def visibilitySum(guard_positions, guardHt, radius, elev, keepNS, verbose=False):
-    global lastNSpos, lastNSids
-
-    visTotal = 0
-    guard = classGuard(0)
-    nrows, ncols = elev.shape
-    id = 0
-
-    if keepNS:
-        saveIDs = lastNSids.copy()
-        savePos = lastNSpos.copy()
-        lastNSids.clear()
-        lastNSpos.clear()
-
-    for position in guard_positions:
-        if keepNS and id in saveIDs:
-            posId = saveIDs.index(id)
-            position = savePos[posID]
-        guard.setLocation(position[0], position[1], guardHt, radius)
-        viewshed = calc_vis(guard, elev, verbose)
-        visTotal += np.sum(viewshed)
-        if keepNS and np.sum(viewshed[0]) > 0 or np.sum(viewshed[ncols-1]) > 0:
-            lastNSpos.append(position)
-            lastNSids.append(id)
-        id += 1
-
-    return visTotal
-
-#---------------------------------------
 # Set up G(V, E)
 # Visibility, guard/connected component information
 #---------------------------------------
@@ -171,12 +95,12 @@ def setupGraph(guard_positions, guardHt, radius, elev, verbose=False):
 
     for guard in gGuards:
         guard.setLocation(guard_positions[guard.id][0], guard_positions[guard.id][1], guardHt, radius)
-        viewshed = calc_vis(guard, elev, verbose)
+        viewshed = calc_vis(guard_positions[guard.id][0], guard_positions[guard.id][1], guardHt, radius, elev, verbose)
         findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose)
 
     findIntersections(gComps, verbose)
 
-    #printGuards(gGuards, gComps, gNorths, gSouths, verbose)
+    #printGuards(gGuards, gComps, gNorths, gSouths)
 
     timestamp = elapsed(verbose, timestamp, "Set up graph")
 

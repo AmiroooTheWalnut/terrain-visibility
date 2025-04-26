@@ -5,8 +5,8 @@ import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF
-from mlCommon import GuardEnv
-from common import fibonacci_lattice, square_uniform, setupGraph, visibilitySum
+from mlCommon import visibilitySum, best_move
+from common import fibonacci_lattice, square_uniform, setupGraph
 import pyswarms as ps
 import time
 import copy
@@ -22,29 +22,21 @@ def visScore(guard_positions):
 
     visTotal = visibilitySum(guard_positions, guardHt, radius, elev, keepNS, verbose)
 
+    print(f"Visibility score = {visTotal}")
     return -visTotal  # Lower cost the better - Use visibility as the score
-
+    
 #---------------------------------------
-# BSF - Option to use Frontier as score or not
+# Score BSF
 #---------------------------------------
-def bsfScore(guard_positions):
+def bsfScore(guard_positions, baseline=False):
     global lastGuards, lastComps
 
-    # Don't move the guards that were seeing North or South
-    # We don't know if the guard will still see N/S even if the guard moves E/W, 
-    # So we need to keep the guard at its last position (both x and y)
-    if scoreBSF and keepNS:
-        for comp in lastComps:
-            if comp.minX == 0 or comp.maxX == nrows-1:
-                id = comp.parentID
-                guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+    # To be sure positions are integral as they are passed by the optimizer
+    guard_positions=guard_positions.astype(int)
 
-    # Don't move the guards that had at least N (threshold) intersecting components
-    if threshold != None:
-        for comp in lastComps:
-            if len(comp.intersects) >= threshold:
-                id = comp.parentID
-                guard_positions[id] = (lastGuards[id].x, lastGuards[id].y)
+    # Strategically move the guards
+    if baseline or (scoreBSF and keepNS):
+        guard_positions = best_move(guard_positions, guardHt, radius, elev, lastGuards, lastComps, verbose)
 
     gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, elev, verbose)
 
@@ -53,11 +45,13 @@ def bsfScore(guard_positions):
     else:
         cost = runBSF(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
 
-    if threshold or (scoreBSF and keepNS):
+    if baseline or (scoreBSF and keepNS):
         lastComps.clear()
         lastComps = gComps.copy()
         lastGuards.clear()
         lastGuards = gGuards.copy()
+   
+    print(f"ILP/BSF score = {cost}")
 
     return cost  # Lower cost the better - Use visibility as the score
 
@@ -76,25 +70,26 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
     parser.add_argument('--keepNS', action='store_true', help="Keep NS guard pos")
-    parser.add_argument('--threshold', type=int, help="Connectivity threshold to keep guard pos")
+    parser.add_argument('--keepCon', action='store_true', help="keep connectivity of selected components")
 
     args = parser.parse_args()
 
     filename = args.name        # None if not provided
-    radius = args.radius        # None if not provided
-    numGuards = args.numGuards  # None if not provided
+    radius = args.radius        # Default if not provided
+    numGuards = args.numGuards  # Default if not provided
     guardHt = args.height       # Default if not provided
     ilp = args.ilp              # False if not provided
     squareUniform = args.square # False if not provided
     randomize = args.randomize  # False if not provided (Only applicable if squareUniform is true)
     verbose = args.verbose      # False if not provided
     enableShow = args.show      # False if not provided
-    keepNS = args.keepNS        # None if not provided
-    threshold = args.threshold   # None if not provided
-
+    keepNS = args.keepNS        # False if not provided
+    keepCon = args.keepCon      # False if not provided
+    
     #-------------------
     # Other options
-    scoreBSF = False
+    scoreBSF = True
+    keepCon = True
     #-------------------
 
     start_time = time.time()   
@@ -111,7 +106,7 @@ if __name__ == "__main__":
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     # Get a baseline
-    nFrontier = bsfScore(guard_positions)
+    score = bsfScore(guard_positions, baseline=True)
 
     # Define bounds for the guards to not exceed the elev
     num_dimensions = 2
@@ -127,16 +122,14 @@ if __name__ == "__main__":
     # w [0.4 to 1.2] = Inertia weight (high: explore more wider space)
     
     optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
-                                        options={'c1': 1.2, 'c2': 0.3, 'w': 1.0},
+                                        options={'c1': 1.8, 'c2': 0.8, 'w': 0.4},
                                         bounds=(lb, ub), init_pos=guard_positions.astype(float))
 
     max_iters = 500
-    no_improvement_limit = 3
-    best_cost = nFrontier
+    no_improvement_limit = 10
+    best_cost = score
     best_pos = guard_positions
     no_improvement_count = 0
-
-    print(guard_positions)
 
     for i in range(max_iters):
         if scoreBSF:
@@ -150,7 +143,6 @@ if __name__ == "__main__":
             best_cost = cost
             positions = optimizer.swarm.position
             best_pos = np.array(positions).reshape(numGuards, num_dimensions)
-            print(best_pos)
             no_improvement_count = 0
         else:
             no_improvement_count += 1
@@ -160,11 +152,11 @@ if __name__ == "__main__":
             break
 
     if scoreBSF:
-        nFrontier = best_cost
+        score = best_cost
     else:
-        keepNS = False # No need to change guard position anymore
-        nFrontier = bsfScore(best_pos)
-    print(f"Best position nFrontier = {nFrontier}", flush=True)
+        scoreBSF = True # KeepNS positions as original
+        score = bsfScore(best_pos)
+    print(f"Best position score = {score}", flush=True)
 
     end_time = time.time()
     print(f"Total running time = {end_time - start_time:.2g} seconds", flush=True)    
