@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF
+from ilpAlgGen import runILP
 from mlCommon import visibilitySum, best_move
 from common import fibonacci_lattice, square_uniform, setupGraph
 import pyswarms as ps
@@ -26,9 +27,9 @@ def visScore(guard_positions):
     return -visTotal  # Lower cost the better - Use visibility as the score
     
 #---------------------------------------
-# Score BSF
+# Score BSF/ILP
 #---------------------------------------
-def bsfScore(guard_positions, baseline=False):
+def bsf_ilp_Score(guard_positions, baseline=False):
     global lastGuards, lastComps
 
     # To be sure positions are integral as they are passed by the optimizer
@@ -102,7 +103,7 @@ if __name__ == "__main__":
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
     # Get a baseline
-    score = bsfScore(guard_positions, baseline=True)
+    score = bsf_ilp_Score(guard_positions, baseline=True)
 
     # Define bounds for the guards to not exceed the elev
     num_dimensions = 2
@@ -118,40 +119,49 @@ if __name__ == "__main__":
     # w [0.4 to 1.2] = Inertia weight (high: explore more wider space)
     
     optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
-                                        options={'c1': 1.8, 'c2': 0.8, 'w': 0.4},
+                                        options={'c1': 1.8, 'c2': 0.5, 'w': 1.2},
                                         bounds=(lb, ub), init_pos=guard_positions.astype(float))
 
     max_iters = 500
     no_improvement_limit = 10
+    no_improvement_count = 0
     best_cost = score
     best_pos = guard_positions
-    no_improvement_count = 0
+    no_solution_limit = 30
+    no_solution_count = 0
 
     for i in range(max_iters):
         if scoreBSF:
-            cost, pos = optimizer.optimize(bsfScore, iters=1)
+            cost, pos = optimizer.optimize(bsf_ilp_Score, iters=1)
         else:
             cost, pos = optimizer.optimize(visScore, iters=1)
 
         print(f"Cost = {cost}", flush=True)
 
-        if cost < best_cost:
-            best_cost = cost
-            positions = optimizer.swarm.position
-            best_pos = np.array(positions).reshape(numGuards, num_dimensions)
-            no_improvement_count = 0
+        if cost == 9999: # Only count those that have solutions
+            no_solution_count += 1
         else:
-            no_improvement_count += 1
+            no_solution_count = 0
+            if cost < best_cost:
+                best_cost = cost
+                positions = optimizer.swarm.position
+                best_pos = np.array(positions).reshape(numGuards, num_dimensions)
+                no_improvement_count = 0
+            else:
+                no_improvement_count += 1
      
         if no_improvement_count >= no_improvement_limit:
-            print(f"Early stopping at iteration {i}", flush=True)
+            print(f"Early stopping at iteration {i}: Cause is {no_improvement_limit} iterations with no improvement", flush=True)
+            break
+        if no_solution_count >= no_solution_limit:
+            print(f"Early stopping at iteration {i}: Cause is {no_solution_limit} iterations with no solution", flush=True)
             break
 
     if scoreBSF:
         score = best_cost
     else:
         scoreBSF = True # KeepNS positions as original
-        score = bsfScore(best_pos)
+        score = bsf_ilp_Score(best_pos)
     print(f"Best position score = {score}", flush=True)
 
     end_time = time.time()

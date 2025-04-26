@@ -8,6 +8,8 @@ from common import vprint, elapsed
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
+NO_SOLUTION = 9999
+
 '''
 g0, ..., gn-1 are integers, 0 = not selected, 1 = selected
 Nodes: (CN = Component North, CS = Component South)
@@ -100,7 +102,7 @@ def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
     # No solution if North or South borders do not overlap with any CC
     if len(gNorths) == 0 or len(gSouths) == 0:
         print("No North/South intersection!", flush=True)
-        return 9999
+        return NO_SOLUTION
 
     timestamp = time.time()
 
@@ -206,6 +208,7 @@ def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
     # ------------ Print output -------------
     print(f"Status: {prob.status}", flush=True)    
     print("Non-zero flow values below:", flush=True)    
+    solutionOK = True
     for var in lpGuardArray:
         if var.varValue != 0.0:
             print(f"Path {var.name}: {var.varValue}", flush=True)
@@ -224,11 +227,70 @@ def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
     
     print(f"Total Cost: {prob.objective.value()}", flush=True)
 
-    if enableShow:
-        show_ilp(bitmap, gGuards, gComps, lpFlowArray, int(prob.objective.value()))
+    if verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray):
+        cost = int(prob.objective.value())
+        if enableShow:
+            show_ilp(bitmap, gGuards, gComps, lpFlowArray, cost)
+    else:
+        cost = NO_SOLUTION
+        print("No ILP solution!")
 
-    return int(prob.objective.value())
+    return cost
 
+# --------------------------------------------------
+# Automatic verification that the solution is good
+# --------------------------------------------------
+def verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray):
+    paths = []
+
+    gN = -1
+    gS = -1
+    nN = 0
+    for var in lpFlowfromN:
+        if var.varValue != 0.0:
+            nN += int(var.varValue)
+            match = re.search(r'\d+', var.name)
+            if match:
+                gN = int(match.group())    
+    solutionOK = (nN==1 and gN>=0)
+
+    nS = 0
+    for var in lpFlowtoS:
+        if var.varValue != 0.0:
+            nS += int(var.varValue)
+            match = re.search(r'\d+', var.name)
+            if match:
+                gS = int(match.group())    
+    solutionOK = (solutionOK and (nS==1 and gS>=0))
+
+    if not solutionOK:
+        return False
+
+    for var in lpFlowArray:
+        if var.varValue != 0.0:
+            numbers = re.findall(r'\d+', var.name)
+            paths.append([int(numbers[0]), int(numbers[1]), int(var.varValue)])
+
+    i = gN
+    done = False
+    solutionOK = False
+    while not done:
+        found = False
+        for path in paths:
+            if path[0] == i and path[2] == 1:
+                i = path[1] # Move to next location
+                found = True
+            if path[1] == i and path[2] == -1:     
+                i = path[0] # Move to next location        
+                found = True
+            if i == gS:
+                done = True
+                solutionOK = True
+
+        if not found: # No match to any location
+            done = True        
+            
+    return solutionOK    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ILP')
@@ -241,5 +303,5 @@ if __name__ == "__main__":
 
     gGuards, gComps, gNorths, gSouths = readInput(f, verbose)
 
-    num = runILP(None, gGuards, gComps, gNorths, gSouths, verbose) # No bitmap when input is text file
-    print(f"Number of Guards needed = {num}", flush=True)
+    cost = runILP(None, gGuards, gComps, gNorths, gSouths, verbose) # No bitmap when input is text file
+    print(f"Number of Guards needed = {cost}", flush=True)
