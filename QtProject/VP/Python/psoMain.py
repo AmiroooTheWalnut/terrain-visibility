@@ -40,9 +40,9 @@ def bsf_ilp_Score(guard_positions, baseline=False):
     if baseline:
         lastGuards = []
         lastComps = []
-        lastComps = gComps.copy()
         lastGuards = gGuards.copy()
-   
+        lastComps = gComps.copy()
+    
     print(f"ILP/BSF score = {cost}")
 
     return cost  # Lower cost the better - Use visibility as the score

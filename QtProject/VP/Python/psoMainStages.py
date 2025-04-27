@@ -22,12 +22,15 @@ lastComps = []
 #---------------------------------------
 # Score visibility
 #---------------------------------------
-def visScore(guard_positions, diam=False):
+def visScore(guard_positions):
+
+    # To be sure positions are integral as they are passed by the optimizer
+    guard_positions=guard_positions.astype(int)
 
     visTotal = visibilitySum(guard_positions, guardHt, radius, elev, optDiam, keepNS, verbose)
 
     print(f"Visibility score = {visTotal}")
-    return -visTotal  # Lower cost the better - Use visibility as the score
+    return -visTotal  # Optimizer finds the minimum
     
 #---------------------------------------
 # Score connectedness
@@ -44,19 +47,13 @@ def connectScore(guard_positions):
 
     gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, elev, verbose)
 
-    if ilp:
-        cost = runILP(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
-    else:
-        cost = runBSF(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    cost = 0
+    for comp in gComps:
+        cost += len(comp.intersects)    
+        
+    print(f"Connectivity score = {cost}")
 
-    # Only need to store lastComp and lastGuards once to prevent increasing number of restored guards
-    if keepNS:
-        lastComps = gComps.copy()
-        lastGuards = gGuards.copy()
-   
-    print(f"ILP/BSF score = {cost}")
-
-    return cost  # Lower cost the better - Use visibility as the score
+    return -cost  # ptimizer finds the minimum
 #---------------------------------------
 # Score BSF/ILP
 #---------------------------------------
@@ -81,12 +78,12 @@ def bsf_ilp_Score(guard_positions, baseline=False):
     if baseline:
         lastGuards = []
         lastComps = []
-        lastComps = gComps.copy()
         lastGuards = gGuards.copy()
+        lastComps = gComps.copy()
    
     print(f"ILP/BSF score = {cost}")
 
-    return cost  # Lower cost the better - Use visibility as the score
+    return cost  # Lower cost the better 
 
 if __name__ == "__main__":
     sys.stdout = open('psoMainStagesLog.txt', 'a')
@@ -137,6 +134,8 @@ if __name__ == "__main__":
     else:
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
+    bsf_ilp_Score(guard_positions, baseline=True)  # Baseline so we can save the N/S and selected CC for later
+
     # --------------------------------
     # Set up PSO
     # c1 [0.5 to 2.5] = Cognitive parameter (high: more based on individual memory) 
@@ -161,7 +160,7 @@ if __name__ == "__main__":
     no_improvement_count = 0
     no_solution_count = 0
     best_pos = guard_positions
-    best_cost = visScore(guard_positions)  # Baseline
+    best_cost = 9999
     for i in range(max_iters):
         cost, pos = optimizer.optimize(visScore, iters=1)
         print(f"visScore cost = {cost}", flush=True)
@@ -182,8 +181,8 @@ if __name__ == "__main__":
     # --------------------------------
     no_improvement_count = 0
     no_solution_count = 0
+    best_cost = 9999
     guard_positions = best_pos
-    best_cost = connectScore(guard_positions)  # Baseline
     for i in range(max_iters):
         cost, pos = optimizer.optimize(connectScore, iters=1)
         print(f"connectScore cost = {cost}", flush=True)
@@ -204,8 +203,8 @@ if __name__ == "__main__":
     # --------------------------------
     no_improvement_count = 0
     no_solution_count = 0
+    best_cost = 9999
     guard_positions = best_pos
-    best_cost = bsf_ilp_Score(guard_positions)  # Baseline
     for i in range(max_iters):
         cost, pos = optimizer.optimize(bsf_ilp_Score, iters=1)
         print(f"bsf_ilp cost = {cost}", flush=True)
