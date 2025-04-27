@@ -16,11 +16,11 @@ lastSavedIds = []
 
 # Environment setup for multi-level RL
 class GuardEnv(gym.Env):
-    def __init__(self, num_guards, guardHt, radius, bitmap, squareUniform=False, randomize=False, verbose=False):
+    def __init__(self, num_guards, guardHt, radius, elev, squareUniform=False, randomize=False, verbose=False):
         super(GuardEnv, self).__init__()
 
         self.num_guards = num_guards
-        nrows, ncols = bitmap.shape
+        nrows, ncols = elev.shape
         self.grid_size = (nrows, ncols)
         self.squareUniform = squareUniform
         self.randomize = randomize
@@ -37,7 +37,7 @@ class GuardEnv(gym.Env):
         self.action_dim = self.num_guards * 8  # 8 actions: N, NE, E, SE, S, SW, W, NW
         self.guardHt = guardHt
         self.radius = radius
-        self.bitmap = bitmap.copy()
+        self.elev = elev.copy()  # Save a copy of the elevation bitmap
 
         # Define action and observation space
         self.action_space = spaces.MultiDiscrete([8] * self.num_guards)
@@ -68,7 +68,7 @@ class GuardEnv(gym.Env):
             self.guard_positions[i] = stepMove(pt, bound, act)
         
         # Set up G(V, E)
-        self.gGuards, self.gComps, self.gNorths, self.gSouths = setupGraph(self.guard_positions, self.guardHt, self.radius, self.bitmap, self.verbose)
+        self.gGuards, self.gComps, self.gNorths, self.gSouths = setupGraph(self.guard_positions, self.guardHt, self.radius, self.elev, self.verbose)
 
         reward, done = self._compute_reward()
         truncated = False
@@ -115,7 +115,7 @@ class GuardEnv(gym.Env):
     def _coverage_score(self):
         """Compute coverage reward."""
         # Score = - number of guards/frontiers
-        self.nFrontiers = runBSF(self.bitmap, self.gGuards, self.gComps, \
+        self.nFrontiers = runBSF(self.elev, self.gGuards, self.gComps, \
             self.gNorths, self.gSouths, self.verbose, False)
         print(f"Iteration: {self.iteration}, Cost = {self.nFrontiers}", flush=True)
         self.iteration += 1
@@ -200,38 +200,45 @@ def best_move(guard_positions, ht, radius, elev, lastGuards, lastComps, verbose=
 # Calculate visibility sum
 # If keepNS, do not move the guards that reach N/S
 #---------------------------------------
-def visibilitySum(guard_positions, guardHt, radius, elev, keepNS, verbose=False):
+def visibilitySum(guard_positions, guardHt, radius, elev, diam=False, keepNS=False, verbose=False):
     global lastSavedPos, lastSavedIds
 
     # To be sure positions are integral as they are passed by the optimizer
     guard_positions=guard_positions.astype(int)
 
-    savePos = lastSavedPos.copy() # Copy of all of last guard positions
-    saveIds = lastSavedIds.copy() # List of IDs that reach N/S
-    del lastSavedPos
-    del lastSavedIds
-    gc.collect
-    lastSavedPos = []
-    lastSavedIds = []
+    if keepNS:
+        savePos = lastSavedPos.copy() # Copy of all of last guard positions
+        saveIds = lastSavedIds.copy() # List of IDs that reach N/S
+        del lastSavedPos
+        del lastSavedIds
+        gc.collect
+        lastSavedPos = []
+        lastSavedIds = []
 
     visTotal = 0
     nrows, ncols = elev.shape
     id = 0
 
     for position in guard_positions:
-        if id in saveIds: # Crossed N/S last time
-            viewshed = calc_vis(position[0], position[1], guardHt, radius, elev, verbose)
-            if np.sum(viewshed[0][:]) == 0 and np.sum(viewshed[ncols-1][:]) == 0: # Does not cross N/S this time
-                position = savePos[id] # Move back to the old position
+        if keepNS:
+            if id in saveIds: # Crossed N/S last time
+                viewshed = calc_vis(position[0], position[1], guardHt, radius, elev, verbose)
+                if np.sum(viewshed[0][:]) == 0 and np.sum(viewshed[ncols-1][:]) == 0: # Does not cross N/S this time
+                    position = savePos[id] # Move back to the old position
 
         viewshed = calc_vis(position[0], position[1], guardHt, radius, elev, verbose)
-        visTotal += np.sum(viewshed)
+        if diam:
+            visTotal += calc_diameter(viewshed)
+        else:
+            visTotal += np.sum(viewshed)
 
-        if np.sum(viewshed[0][:]) > 0 or np.sum(viewshed[ncols-1][:]) > 0:
-            lastSavedIds.append(id)
+        if keepNS:
+            if np.sum(viewshed[0][:]) > 0 or np.sum(viewshed[ncols-1][:]) > 0:
+                lastSavedIds.append(id)
 
         id += 1
 
-    lastSavedPos = guard_positions.copy()
+    if keepNS:
+        lastSavedPos = guard_positions.copy()
 
     return visTotal

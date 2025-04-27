@@ -65,10 +65,10 @@ if __name__ == "__main__":
     start_time = time.time()   
 
     # Read bitmap
-    bitmap = read_png(filename, verbose, enableShow)
+    elev = read_png(filename, verbose, enableShow)
     
     # Check environment before training
-    env = GuardEnv(numGuards, guardHt, radius, bitmap, squareUniform=squareUniform, randomize=randomize, verbose=verbose)
+    env = GuardEnv(numGuards, guardHt, radius, elev, squareUniform=squareUniform, randomize=randomize, verbose=verbose)
     DummyVecEnv([lambda: env])  # Make the environment single-threaded
 
     # Define PPO/DQN policy and model

@@ -227,7 +227,7 @@ def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
     
     print(f"Total Cost: {prob.objective.value()}", flush=True)
 
-    if verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray):
+    if verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray, gComps):
         cost = int(prob.objective.value())
         if enableShow:
             show_ilp(bitmap, gGuards, gComps, lpFlowArray, cost)
@@ -239,8 +239,9 @@ def runILP(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
 
 # --------------------------------------------------
 # Automatic verification that the solution is good
+# Also set the component selected flag
 # --------------------------------------------------
-def verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray):
+def verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray, gComps):
     paths = []
 
     gN = -1
@@ -252,6 +253,7 @@ def verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray):
             match = re.search(r'\d+', var.name)
             if match:
                 gN = int(match.group())    
+                gComps[gN].selected = True
     solutionOK = (nN==1 and gN>=0)
 
     nS = 0
@@ -261,6 +263,7 @@ def verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray):
             match = re.search(r'\d+', var.name)
             if match:
                 gS = int(match.group())    
+                gComps[gS].selected = True
     solutionOK = (solutionOK and (nS==1 and gS>=0))
 
     if not solutionOK:
@@ -283,6 +286,7 @@ def verifySolution(lpFlowfromN, lpFlowtoS, lpFlowArray):
             if path[1] == i and path[2] == -1:     
                 i = path[0] # Move to next location        
                 found = True
+            gComps[i].selected = True
             if i == gS:
                 done = True
                 solutionOK = True

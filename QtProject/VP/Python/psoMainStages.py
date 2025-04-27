@@ -1,12 +1,15 @@
 #---------------------------------------
-# Particle Swarm Optimization
+# Particle Swarm Optimization 
+# Stage 1: Maximimize visibility/diameter (Keeping N/S)
+# Stage 2: Maximimize connectedness (Keeping N/S) 
+# Stage 3: Optimize solution (Keeping N/S and previous connectedness of shortest path)
 #---------------------------------------
 import numpy as np
 import argparse
 from ReadElevImg import read_png, show_terrain
 from algBSF import runBSF
 from ilpAlgGen import runILP
-from mlCommon import best_move
+from mlCommon import visibilitySum, best_move
 from common import fibonacci_lattice, square_uniform, setupGraph
 import pyswarms as ps
 import time
@@ -15,7 +18,45 @@ import sys
 
 lastGuards = []
 lastComps = []
+
+#---------------------------------------
+# Score visibility
+#---------------------------------------
+def visScore(guard_positions, diam=False):
+
+    visTotal = visibilitySum(guard_positions, guardHt, radius, elev, optDiam, keepNS, verbose)
+
+    print(f"Visibility score = {visTotal}")
+    return -visTotal  # Lower cost the better - Use visibility as the score
     
+#---------------------------------------
+# Score connectedness
+#---------------------------------------
+def connect_Score(guard_positions):
+    global lastGuards, lastComps
+
+    # To be sure positions are integral as they are passed by the optimizer
+    guard_positions=guard_positions.astype(int)
+
+    # Strategically move the guards
+    if keepNS:
+        guard_positions = best_move(guard_positions, guardHt, radius, elev, lastGuards, lastComps, verbose)
+
+    gGuards, gComps, gNorths, gSouths = setupGraph(guard_positions, guardHt, radius, elev, verbose)
+
+    if ilp:
+        cost = runILP(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+    else:
+        cost = runBSF(elev, gGuards, gComps, gNorths, gSouths, verbose, enableShow)
+
+    # Only need to store lastComp and lastGuards once to prevent increasing number of restored guards
+    if keepNS:
+        lastComps = gComps.copy()
+        lastGuards = gGuards.copy()
+   
+    print(f"ILP/BSF score = {cost}")
+
+    return cost  # Lower cost the better - Use visibility as the score
 #---------------------------------------
 # Score BSF/ILP
 #---------------------------------------
@@ -48,8 +89,8 @@ def bsf_ilp_Score(guard_positions, baseline=False):
     return cost  # Lower cost the better - Use visibility as the score
 
 if __name__ == "__main__":
-    sys.stdout = open('psoMainLog.txt', 'a')
-    print("=============psoMain.py Run Start===============", flush=True)
+    sys.stdout = open('psoMainStagesLog.txt', 'a')
+    print("=============psoMainStages.py Run Start===============", flush=True)
 
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('--name', type=str, help="test.png")
@@ -75,51 +116,99 @@ if __name__ == "__main__":
     verbose = args.verbose      # False if not provided
     enableShow = args.show      # False if not provided
     keepNS = args.keepNS        # False if not provided
-    
+
+    # -------------------------------
+    # Other options
+    optDiam = False # If set, we optimize diameter instead of area
+    # -------------------------------    
+
     start_time = time.time()   
 
     # Read elevation
     elev = read_png(filename, verbose, enableShow)
     nrows, ncols = elev.shape
 
+    # --------------------------------
     # Initial guard positions determined by fibonacci lattice
+    # --------------------------------
     if squareUniform:
         guard_positions = square_uniform(numGuards, nrows, ncols, randomize)
         numGuards = guard_positions.shape[0] # numGuards must be perfect square
     else:
         guard_positions = fibonacci_lattice(numGuards, nrows, ncols)
 
-    # Get a baseline
-    score = bsf_ilp_Score(guard_positions, baseline=True)
+    # --------------------------------
+    # Set up PSO
+    # c1 [0.5 to 2.5] = Cognitive parameter (high: more based on individual memory) 
+    # c2 [0.5 to 2.5] = Social parameter (high: converge quickly)
+    # w [0.4 to 1.2] = Inertia weight (high: explore more wider space)    
+    # --------------------------------
 
     # Define bounds for the guards to not exceed the elev
     num_dimensions = 2
     lb = np.array([0, 0])
     ub = np.array([nrows-1, ncols-1])
-   
-    # Two approaches:
-    # Option 1: n_particles = numGuards, num_dimensions = 2     - Optimize individual position    
-    # Option 2: n_particles = 1, num_dimensions = numGuards * 2 - Optimize entire set
-    # Options:
-    # c1 [0.5 to 2.5] = Cognitive parameter (high: more based on individual memory) 
-    # c2 [0.5 to 2.5] = Social parameter (high: converge quickly)
-    # w [0.4 to 1.2] = Inertia weight (high: explore more wider space)
-    
     optimizer = ps.single.GlobalBestPSO(n_particles=numGuards, dimensions=num_dimensions,
                                         options={'c1': 1.8, 'c2': 0.5, 'w': 1.2},
                                         bounds=(lb, ub), init_pos=guard_positions.astype(float))
-
     max_iters = 500
     no_improvement_limit = 10
-    no_improvement_count = 0
-    best_cost = score
-    best_pos = guard_positions
     no_solution_limit = 30
-    no_solution_count = 0
 
+    # --------------------------------
+    # Stage 1
+    # --------------------------------
+    no_improvement_count = 0
+    no_solution_count = 0
+    best_pos = guard_positions
+    best_cost = visScore(guard_positions)  # Baseline
+    for i in range(max_iters):
+        cost, pos = optimizer.optimize(visScore, iters=1)
+        print(f"visScore cost = {cost}", flush=True)
+        if cost < best_cost:
+            best_cost = cost
+            positions = optimizer.swarm.position
+            best_pos = np.array(positions).reshape(numGuards, num_dimensions)
+            no_improvement_count = 0
+        else:
+            no_improvement_count += 1
+     
+        if no_improvement_count >= no_improvement_limit:
+            print(f"visScore: Early stopping at iteration {i}: Cause is {no_improvement_limit} iterations with no improvement", flush=True)
+            break
+
+    # --------------------------------
+    # Stage 2
+    # --------------------------------
+    no_improvement_count = 0
+    no_solution_count = 0
+    guard_positions = best_pos
+    best_cost = connectScore(guard_positions)  # Baseline
+    for i in range(max_iters):
+        cost, pos = optimizer.optimize(connectScore, iters=1)
+        print(f"connecdtScore cost = {cost}", flush=True)
+        if cost < best_cost:
+            best_cost = cost
+            positions = optimizer.swarm.position
+            best_pos = np.array(positions).reshape(numGuards, num_dimensions)
+            no_improvement_count = 0
+        else:
+            no_improvement_count += 1
+     
+        if no_improvement_count >= no_improvement_limit:
+            print(f"connectScore: Early stopping at iteration {i}: Cause is {no_improvement_limit} iterations with no improvement", flush=True)
+            break
+
+    # --------------------------------
+    # Stage 3
+    # --------------------------------
+    no_improvement_count = 0
+    no_solution_count = 0
+    guard_positions = best_pos
+    best_cost = bsf_ilp_Score(guard_positions)  # Baseline
     for i in range(max_iters):
         cost, pos = optimizer.optimize(bsf_ilp_Score, iters=1)
-        print(f"Cost = {cost}", flush=True)
+        print(f"bsf_ilp cost = {cost}", flush=True)
 
         if cost == 9999: # Only count those that have solutions
             no_solution_count += 1
