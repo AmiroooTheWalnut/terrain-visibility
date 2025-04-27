@@ -32,7 +32,7 @@ def visScore(guard_positions, diam=False):
 #---------------------------------------
 # Score connectedness
 #---------------------------------------
-def connect_Score(guard_positions):
+def connectScore(guard_positions):
     global lastGuards, lastComps
 
     # To be sure positions are integral as they are passed by the optimizer
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     best_cost = connectScore(guard_positions)  # Baseline
     for i in range(max_iters):
         cost, pos = optimizer.optimize(connectScore, iters=1)
-        print(f"connecdtScore cost = {cost}", flush=True)
+        print(f"connectScore cost = {cost}", flush=True)
         if cost < best_cost:
             best_cost = cost
             positions = optimizer.swarm.position
