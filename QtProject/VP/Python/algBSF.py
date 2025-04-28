@@ -109,7 +109,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
         for guard in gGuards:
             for cc in guard.compIDs:
                 comp = gComps[cc]
-                vprint(verbose, f"Checking {cc} for new Frontier", flush=True)
+                #vprint(verbose, f"Checking {cc} for new Frontier", flush=True)
                 
                 if ccUsedForFrontier[cc] == 0:
 
@@ -121,9 +121,9 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
                     # from the last frontier
                     for i in range(nCCPerFrontier[nFrontier-1]): 
                         dd = frontier[nFrontier-1][i]
-                        vprint(verbose, f"Checking {dd} from last Frontier", flush=True)
+                        #vprint(verbose, f"Checking {dd} from last Frontier", flush=True)
                         if dd in comp.intersects:
-                            vprint(verbose, f"Component {cc} intersects Component {dd} from last Frontier", flush=True)
+                            #vprint(verbose, f"Component {cc} intersects Component {dd} from last Frontier", flush=True)
                             # remember the intersecting CC
                             ccIntersect1.append(cc)
                             ccIntersect2.append(dd)
@@ -134,7 +134,7 @@ def runBSF(bitmap, gGuards, gComps, gNorths, gSouths, verbose=False, enableShow=
                             nCCPerFrontier[nFrontier] += 1
 
                             if cc in gSouths:
-                                vprint(verbose, f"Intersecting South", flush=True)
+                                #vprint(verbose, f"Intersecting South", flush=True)
                                 done = True
                                 returningPath.append(cc)
                                 comp.selected = True
