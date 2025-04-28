@@ -85,14 +85,14 @@ class GuardEnv(gym.Env):
         """Compute multi-level reward based on objectives."""
         visibility_reward = self._visibility_score()
         connectivity_reward = self._connectivity_score()
-        coverage_reward = self._coverage_score()
+        path_reward = self._path_score()
 
         vprint(self.verbose, f"Visibility reward = {visibility_reward:.4g}", flush=True)
         vprint(self.verbose, f"Connectivity reward = {connectivity_reward:.4g}", flush=True)
-        vprint(self.verbose, f"Coverage reward = {coverage_reward:.4g}", flush=True)
+        vprint(self.verbose, f"Path reward = {path_reward:.4g}", flush=True)
 
         # Weighted sum of the three levels
-        total_reward = 0.4 * visibility_reward + 0.3 * connectivity_reward + 0.3 * coverage_reward
+        total_reward = 0.4 * visibility_reward + 0.3 * connectivity_reward + 0.3 * path_reward
         done = False  # Continue until maximum steps
         return total_reward, done
 
@@ -115,8 +115,8 @@ class GuardEnv(gym.Env):
             sum += len(comp.intersects)
         return sum
 
-    def _coverage_score(self):
-        """Compute coverage reward."""
+    def _path_score(self):
+        """Compute path reward."""
         # Score = - number of guards/frontiers
         if self.ilp:
             self.cost = runILP(self.elev, self.gGuards, self.gComps, self.gNorths, self.gSouths, self.verbose, self.enableShow)
