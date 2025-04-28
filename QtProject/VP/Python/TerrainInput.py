@@ -30,6 +30,10 @@ class classComp:
         self.intersects = []
         self.connectedRows = []
         self.selected = False
+        self.xmin = 10000
+        self.xmax = -10000
+        self.ymin = 10000
+        self.ymax = -10000
 
     def addIntersect(self, id):
         if (id in self.intersects) == False: 
@@ -45,10 +49,20 @@ class classComp:
     def addRow(self, row, yStart, yEnd):
         self.connectedRows.append([row, yStart, yEnd])
 
+    def setMinMax(self, xmin, xmax, ymin, ymax):
+        self.xmin = xmin
+        self.xmax = xmax
+        self.ymin = ymin
+        self.ymax = ymax
+
     def clear(self):
         del self.intersects
         del self.connectedRows
         self.selected = False
+        self.xmin = 10000
+        self.xmax = -10000
+        self.ymin = 10000
+        self.ymax = -10000
         gc.collect()
 
 # -----------------------------
@@ -59,8 +73,6 @@ class classGuard:
         self.id = id
         self.compIDs = []
         self.paired = False
-        self.xmin = 10000
-        self.xmax = -10000
 
     def addComp(self, comp):
         self.compIDs.append(comp.id)
@@ -71,15 +83,9 @@ class classGuard:
         self.ht = int(ht)
         self.radius = int(radius)
 
-    def setMinMax(self, xmin, xmax):
-        self.xmin = xmin
-        self.xmax = xmax
-
     def clear(self):
         del self.compIDs
         self.paired = False
-        self.xmin = 10000
-        self.xmax = -10000
         gc.collect()
 
 # -----------------------------
@@ -190,8 +196,10 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
     guard.addComp(comp)
     gComps.append(comp)
 
-    maxX=-10000
     minX=10000
+    maxX=-10000
+    minY=10000
+    maxY=-1000
 
     for i in range(nrows):
         startY = -1
@@ -214,6 +222,8 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
                     startY = -1 # To allow multiple strips per row
                     minX = min(i, minX)
                     maxX = max(i, maxX)
+                    minY = min(i, minY)
+                    maxY = max(i, maxY)
 
     # Potentially add to gNorth or gSouth
     # In the appVP, this is done during construction of first frontier
@@ -223,7 +233,7 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
     if maxX == nrows-1:
         gSouths.append(compnum)
 
-    guard.setMinMax(minX, maxX)
+    comp.setMinMax(minX, maxX, minY, maxY)
 
 # -----------------------------
 # Flood fill a 2D array

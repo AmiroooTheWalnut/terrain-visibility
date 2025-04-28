@@ -38,29 +38,29 @@ def evaluate_model(env, model, num_episodes=10):
 
 if __name__ == "__main__":
     sys.stdout = open('rlMainLog.txt', 'a')
-    print("=============rlMain.py Run Start===============")
+    print("=============rlMain.py Run Start===============", flush=True)
 
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('--name', type=str, help="test.png")
     parser.add_argument('--numGuards', type=int, help="50")
     parser.add_argument('--radius', type=int, help="120")
+    parser.add_argument('--height', type=int, help="10")
+    parser.add_argument('--ilp', action='store_true', help="Run ILP")
+    parser.add_argument('--square', action='store_true', help="Square uniform")
+    parser.add_argument('--randomize', action='store_true', help="Randomize Square Pos")
     parser.add_argument('--verbose', action='store_true', help="Enable verbose")
     parser.add_argument('--show', action='store_true', help="Enable showing frontiers")
 
     args = parser.parse_args()
     filename = args.name        # None if not provided
-    radius = args.radius        # None if not provided
-    numGuards = args.numGuards  # None if not provided
+    radius = args.radius        # Default if not provided
+    numGuards = args.numGuards  # Default if not provided
+    guardHt = args.height       # Default if not provided
+    ilp = args.ilp              # False if not provided
+    squareUniform = args.square # False if not provided
+    randomize = args.randomize  # False if not provided (Only applicable if squareUniform is true)
     verbose = args.verbose      # False if not provided
     enableShow = args.show      # False if not provided
-
-    # -------------------------
-    # Other options
-    # -------------------------
-    guardHt = 10     # Guard height above terrain
-    squareUniform = True # False = Fibonacci Lattice guard initial positions
-    randomize = True  # Randomize square uniform guard initial positions
-    # -------------------------
 
     start_time = time.time()   
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     elev = read_png(filename, verbose, enableShow)
     
     # Check environment before training
-    env = GuardEnv(numGuards, guardHt, radius, elev, squareUniform=squareUniform, randomize=randomize, verbose=verbose)
+    env = GuardEnv(numGuards, guardHt, radius, elev, ilp=ilp, squareUniform=squareUniform, randomize=randomize, verbose=verbose, enableShow=enableShow)
     DummyVecEnv([lambda: env])  # Make the environment single-threaded
 
     # Define PPO/DQN policy and model

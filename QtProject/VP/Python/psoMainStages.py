@@ -151,8 +151,8 @@ if __name__ == "__main__":
                                         options={'c1': 1.8, 'c2': 0.5, 'w': 1.2},
                                         bounds=(lb, ub), init_pos=guard_positions.astype(float))
     max_iters = 500
-    no_improvement_limit = 10
-    no_solution_limit = 30
+    no_improvement_limit = 20
+    no_solution_limit = 20
 
     # --------------------------------
     # Stage 1
@@ -163,7 +163,6 @@ if __name__ == "__main__":
     best_cost = 9999
     for i in range(max_iters):
         cost, pos = optimizer.optimize(visScore, iters=1)
-        print(f"visScore cost = {cost}", flush=True)
         if cost < best_cost:
             best_cost = cost
             positions = optimizer.swarm.position
@@ -185,7 +184,6 @@ if __name__ == "__main__":
     guard_positions = best_pos
     for i in range(max_iters):
         cost, pos = optimizer.optimize(connectScore, iters=1)
-        print(f"connectScore cost = {cost}", flush=True)
         if cost < best_cost:
             best_cost = cost
             positions = optimizer.swarm.position
@@ -207,7 +205,6 @@ if __name__ == "__main__":
     guard_positions = best_pos
     for i in range(max_iters):
         cost, pos = optimizer.optimize(bsf_ilp_Score, iters=1)
-        print(f"bsf_ilp cost = {cost}", flush=True)
 
         if cost == 9999: # Only count those that have solutions
             no_solution_count += 1

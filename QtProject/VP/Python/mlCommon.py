@@ -8,6 +8,7 @@ import gc
 import gymnasium as gym
 from gymnasium import spaces
 from algBSF import runBSF
+from ilpAlgGen import runILP
 from Visibility import calc_vis
 from common import calc_diameter, fibonacci_lattice, square_uniform, setupGraph, unwrapComp, vprint
 
@@ -16,16 +17,18 @@ lastSavedIds = []
 
 # Environment setup for multi-level RL
 class GuardEnv(gym.Env):
-    def __init__(self, num_guards, guardHt, radius, elev, squareUniform=False, randomize=False, verbose=False):
+    def __init__(self, num_guards, guardHt, radius, elev, ilp=False, squareUniform=False, randomize=False, verbose=False, enableShow=False):
         super(GuardEnv, self).__init__()
 
         self.num_guards = num_guards
         nrows, ncols = elev.shape
         self.grid_size = (nrows, ncols)
+        self.ilp = ilp
         self.squareUniform = squareUniform
         self.randomize = randomize
         self.verbose = verbose
-        self.nFrontiers = 9999
+        self.enableShow = enableShow
+        self.cost = 9999
         self.gGuards = None
         self.gComps = None
         self.gNorths = None
@@ -98,7 +101,7 @@ class GuardEnv(gym.Env):
         # Score = sum of diameters of the connected components
         sum = 0
         for comp in self.gComps:
-            bitmap, minX, minY = unwrapComp(comp)
+            bitmap = unwrapComp(comp)
             sum += calc_diameter(bitmap)
         return sum
 
@@ -115,11 +118,14 @@ class GuardEnv(gym.Env):
     def _coverage_score(self):
         """Compute coverage reward."""
         # Score = - number of guards/frontiers
-        self.nFrontiers = runBSF(self.elev, self.gGuards, self.gComps, \
-            self.gNorths, self.gSouths, self.verbose, False)
-        print(f"Iteration: {self.iteration}, Cost = {self.nFrontiers}", flush=True)
+        if self.ilp:
+            self.cost = runILP(self.elev, self.gGuards, self.gComps, self.gNorths, self.gSouths, self.verbose, self.enableShow)
+        else:
+            self.cost = runBSF(self.elev, self.gGuards, self.gComps, self.gNorths, self.gSouths, self.verbose, self.enableShow)
+
+        print(f"Iteration: {self.iteration}, Cost = {self.cost}", flush=True)
         self.iteration += 1
-        return (-self.nFrontiers)
+        return (-self.cost)
 
     def render(self):
         # Should only show frontiers when running single-threaded
@@ -181,7 +187,7 @@ def best_move(guard_positions, ht, radius, elev, lastGuards, lastComps, verbose=
     for guard in lastGuards:
         if guard.xmin == 0 or guard.xmax == ncols-1:
             id = guard.id
-            print(f"Restoring guard {id} that previously crossed N/S")
+            print(f"Restoring guard {id} that previously crossed N/S", flush=True)
             guard_positions[id] = (guard.row, guard.col)
             restored.append(id)
 
@@ -190,7 +196,7 @@ def best_move(guard_positions, ht, radius, elev, lastGuards, lastComps, verbose=
         if comp.selected:
             id = comp.parentID
             if id not in restored:
-                print(f"Restoring guard {id} with previously selected components")
+                print(f"Restoring guard {id} with previously selected components", flush=True)
                 guard_positions[id] = (guard.row, guard.col)
     
     return guard_positions                              

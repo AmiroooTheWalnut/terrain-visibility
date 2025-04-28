@@ -230,12 +230,11 @@ def removeComp(id, gComps, gNorths, gSouths):
 # -----------------------------
 # Unwrap a component into cropped bitmap
 # -----------------------------
-def unwrapComp(comp):
-    minX = min(comp.connectedRows[:][0])
-    maxX = max(comp.connectedRows[:][0])
-    minY = min(comp.connectedRows[:][1])
-    maxY = max(comp.connectedRows[:][2])
-    bitmap = np.array((maxX-minX+1, maxY-minY+1), dtype=uint16)
+def unwrapComp(comp):    
+
+    bitmap = np.zeros((comp.xmax-comp.xmin+1, comp.ymax-comp.ymin+1), dtype=np.uint16)
     for cRow in comp.connectedRows:
-        bitmap[cRow[0]-minX][cRow[1]-minY:cRow[2]-minY+1] = 1
-    return bitmap, minX, minY      
+        bitmap[cRow[0]-comp.xmin][cRow[1]-comp.ymin:cRow[2]-comp.ymin+1] = 1
+    return bitmap
+
+      
