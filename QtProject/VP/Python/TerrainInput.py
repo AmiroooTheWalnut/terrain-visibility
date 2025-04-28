@@ -161,21 +161,23 @@ def intersect(comp1, comp2):
 # -----------------------------
 def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
 
-    nrows, ncols = viewshed.shape
+    arr = np.where(viewshed==1)
+    xmin, xmax = np.min(arr[0]), np.max(arr[0])
+    ymin, ymax = np.min(arr[1]), np.max(arr[1])
 
     done = False
     while done == False:
         # Find a non-zero pixel to start 
         found = False
-        for i in range(nrows):
-            for j in range(ncols):
+        for i in range(xmin, xmax+1):
+            for j in range(ymin, ymax+1):
                 if viewshed[i][j] == 1:  # Either one or zero
                     timestamp = time.time()
 
-                    flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
+                    minX, maxX, minY, maxY = flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
                     timestamp = elapsed(verbose, timestamp, "Flood fill")
 
-                    setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose)
+                    setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, minX, maxX, minY, maxY, verbose)
                     timestamp = elapsed(verbose, timestamp, "Set connected component")
 
                     found = True
@@ -187,7 +189,7 @@ def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
 # viewshed contains the mask for the connected component (visible = 2 after flood fill)
 # Other pixels (if visible by the same guard) = 1
 # -----------------------------
-def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
+def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, minX, maxX, minY, maxY, verbose=False):
 
     nrows, ncols = viewshed.shape
 
@@ -196,34 +198,25 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
     guard.addComp(comp)
     gComps.append(comp)
 
-    minX=10000
-    maxX=-10000
-    minY=10000
-    maxY=-1000
-
-    for i in range(nrows):
+    for i in range(minX, maxX+1):
         startY = -1
         endY = -1
         compRow = i
-        for j in range(ncols):
+        for j in range(minY, maxY+1):
             value = viewshed[i][j]
-            if value == 2 and j < ncols-1:  # Force start <> end
+            if value == 2 and j < maxY:  # Force start <> end
                 if startY < 0: 
                     startY = j
                     compRow = i
-            elif (j==ncols-1 and value==2) or value != 2:
+            if (j==maxY and value==2) or value != 2:
                 if startY >= 0:
-                    if j==ncols-1 and value==2:
+                    if j==maxY and value==2:
                         endY = j
                     else:
                         endY = j-1
                     comp.addRow(compRow, startY, endY)
                     viewshed[i][startY:endY+1] = 0  # Clear pixel after setting the ConnectedRow
                     startY = -1 # To allow multiple strips per row
-                    minX = min(i, minX)
-                    maxX = max(i, maxX)
-                    minY = min(i, minY)
-                    maxY = max(i, maxY)
 
     # Potentially add to gNorth or gSouth
     # In the appVP, this is done during construction of first frontier
@@ -235,12 +228,23 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, verbose=Fal
 
     comp.setMinMax(minX, maxX, minY, maxY)
 
+    if verbose:
+        print(minX, maxX, minY, maxY, flush=True)
+        print("Connected Rows:", flush=True)
+        print(comp.connectedRows, flush=True)
+
+
 # -----------------------------
 # Flood fill a 2D array
 # -----------------------------
 def flood_fill(start, viewshed):
 
     nrows, ncols = viewshed.shape
+
+    minX=10000
+    maxX=-10000
+    minY=10000
+    maxY=-10000
 
     stack = []
     stack.append((start))
@@ -254,13 +258,21 @@ def flood_fill(start, viewshed):
         
         # Fill the current pixel with the fill value
         viewshed[row][col] = 2
+
+        minX = min(row, minX)
+        maxX = max(row, maxX)
+        minY = min(col, minY)
+        maxY = max(col, maxY)
         
         # Add the 4 neighboring cells to the stack (up, down, left, right)
         stack.append((row + 1, col))  # Right
         stack.append((row - 1, col))  # Left
         stack.append((row, col + 1))  # Down
         stack.append((row, col - 1))  # Up
-        
+
+    # Return boundary to save time processing the component
+    return minX, maxX, minY, maxY        
+
 # -----------------------------
 # Print Guard information
 # A section will be the same format as the input file for the algorithms
