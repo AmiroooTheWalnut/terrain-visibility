@@ -150,7 +150,10 @@ def findIntersections(gComps, verbose=False):
 def intersect(comp1, comp2):
     for conRow1 in comp1.connectedRows:
         for conRow2 in comp2.connectedRows:
-            if conRow1[0] == conRow2[0]:
+            # Since the row numbers are ascending, done when conRow2[0] has surpassed conRow1[0]  
+            if conRow2[0] > conRow1[0]: 
+                return False
+            if conRow2[0] == conRow1[0]:
                 if not (conRow1[2] < conRow2[1] or conRow2[2] < conRow1[1]):
                     return True
 
@@ -170,18 +173,17 @@ def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
         # Find a non-zero pixel to start 
         found = False
         for i in range(xmin, xmax+1):
-            if found == False:
-                for j in range(ymin, ymax+1):
-                    if found == False and viewshed[i][j] == 1:  # Either one or zero
-                        timestamp = time.time()
+            for j in range(ymin, ymax+1):
+                if viewshed[i][j] == 1:  # Either one or zero
+                    timestamp = time.time()
  
-                        minX, maxX, minY, maxY = flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
-                        timestamp = elapsed(verbose, timestamp, "Flood fill")
+                    minX, maxX, minY, maxY = flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
+                    timestamp = elapsed(verbose, timestamp, "Flood fill")
 
-                        setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, minX, maxX, minY, maxY, verbose)
-                        timestamp = elapsed(verbose, timestamp, "Set connected component")
+                    setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, minX, maxX, minY, maxY, verbose)
+                    timestamp = elapsed(verbose, timestamp, "Set connected component")
 
-                        found = True
+                    found = True
         if found == False:
             done = True
 
