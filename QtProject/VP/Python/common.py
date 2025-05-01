@@ -97,6 +97,8 @@ def setupGraph(guard_positions, guardHt, radius, elev, verbose=False):
         viewshed = calc_vis(guard_positions[guard.id][0], guard_positions[guard.id][1], guardHt, radius, elev, verbose)
         findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose)
 
+    vprint(verbose, f"Total number of connected components = {len(gComps)}", flush=True)
+
     findIntersections(gComps, verbose)
 
     #printGuards(gGuards, gComps, gNorths, gSouths)

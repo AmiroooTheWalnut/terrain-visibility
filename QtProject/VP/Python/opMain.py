@@ -43,7 +43,7 @@ def ilpScore(guard_positions, pairGuardFlag=False, verbose=False, enableShow=Fal
 
 if __name__ == "__main__":
     sys.stdout = open('opMainLog.txt', 'a')
-    print("=============opMain.py Run Start===============")
+    print("=============opMain.py Run Start===============", flush=True)
 
     parser = argparse.ArgumentParser(description='Calculate Visibility')
     parser.add_argument('--name', type=str, help="test.png")

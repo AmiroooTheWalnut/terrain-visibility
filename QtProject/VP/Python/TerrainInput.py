@@ -142,7 +142,7 @@ def findIntersections(gComps, verbose=False):
             if intersect(c1, c2):
                 c1.addIntersect(c2.id)
                 c2.addIntersect(c1.id)
-            timestamp = elapsed(verbose, timestamp, "Process two component intersection")
+            timestamp = elapsed(verbose, timestamp, f"Processed intersection between {c1.id} and {c2.id}")
 
 # -----------------------------
 # Determine if two Components intersect
@@ -170,17 +170,18 @@ def findConnected(guard, viewshed, gComps, gNorths, gSouths, verbose=False):
         # Find a non-zero pixel to start 
         found = False
         for i in range(xmin, xmax+1):
-            for j in range(ymin, ymax+1):
-                if viewshed[i][j] == 1:  # Either one or zero
-                    timestamp = time.time()
+            if found == False:
+                for j in range(ymin, ymax+1):
+                    if found == False and viewshed[i][j] == 1:  # Either one or zero
+                        timestamp = time.time()
+ 
+                        minX, maxX, minY, maxY = flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
+                        timestamp = elapsed(verbose, timestamp, "Flood fill")
 
-                    minX, maxX, minY, maxY = flood_fill((i, j), viewshed) # Fill all the connected points and set the pixels to 2
-                    timestamp = elapsed(verbose, timestamp, "Flood fill")
+                        setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, minX, maxX, minY, maxY, verbose)
+                        timestamp = elapsed(verbose, timestamp, "Set connected component")
 
-                    setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, minX, maxX, minY, maxY, verbose)
-                    timestamp = elapsed(verbose, timestamp, "Set connected component")
-
-                    found = True
+                        found = True
         if found == False:
             done = True
 
@@ -230,9 +231,8 @@ def setConnectedComponent(guard, viewshed, gComps, gNorths, gSouths, minX, maxX,
 
     if verbose:
         print(minX, maxX, minY, maxY, flush=True)
-        print("Connected Rows:", flush=True)
-        print(comp.connectedRows, flush=True)
-
+    #    print("Connected Rows:", flush=True)
+    #    print(comp.connectedRows, flush=True)
 
 # -----------------------------
 # Flood fill a 2D array
